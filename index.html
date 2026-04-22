@@ -1515,9 +1515,11 @@ html, body {
       <div class="brand-name">글잼 라이팅<span class="ver">v0.4</span></div>
     </div>
   </div>
-  <div class="api-chip">
-    <span class="dot"></span>
-    Claude Vision API 연동됨
+  <div style="display:flex; align-items:center; gap:10px;">
+    <button class="api-chip" id="apiKeyBtn" style="cursor:pointer; border:0; font-family:inherit;">
+      <span class="dot" id="apiKeyDot"></span>
+      <span id="apiKeyLabel">연결 설정 필요</span>
+    </button>
   </div>
 </header>
 
@@ -2066,24 +2068,120 @@ document.getElementById('gradeTabs').addEventListener('click', (e) => {
   renderProblemPreview();
 });
 
-// TTS (1학년)
-function speakSentence() {
+// TTS (1학년) - 개선 버전
+// 음성 목록 로딩 대기
+let _voicesCache = null;
+function loadVoices() {
+  return new Promise((resolve) => {
+    if (!('speechSynthesis' in window)) { resolve([]); return; }
+    let voices = window.speechSynthesis.getVoices();
+    if (voices && voices.length > 0) { _voicesCache = voices; resolve(voices); return; }
+    // 아직 로드 안 됨 → voiceschanged 이벤트 대기
+    const timeout = setTimeout(() => {
+      voices = window.speechSynthesis.getVoices();
+      _voicesCache = voices || [];
+      resolve(_voicesCache);
+    }, 1500);
+    window.speechSynthesis.addEventListener('voiceschanged', () => {
+      clearTimeout(timeout);
+      _voicesCache = window.speechSynthesis.getVoices();
+      resolve(_voicesCache);
+    }, { once: true });
+  });
+}
+
+// 페이지 로드 시 미리 음성 로딩 시도
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.getVoices();
+  loadVoices();
+}
+
+function findKoreanVoice(voices) {
+  if (!voices || voices.length === 0) return null;
+  // 1순위: ko-KR 언어 태그
+  let v = voices.find(v => v.lang === 'ko-KR' || v.lang === 'ko_KR');
+  if (v) return v;
+  // 2순위: ko 로 시작
+  v = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ko'));
+  if (v) return v;
+  // 3순위: 이름에 Korean 포함
+  v = voices.find(v => v.name && /korean|한국/i.test(v.name));
+  return v || null;
+}
+
+async function speakSentence() {
   if (state.grade !== 1) return;
   const p = currentProblem();
   const btn = document.getElementById('audioBtn');
   if (!btn) return;
 
-  if ('speechSynthesis' in window) {
+  if (!('speechSynthesis' in window)) {
+    showTtsError('이 브라우저는 음성 재생을 지원하지 않아요. Chrome, Safari, Edge 최신 버전을 사용해 주세요.');
+    return;
+  }
+
+  try {
+    // 기존 재생 취소
     window.speechSynthesis.cancel();
+
+    // 음성 목록 확보
+    const voices = await loadVoices();
+    const koVoice = findKoreanVoice(voices);
+
+    if (!koVoice) {
+      // 한국어 음성 없음 → 안내
+      const platform = navigator.platform || '';
+      const ua = navigator.userAgent || '';
+      let hint = '';
+      if (/Win/i.test(platform)) {
+        hint = 'Windows 설정 → 시간 및 언어 → 언어에서 한국어 음성팩을 설치해 주세요.';
+      } else if (/Mac/i.test(platform)) {
+        hint = '시스템 설정 → 손쉬운 사용 → 음성 읽기에서 한국어 음성을 추가해 주세요.';
+      } else if (/Android/i.test(ua)) {
+        hint = '설정 → 일반관리 → 언어 및 입력 → 텍스트 음성 변환에서 한국어를 설정해 주세요.';
+      } else if (/iPhone|iPad/i.test(ua)) {
+        hint = 'iOS는 기본적으로 한국어를 지원해요. 설정 → 손쉬운 사용 → 음성 콘텐츠를 확인해 주세요.';
+      }
+      showTtsError('이 기기에 한국어 음성이 설치되어 있지 않아요. ' + hint);
+      return;
+    }
+
     const utter = new SpeechSynthesisUtterance(p.text);
-    utter.lang = 'ko-KR';
+    utter.voice = koVoice;
+    utter.lang = koVoice.lang || 'ko-KR';
     utter.rate = 0.85;
+    utter.pitch = 1.0;
+    utter.volume = 1.0;
     utter.onstart = () => btn.classList.add('playing');
     utter.onend = () => btn.classList.remove('playing');
-    window.speechSynthesis.speak(utter);
-  } else {
-    alert('이 브라우저는 음성 재생을 지원하지 않아요.');
+    utter.onerror = (e) => {
+      btn.classList.remove('playing');
+      console.error('[TTS error]', e);
+      showTtsError('음성 재생 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.');
+    };
+
+    // 크롬 버그 대응: speak 전 약간의 지연
+    setTimeout(() => window.speechSynthesis.speak(utter), 50);
+  } catch (err) {
+    console.error('[TTS]', err);
+    showTtsError('음성 재생 실패: ' + err.message);
   }
+}
+
+function showTtsError(msg) {
+  // 프리뷰 영역 하단에 비파괴적으로 에러 표시
+  let box = document.getElementById('ttsErrorBox');
+  if (!box) {
+    const preview = document.getElementById('problemPreview');
+    if (!preview) { alert(msg); return; }
+    box = document.createElement('div');
+    box.id = 'ttsErrorBox';
+    box.className = 'error-box';
+    box.style.marginTop = '14px';
+    preview.appendChild(box);
+  }
+  box.innerHTML = `<span class="icon icon-16"><svg><use href="#i-alert"/></svg></span>${escapeHtml(msg)}`;
+  setTimeout(() => { if (box && box.parentNode) box.parentNode.removeChild(box); }, 8000);
 }
 
 // STEP 2 요약 영역
@@ -2184,10 +2282,23 @@ dropZone.addEventListener('drop', (e) => {
 
 function handleFile(file) {
   const reader = new FileReader();
-  reader.onload = (e) => {
-    state.imageData = e.target.result;
-    state.imageMediaType = file.type || 'image/png';
-    showPreview(e.target.result);
+  reader.onload = async (e) => {
+    const dataUrl = e.target.result;
+    const sizeKb = Math.round(dataUrl.length * 0.75 / 1024); // base64 대략 원본 크기
+    try {
+      // 업로드 파일도 1600px / JPEG 85%로 정규화해서 API 호출 안정성 확보
+      const resized = await downscaleImageDataUrl(dataUrl, 1600, 0.85, file.type || 'image/png');
+      state.imageData = resized;
+      state.imageMediaType = 'image/jpeg';
+      showPreview(resized);
+      console.log(`[Image] 원본 ~${sizeKb}KB → 리사이즈 완료`);
+    } catch (err) {
+      // 실패 시 원본 그대로 사용
+      console.warn('[Image resize 실패, 원본 사용]', err);
+      state.imageData = dataUrl;
+      state.imageMediaType = file.type || 'image/png';
+      showPreview(dataUrl);
+    }
   };
   reader.readAsDataURL(file);
 }
@@ -2216,17 +2327,57 @@ startCameraBtn.addEventListener('click', async () => {
 });
 
 captureBtn.addEventListener('click', () => {
-  const canvas = document.createElement('canvas');
-  canvas.width = videoEl.videoWidth;
-  canvas.height = videoEl.videoHeight;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(videoEl, 0, 0);
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+  // 원본 촬영
+  const rawCanvas = document.createElement('canvas');
+  rawCanvas.width = videoEl.videoWidth;
+  rawCanvas.height = videoEl.videoHeight;
+  const rawCtx = rawCanvas.getContext('2d');
+  rawCtx.drawImage(videoEl, 0, 0);
+
+  // 리사이즈 (최대 1600px) + 품질 조정 → API 페이로드 줄이기
+  const dataUrl = downscaleImageFromCanvas(rawCanvas, 1600, 0.85);
   state.imageData = dataUrl;
   state.imageMediaType = 'image/jpeg';
   showPreview(dataUrl);
   stopCamera();
 });
+
+// 이미지 리사이즈 유틸: max 변(가로/세로 큰 쪽)을 기준으로 축소하고 JPEG로 반환
+function downscaleImageFromCanvas(srcCanvas, maxSide, quality) {
+  const w = srcCanvas.width;
+  const h = srcCanvas.height;
+  const longSide = Math.max(w, h);
+  let scale = 1;
+  if (longSide > maxSide) scale = maxSide / longSide;
+  const outW = Math.round(w * scale);
+  const outH = Math.round(h * scale);
+  const out = document.createElement('canvas');
+  out.width = outW;
+  out.height = outH;
+  const ctx = out.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, outW, outH); // JPEG 투명 방지
+  ctx.drawImage(srcCanvas, 0, 0, outW, outH);
+  return out.toDataURL('image/jpeg', quality);
+}
+
+// 파일/HTMLImage 기반 리사이즈 (업로드 경로에서도 사용)
+function downscaleImageDataUrl(dataUrl, maxSide, quality, mediaType) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth;
+      c.height = img.naturalHeight;
+      c.getContext('2d').drawImage(img, 0, 0);
+      resolve(downscaleImageFromCanvas(c, maxSide, quality));
+    };
+    img.onerror = () => reject(new Error('이미지 로드 실패'));
+    img.src = dataUrl;
+  });
+}
 
 stopCameraBtn.addEventListener('click', stopCamera);
 
@@ -2616,33 +2767,82 @@ function buildPrompt() {
 }
 
 async function callClaudeVision() {
+  // 프록시 설정 확인
+  const cfg = getProxyConfig();
+  if (!cfg.password) {
+    openApiKeyModal();
+    throw new Error('AI 분석 비밀번호가 필요해요. 우측 상단 버튼으로 설정해 주세요.');
+  }
+
   const base64Data = state.imageData.split(',')[1];
   const cleanMediaType = (state.imageMediaType || 'image/png').toLowerCase();
   const { system, user } = buildPrompt();
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 2500,
-      system: system,
-      messages: [{
-        role: "user",
-        content: [
-          {
-            type: "image",
-            source: { type: "base64", media_type: cleanMediaType, data: base64Data }
-          },
-          { type: "text", text: user }
-        ]
-      }]
-    })
-  });
+  // 페이로드 크기 검증
+  const approxMB = (base64Data.length * 0.75) / (1024 * 1024);
+  console.log(`[API] 이미지 페이로드 크기: ~${approxMB.toFixed(2)}MB`);
+  if (approxMB > 5) {
+    throw new Error(`이미지가 너무 커요 (${approxMB.toFixed(1)}MB). 더 작은 해상도로 다시 시도해 주세요.`);
+  }
+
+  const proxyUrl = resolveProxyUrl();
+
+  let response;
+  try {
+    response = await fetch(proxyUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-password": cfg.password || ''
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 2500,
+        system: system,
+        messages: [{
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: { type: "base64", media_type: cleanMediaType, data: base64Data }
+            },
+            { type: "text", text: user }
+          ]
+        }]
+      })
+    });
+  } catch (netErr) {
+    console.error('[프록시 네트워크 오류]', netErr);
+    throw new Error('프록시 서버에 연결할 수 없어요. 주소를 확인해 주세요.');
+  }
 
   if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`API 오류 (${response.status}): ${errText.substring(0, 200)}`);
+    const errText = await response.text().catch(() => '');
+    console.error(`[프록시 ${response.status}]`, errText);
+
+    let errDetail = '';
+    try {
+      const errObj = JSON.parse(errText);
+      errDetail = (errObj.error && errObj.error.message) || '';
+    } catch(e) { errDetail = errText.substring(0, 120); }
+
+    if (response.status === 401) {
+      openApiKeyModal();
+      throw new Error('팀 비밀번호가 올바르지 않아요. 다시 확인해 주세요.');
+    }
+    if (response.status === 403) {
+      throw new Error('허용되지 않은 출처에서의 요청이에요. 팀장에게 문의해 주세요.');
+    }
+    if (response.status === 413 || /too large|size limit/i.test(errDetail)) {
+      throw new Error('이미지가 너무 커요. 더 작은 해상도로 촬영하거나 업로드해 주세요.');
+    }
+    if (response.status === 429) {
+      throw new Error('요청이 너무 많아요. 잠시 후 다시 시도해 주세요.');
+    }
+    if (response.status >= 500) {
+      throw new Error('서버 일시 오류예요. 잠시 후 다시 시도해 주세요. ' + errDetail);
+    }
+    throw new Error(`AI 분석 실패 (${response.status}). ${errDetail}`);
   }
 
   const data = await response.json();
@@ -2651,6 +2851,8 @@ async function callClaudeVision() {
     .map(c => c.text)
     .join('\n');
 
+  console.log('[API 응답]', text.substring(0, 300));
+
   const cleaned = text.replace(/```json\s*|\s*```/g, '').trim();
 
   let parsed;
@@ -2658,8 +2860,17 @@ async function callClaudeVision() {
     parsed = JSON.parse(cleaned);
   } catch (e) {
     const m = cleaned.match(/\{[\s\S]*\}/);
-    if (m) parsed = JSON.parse(m[0]);
-    else throw new Error('AI 응답을 해석할 수 없어요: ' + cleaned.substring(0, 120));
+    if (m) {
+      try {
+        parsed = JSON.parse(m[0]);
+      } catch (e2) {
+        console.error('[JSON parse 실패]', cleaned);
+        throw new Error('AI 응답을 해석할 수 없어요. 다시 시도해 주세요.');
+      }
+    } else {
+      console.error('[JSON 블록 없음]', cleaned);
+      throw new Error('AI 응답이 예상한 형식이 아니에요. 다시 시도해 주세요.');
+    }
   }
 
   return parsed;
@@ -2923,6 +3134,235 @@ function escapeHtml(s) {
 
 // 초기 렌더
 renderProblemPreview();
+</script>
+
+<!-- Proxy Config Modal -->
+<div id="apiKeyModal" style="display:none; position:fixed; inset:0; background:rgba(33,33,33,0.6); z-index:200; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:white; border-radius:16px; padding:28px; max-width:480px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+    <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:18px;">
+      <div style="width:40px; height:40px; background:var(--bg-primary-soft); color:var(--primary); border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <span class="icon icon-20"><svg><use href="#i-sparkle"/></svg></span>
+      </div>
+      <div>
+        <h3 style="font-size:18px; font-weight:700; color:var(--text); margin-bottom:4px;">AI 분석 사용 시작하기</h3>
+        <div style="font-size:13px; color:var(--gray-2); line-height:1.55;">
+          팀장에게 받은 <b>비밀번호</b>를 입력하면<br>
+          바로 AI 분석을 사용할 수 있어요.
+        </div>
+      </div>
+    </div>
+
+    <div style="background:var(--bg-primary-soft); border-left:3px solid var(--primary); border-radius:0 8px 8px 0; padding:12px 14px; margin-bottom:18px; font-size:12px; color:var(--gray-1); line-height:1.65;">
+      <b style="color:var(--text);">💡 팀원 안내</b><br>
+      비밀번호는 이 브라우저에만 저장되어 다음번 방문 시<br>
+      자동으로 연결돼요.
+    </div>
+
+    <label style="display:block; font-size:12px; font-weight:600; color:var(--gray-1); margin-bottom:6px;">팀 공유 비밀번호</label>
+    <input type="password" id="accessPasswordInput" placeholder="팀장에게 받은 비밀번호"
+      style="width:100%; padding:12px 14px; border:1px solid var(--gray-line); border-radius:8px; font-family:inherit; font-size:14px; color:var(--text); margin-bottom:10px;">
+
+    <div style="font-size:11px; color:var(--gray-3); margin-bottom:18px;">
+      ※ 비밀번호는 이 브라우저의 localStorage에만 저장돼요.
+    </div>
+
+    <details style="margin-bottom:14px; font-size:12px; color:var(--gray-2);">
+      <summary style="cursor:pointer; user-select:none;">고급 설정 (프록시 URL 변경)</summary>
+      <div style="margin-top:10px;">
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--gray-1); margin-bottom:6px;">프록시 서버 주소</label>
+        <input type="text" id="proxyUrlInput" placeholder="/api/proxy (기본값)"
+          style="width:100%; padding:10px 12px; border:1px solid var(--gray-line); border-radius:8px; font-family:monospace; font-size:12px; color:var(--text);">
+        <div style="font-size:11px; color:var(--gray-3); margin-top:6px;">
+          비워두면 같은 도메인의 /api/proxy를 사용해요.
+        </div>
+      </div>
+    </details>
+
+    <div style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+      <button class="btn btn-ghost" id="apiKeyClear" style="padding:10px 18px; font-size:13px;">설정 초기화</button>
+      <button class="btn btn-ghost" onclick="closeApiKeyModal()" style="padding:10px 18px; font-size:13px;">취소</button>
+      <button class="btn btn-primary" id="apiKeySave" style="padding:10px 18px; font-size:13px;">저장하고 연결 테스트</button>
+    </div>
+
+    <div id="connectionTestResult" style="margin-top:14px; display:none;"></div>
+  </div>
+</div>
+
+
+<script>
+// ===========================================
+// Proxy Config Management
+// ===========================================
+const PROXY_URL_STORAGE = 'geuljam_proxy_url';
+const PROXY_PWD_STORAGE = 'geuljam_proxy_password';
+const DEFAULT_PROXY_PATH = '/api/proxy'; // 같은 도메인의 Vercel 함수
+
+function getProxyConfig() {
+  try {
+    return {
+      url: localStorage.getItem(PROXY_URL_STORAGE) || '',
+      password: localStorage.getItem(PROXY_PWD_STORAGE) || ''
+    };
+  } catch(e) {
+    return { url: '', password: '' };
+  }
+}
+
+// 실제 요청에 쓸 URL 반환 (빈 값이면 기본 경로 사용)
+function resolveProxyUrl() {
+  const cfg = getProxyConfig();
+  if (cfg.url) return cfg.url.replace(/\/+$/, '');
+  return DEFAULT_PROXY_PATH;
+}
+
+function setProxyConfig(url, password) {
+  try {
+    if (url) localStorage.setItem(PROXY_URL_STORAGE, url);
+    else localStorage.removeItem(PROXY_URL_STORAGE);
+    if (password) localStorage.setItem(PROXY_PWD_STORAGE, password);
+    else localStorage.removeItem(PROXY_PWD_STORAGE);
+  } catch(e) {
+    console.warn('localStorage 접근 불가', e);
+  }
+  updateApiKeyUI();
+}
+
+function updateApiKeyUI() {
+  const cfg = getProxyConfig();
+  const label = document.getElementById('apiKeyLabel');
+  const dot = document.getElementById('apiKeyDot');
+  if (!label || !dot) return;
+
+  // 비밀번호만 있으면 연결된 것으로 간주 (URL은 기본값 사용)
+  if (cfg.password) {
+    label.textContent = 'AI 연결됨';
+    dot.style.background = 'var(--success)';
+    label.parentElement.style.background = 'var(--success-soft)';
+    label.parentElement.style.color = 'var(--success)';
+  } else {
+    label.textContent = '비밀번호 입력 필요';
+    dot.style.background = 'var(--warning)';
+    label.parentElement.style.background = 'var(--warning-soft)';
+    label.parentElement.style.color = 'var(--warning)';
+  }
+}
+
+function openApiKeyModal() {
+  const modal = document.getElementById('apiKeyModal');
+  modal.style.display = 'flex';
+  const cfg = getProxyConfig();
+  const urlInput = document.getElementById('proxyUrlInput');
+  if (urlInput) urlInput.value = cfg.url;
+  document.getElementById('accessPasswordInput').value = cfg.password;
+  document.getElementById('connectionTestResult').style.display = 'none';
+  setTimeout(() => document.getElementById('accessPasswordInput').focus(), 50);
+}
+
+function closeApiKeyModal() {
+  document.getElementById('apiKeyModal').style.display = 'none';
+}
+
+async function testConnection(url, password) {
+  const resultBox = document.getElementById('connectionTestResult');
+  resultBox.style.display = 'block';
+  resultBox.innerHTML = `
+    <div style="padding:12px 14px; background:var(--bg-primary-soft); color:var(--primary); border-radius:8px; font-size:13px; font-weight:500;">
+      🔄 연결 테스트 중...
+    </div>`;
+
+  try {
+    const testPayload = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 10,
+      messages: [{ role: 'user', content: 'hi' }]
+    };
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-password': password
+      },
+      body: JSON.stringify(testPayload)
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (response.ok) {
+      resultBox.innerHTML = `
+        <div style="padding:12px 14px; background:var(--success-soft); color:var(--success); border-radius:8px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px;">
+          <span class="icon icon-16"><svg><use href="#i-circle-check"/></svg></span>
+          연결 성공! AI 분석을 사용할 수 있어요.
+        </div>`;
+      setTimeout(closeApiKeyModal, 1200);
+      return true;
+    } else {
+      const errMsg = (data.error && data.error.message) ? data.error.message : `서버 오류 (${response.status})`;
+      resultBox.innerHTML = `
+        <div style="padding:12px 14px; background:var(--error-soft); color:var(--error); border-radius:8px; font-size:13px; font-weight:500;">
+          <b>연결 실패</b><br>
+          ${escapeHtml(errMsg)}
+        </div>`;
+      return false;
+    }
+  } catch (err) {
+    resultBox.innerHTML = `
+      <div style="padding:12px 14px; background:var(--error-soft); color:var(--error); border-radius:8px; font-size:13px; font-weight:500;">
+        <b>연결 실패</b><br>
+        프록시 서버에 접근할 수 없어요. 관리자에게 문의해 주세요. (${escapeHtml(err.message)})
+      </div>`;
+    return false;
+  }
+}
+
+document.getElementById('apiKeyBtn').addEventListener('click', openApiKeyModal);
+
+document.getElementById('apiKeySave').addEventListener('click', async () => {
+  const urlInput = document.getElementById('proxyUrlInput');
+  const url = urlInput ? urlInput.value.trim() : '';
+  const password = document.getElementById('accessPasswordInput').value.trim();
+
+  if (!password) {
+    alert('비밀번호를 입력해 주세요.');
+    return;
+  }
+
+  // URL이 비어있으면 기본 경로 사용
+  const effectiveUrl = url || DEFAULT_PROXY_PATH;
+  if (url && !/^https?:\/\//.test(url) && !url.startsWith('/')) {
+    alert('프록시 주소는 http:// , https:// 또는 / 로 시작해야 해요.');
+    return;
+  }
+
+  const ok = await testConnection(effectiveUrl, password);
+  if (ok) {
+    setProxyConfig(url, password); // 사용자가 명시적으로 입력한 값만 저장
+  }
+});
+
+document.getElementById('apiKeyClear').addEventListener('click', () => {
+  if (confirm('저장된 설정을 모두 삭제할까요?')) {
+    setProxyConfig('', '');
+    const urlInput = document.getElementById('proxyUrlInput');
+    if (urlInput) urlInput.value = '';
+    document.getElementById('accessPasswordInput').value = '';
+    document.getElementById('connectionTestResult').style.display = 'none';
+  }
+});
+
+document.getElementById('apiKeyModal').addEventListener('click', (e) => {
+  if (e.target.id === 'apiKeyModal') closeApiKeyModal();
+});
+
+// 초기 UI
+updateApiKeyUI();
+
+// 첫 방문자 자동 모달
+window.addEventListener('load', () => {
+  const cfg = getProxyConfig();
+  if (!cfg.password) {
+    setTimeout(openApiKeyModal, 400);
+  }
+});
 </script>
 
 </body>
