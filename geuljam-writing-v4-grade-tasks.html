@@ -1,0 +1,2929 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>글잼 라이팅 · v0.4</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT-Variable.css">
+<style>
+/* ============ Design Tokens ============ */
+:root {
+  --primary: #1677FF;
+  --primary-hover: #0E62E0;
+  --primary-pressed: #0A52BF;
+
+  --bg-primary-soft: #E5F2FD;
+  --bg-gray-soft: #F7F8F9;
+  --bg-gray-softer: #EEEEEE;
+
+  --text: #212121;
+  --point: #FB1A18;
+  --point-soft: #FFEBEA;
+
+  --gray-1: #555555;
+  --gray-2: #777777;
+  --gray-3: #999999;
+  --gray-line: #D9D9D9;
+
+  --white: #FFFFFF;
+
+  --success: #00B578;
+  --success-soft: #E7F7F0;
+  --warning: #FF9F1C;
+  --warning-soft: #FFF4E0;
+  --error: #FB1A18;
+  --error-soft: #FFEBEA;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
+
+  --shadow-sm: 0 1px 2px rgba(33, 33, 33, 0.04);
+  --shadow-md: 0 4px 12px rgba(33, 33, 33, 0.06);
+  --shadow-lg: 0 12px 32px rgba(22, 119, 255, 0.12);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg-gray-soft);
+  color: var(--text);
+  font-family: 'SUIT Variable', 'SUIT', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 400;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+/* ============ Header ============ */
+.proto-header {
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-line);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; }
+
+.brand-logo {
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.03em;
+}
+
+.brand-name { font-size: 16px; font-weight: 700; color: var(--text); }
+.brand-name .ver {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-3);
+  margin-left: 6px;
+}
+
+.api-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-primary-soft);
+  color: var(--primary);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.api-chip .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  animation: pulse-dot 1.6s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ============ Layout ============ */
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 28px 20px 80px;
+}
+
+/* ============ Stepper ============ */
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.stepper .step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-3);
+  transition: all 0.3s;
+}
+
+.stepper .step.active { color: var(--primary); font-weight: 600; }
+.stepper .step.done { color: var(--gray-1); }
+
+.stepper .step .num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-gray-softer);
+  color: var(--gray-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+  transition: all 0.3s;
+}
+
+.stepper .step.active .num,
+.stepper .step.done .num {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.stepper .divider {
+  width: 24px;
+  height: 1px;
+  background: var(--gray-line);
+  margin: 0 4px;
+}
+
+/* ============ Card ============ */
+.card {
+  background: var(--white);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--r-lg);
+  padding: 28px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.card-header .icon-box {
+  width: 40px;
+  height: 40px;
+  background: var(--bg-primary-soft);
+  color: var(--primary);
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.card-header .title-group h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin-bottom: 2px;
+}
+
+.card-header .title-group .desc {
+  font-size: 13px;
+  color: var(--gray-2);
+  font-weight: 400;
+}
+
+/* ============ Lucide Icon ============ */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.icon-16 { width: 16px; height: 16px; }
+.icon-20 { width: 20px; height: 20px; }
+.icon-24 { width: 24px; height: 24px; }
+
+/* ============ STEP 1: 학년·유형 선택 ============ */
+.grade-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 640px) {
+  .grade-tabs { grid-template-columns: repeat(2, 1fr); }
+}
+
+.grade-tab {
+  background: var(--white);
+  border: 1.5px solid var(--gray-line);
+  border-radius: var(--r-md);
+  padding: 18px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  position: relative;
+}
+
+.grade-tab:hover {
+  border-color: var(--primary);
+  background: var(--bg-primary-soft);
+}
+
+.grade-tab.selected {
+  border-color: var(--primary);
+  background: var(--bg-primary-soft);
+  border-width: 2px;
+  padding: 17px 13px;
+}
+
+.grade-tab.selected::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 18px;
+  height: 18px;
+  background: var(--primary) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>") center/14px no-repeat;
+  border-radius: 50%;
+}
+
+.grade-tab .grade-num {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1;
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+
+.grade-tab.selected .grade-num { color: var(--primary); }
+
+.grade-tab .grade-type {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+  letter-spacing: -0.01em;
+}
+
+.grade-tab .grade-desc {
+  font-size: 11px;
+  color: var(--gray-2);
+  line-height: 1.4;
+}
+
+/* 문제 프리셋 */
+.problem-preview {
+  background: var(--bg-primary-soft);
+  border: 1px solid rgba(22, 119, 255, 0.2);
+  border-radius: var(--r-md);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.problem-preview .pp-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 14px;
+}
+
+/* 1학년: 음성 */
+.pp-audio {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  background: var(--white);
+  border-radius: var(--r-md);
+}
+
+.audio-play-btn {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--white);
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(22, 119, 255, 0.25);
+}
+
+.audio-play-btn:hover {
+  background: var(--primary-hover);
+  transform: scale(1.05);
+}
+
+.audio-play-btn.playing {
+  animation: pulse-play 1s infinite;
+}
+
+@keyframes pulse-play {
+  0%, 100% { box-shadow: 0 4px 12px rgba(22, 119, 255, 0.25); }
+  50% { box-shadow: 0 4px 24px rgba(22, 119, 255, 0.5); }
+}
+
+.audio-info .label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-2);
+  margin-bottom: 2px;
+  letter-spacing: -0.01em;
+}
+
+.audio-info .title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.audio-info .hint {
+  font-size: 12px;
+  color: var(--gray-2);
+  margin-top: 2px;
+}
+
+.hidden-sentence {
+  color: var(--gray-3);
+  font-style: italic;
+}
+
+/* 2학년: 낱말 카드 */
+.pp-words {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.word-chip {
+  background: var(--white);
+  border: 2px solid var(--primary);
+  border-radius: var(--r-md);
+  padding: 14px 24px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: -0.02em;
+  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.1);
+}
+
+/* 3학년: 그림 */
+.pp-image {
+  background: var(--white);
+  border-radius: var(--r-md);
+  padding: 32px;
+  text-align: center;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pp-emoji-scene {
+  font-size: 72px;
+  line-height: 1;
+}
+
+.pp-caption {
+  font-size: 13px;
+  color: var(--gray-2);
+  margin-top: 10px;
+}
+
+/* 4학년: 물건 */
+.pp-object {
+  background: var(--white);
+  border-radius: var(--r-md);
+  padding: 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.pp-object .obj-emoji {
+  font-size: 64px;
+  line-height: 1;
+}
+
+.pp-object .obj-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pp-object .obj-hints {
+  font-size: 12px;
+  color: var(--gray-2);
+  padding: 6px 12px;
+  background: var(--bg-gray-soft);
+  border-radius: 999px;
+}
+
+/* 문제 리스트 (같은 유형 내 다른 문제 선택) */
+.problem-switcher {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(22, 119, 255, 0.25);
+}
+
+.problem-switcher .sw-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-2);
+  align-self: center;
+  margin-right: 4px;
+}
+
+.problem-switcher button {
+  background: var(--white);
+  border: 1px solid var(--gray-line);
+  color: var(--gray-1);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.problem-switcher button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.problem-switcher button.active {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+}
+
+/* ============ Buttons ============ */
+.btn-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 13px 24px;
+  border: 0;
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-primary { background: var(--primary); color: var(--white); }
+.btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+.btn-primary:disabled {
+  background: var(--gray-line);
+  color: var(--white);
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: var(--white);
+  color: var(--gray-1);
+  border: 1px solid var(--gray-line);
+}
+
+.btn-ghost:hover {
+  border-color: var(--gray-2);
+  color: var(--text);
+  background: var(--bg-gray-soft);
+}
+
+/* ============ STEP 2 ============ */
+.input-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-gray-soft);
+  padding: 4px;
+  border-radius: var(--r-md);
+  margin-bottom: 20px;
+}
+
+.input-tabs button {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-2);
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.input-tabs button.active {
+  background: var(--white);
+  color: var(--primary);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+.input-panel { display: none; }
+.input-panel.active { display: block; animation: fadeIn 0.3s; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 문제 요약 (step 2 상단) */
+.task-summary {
+  background: var(--bg-gray-soft);
+  border-radius: var(--r-md);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.task-summary .label {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  padding: 4px 10px;
+  background: var(--bg-primary-soft);
+  border-radius: 4px;
+}
+
+.task-summary .content {
+  flex: 1;
+  min-width: 200px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.task-summary .mini-word {
+  background: var(--white);
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.task-summary .mini-emoji {
+  font-size: 24px;
+}
+
+.task-summary .replay-btn {
+  background: var(--white);
+  border: 1px solid var(--gray-line);
+  color: var(--gray-1);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.task-summary .replay-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* Drop zone */
+.drop-zone {
+  border: 2px dashed var(--gray-line);
+  border-radius: var(--r-md);
+  padding: 56px 24px;
+  text-align: center;
+  background: var(--bg-gray-soft);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.drop-zone:hover, .drop-zone.dragging {
+  border-color: var(--primary);
+  background: var(--bg-primary-soft);
+}
+
+.drop-zone .zone-icon { color: var(--primary); }
+
+.drop-zone .zone-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.drop-zone .zone-sub { font-size: 13px; color: var(--gray-2); }
+
+/* Camera */
+.camera-stage {
+  position: relative;
+  background: #1a1a1a;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#cameraVideo {
+  width: 100%;
+  max-height: 480px;
+  object-fit: cover;
+  display: none;
+}
+
+#cameraVideo.active { display: block; }
+
+.camera-placeholder {
+  color: var(--gray-3);
+  text-align: center;
+  padding: 40px;
+}
+
+.camera-placeholder .icon-wrap { margin: 0 auto 12px; color: var(--gray-3); }
+
+.camera-placeholder .txt-main {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--gray-line);
+  margin-bottom: 4px;
+}
+
+.camera-placeholder .txt-sub { font-size: 12px; color: var(--gray-3); }
+
+.corner-g {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--primary);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.corner-g.tl { top: 16px; left: 16px; border-right: 0; border-bottom: 0; }
+.corner-g.tr { top: 16px; right: 16px; border-left: 0; border-bottom: 0; }
+.corner-g.bl { bottom: 16px; left: 16px; border-right: 0; border-top: 0; }
+.corner-g.br { bottom: 16px; right: 16px; border-left: 0; border-top: 0; }
+
+.camera-controls, .canvas-tools {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.chip-btn {
+  background: var(--white);
+  border: 1px solid var(--gray-line);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--gray-1);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chip-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--bg-primary-soft);
+}
+
+.chip-btn.active {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+}
+
+/* Canvas */
+.canvas-wrap {
+  background: var(--white);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--r-md);
+  padding: 12px;
+}
+
+#writeCanvas {
+  display: block;
+  width: 100%;
+  background: transparent;
+  touch-action: none;
+  cursor: crosshair;
+  border-radius: var(--r-sm);
+}
+
+.canvas-hint {
+  font-size: 12px;
+  color: var(--gray-2);
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* Preview */
+.preview-box {
+  margin-top: 20px;
+  background: var(--bg-gray-soft);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--r-md);
+  padding: 16px;
+  display: none;
+}
+
+.preview-box.show { display: block; }
+
+.preview-box h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-2);
+  margin-bottom: 10px;
+}
+
+.preview-box img {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: var(--r-sm);
+  display: block;
+  margin: 0 auto;
+  background: var(--white);
+}
+
+/* Error */
+.error-box {
+  background: var(--error-soft);
+  border: 1px solid var(--error);
+  color: var(--error);
+  padding: 12px 16px;
+  border-radius: var(--r-sm);
+  margin: 14px 0;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============ STEP 3 ============ */
+.analyzing { text-align: center; padding: 48px 20px; }
+
+.analyze-visual {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 28px;
+  position: relative;
+}
+
+.analyze-visual .ring {
+  position: absolute;
+  inset: 0;
+  border: 3px solid var(--bg-primary-soft);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1.2s linear infinite;
+}
+
+.analyze-visual .ring:nth-child(2) {
+  inset: 12px;
+  border-color: var(--bg-primary-soft);
+  border-right-color: var(--primary);
+  animation-duration: 1.8s;
+  animation-direction: reverse;
+}
+
+.analyze-visual .core {
+  position: absolute;
+  inset: 30px;
+  background: var(--primary);
+  color: var(--white);
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.analyze-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.analyze-sub {
+  color: var(--gray-2);
+  font-size: 13px;
+  margin-bottom: 32px;
+}
+
+.analyze-steps {
+  max-width: 320px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.analyze-steps .st {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 13px;
+  color: var(--gray-3);
+  font-weight: 500;
+}
+
+.analyze-steps .st .chk {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-gray-softer);
+  border: 1.5px solid var(--gray-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  color: var(--gray-3);
+}
+
+.analyze-steps .st.done { color: var(--text); font-weight: 500; }
+.analyze-steps .st.done .chk {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+}
+
+.analyze-steps .st.now { color: var(--primary); font-weight: 600; }
+.analyze-steps .st.now .chk {
+  background: var(--bg-primary-soft);
+  color: var(--primary);
+  border-color: var(--primary);
+  animation: now-pulse 1.2s infinite;
+}
+
+@keyframes now-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+/* ============ STEP 4 ============ */
+.result-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .result-layout { grid-template-columns: 1fr; }
+}
+
+.result-col h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--gray-1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.submitted-img {
+  background: var(--bg-gray-soft);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--r-md);
+  padding: 14px;
+}
+
+.submitted-img img {
+  width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+  border-radius: var(--r-sm);
+  background: var(--white);
+}
+
+.ocr-output {
+  background: var(--white);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--r-md);
+  padding: 18px;
+  min-height: 160px;
+}
+
+.ocr-output .target-ref {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--gray-line);
+  margin-bottom: 14px;
+}
+
+.ocr-output .target-ref .lbl {
+  font-size: 11px;
+  color: var(--gray-3);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.ocr-output .target-ref .txt {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-1);
+}
+
+.ocr-output .ocr-text-display {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.ocr-output .ocr-text-display .diff-add {
+  background: var(--success-soft);
+  color: var(--success);
+  padding: 0 3px;
+  border-radius: 3px;
+}
+
+.ocr-output .ocr-text-display .diff-remove {
+  background: var(--point-soft);
+  color: var(--point);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  padding: 0 3px;
+  border-radius: 3px;
+}
+
+.confidence-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-gray-soft);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-1);
+  margin-top: 12px;
+  grid-column: 1 / -1;
+}
+
+.confidence-bar .bar {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-gray-softer);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.confidence-bar .bar-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  transition: width 0.8s ease;
+}
+
+.confidence-bar b {
+  color: var(--primary);
+  font-weight: 700;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* ============ Feedback Hero ============ */
+.fb-hero {
+  background: linear-gradient(135deg, var(--primary) 0%, #0E62E0 100%);
+  color: var(--white);
+  padding: 28px;
+  border-radius: var(--r-lg);
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.fb-hero::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%);
+  pointer-events: none;
+}
+
+.score-chip {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  color: var(--white);
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  margin-bottom: 14px;
+  position: relative;
+  z-index: 2;
+}
+
+.big-score {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 8px;
+  letter-spacing: -0.03em;
+  position: relative;
+  z-index: 2;
+}
+
+.big-score small {
+  font-size: 20px;
+  opacity: 0.7;
+  font-weight: 500;
+}
+
+.score-comment {
+  font-size: 16px;
+  color: rgba(255,255,255,0.95);
+  font-weight: 500;
+  position: relative;
+  z-index: 2;
+  margin-bottom: 20px;
+  letter-spacing: -0.01em;
+}
+
+.cat-bars-fb {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.cat-block {
+  background: rgba(255,255,255,0.12);
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  backdrop-filter: blur(8px);
+}
+
+.cat-block .name {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.85;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+.cat-block .val {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.cat-block .mini-bar {
+  height: 4px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.cat-block .mini-bar-fill {
+  height: 100%;
+  background: var(--white);
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+
+/* Feedback cards */
+.fb-card {
+  background: var(--white);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--r-lg);
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.fb-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--gray-line);
+}
+
+.fb-card-head .title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.fb-card-head .title .icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fb-card-head .title .icon-box.blue { background: var(--bg-primary-soft); color: var(--primary); }
+.fb-card-head .title .icon-box.red { background: var(--point-soft); color: var(--point); }
+.fb-card-head .title .icon-box.green { background: var(--success-soft); color: var(--success); }
+.fb-card-head .title .icon-box.orange { background: var(--warning-soft); color: var(--warning); }
+
+.fb-card-head .score {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.fb-card-head .score small {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-3);
+}
+
+/* Char grid */
+.char-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.char-cell {
+  aspect-ratio: 1;
+  border: 1.5px solid var(--gray-line);
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 600;
+  position: relative;
+  border-radius: var(--r-sm);
+  color: var(--text);
+}
+
+.char-cell.good { border-color: var(--success); background: var(--success-soft); }
+.char-cell.warn { border-color: var(--warning); background: var(--warning-soft); }
+.char-cell.bad { border-color: var(--point); background: var(--point-soft); }
+.char-cell.space { background: var(--bg-gray-soft); border-color: var(--gray-line); border-style: dashed; }
+
+.char-cell .tag {
+  position: absolute;
+  top: -5px;
+  right: -4px;
+  font-size: 9px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.char-cell.good .tag { background: var(--success); color: var(--white); }
+.char-cell.warn .tag { background: var(--warning); color: var(--white); }
+.char-cell.bad .tag { background: var(--point); color: var(--white); }
+
+.legend-row {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--gray-1);
+  font-weight: 500;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.legend-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-row span::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1.5px solid;
+}
+
+.legend-row .lg-good::before { border-color: var(--success); background: var(--success-soft); }
+.legend-row .lg-warn::before { border-color: var(--warning); background: var(--warning-soft); }
+.legend-row .lg-bad::before { border-color: var(--point); background: var(--point-soft); }
+
+.fb-tip {
+  background: var(--bg-primary-soft);
+  border-left: 3px solid var(--primary);
+  padding: 14px 16px;
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--gray-1);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.fb-tip .tip-icon { color: var(--primary); flex-shrink: 0; margin-top: 1px; }
+
+.fb-tip b { color: var(--text); font-weight: 600; }
+
+/* Spell error */
+.spell-error {
+  background: var(--bg-gray-soft);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 18px;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .spell-error { grid-template-columns: 1fr; gap: 10px; }
+}
+
+.spell-compare {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.spell-compare .wrong {
+  color: var(--point);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.spell-compare .arrow { color: var(--gray-3); }
+.spell-compare .right { color: var(--primary); }
+
+.spell-reason {
+  font-size: 13px;
+  color: var(--gray-1);
+  line-height: 1.6;
+}
+
+.spell-reason b { color: var(--text); font-weight: 600; }
+
+.perfect-box {
+  text-align: center;
+  padding: 24px;
+  color: var(--success);
+  font-weight: 600;
+  background: var(--success-soft);
+  border-radius: var(--r-md);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* 2~4학년 전용: 학생이 쓴 문장 박스 */
+.written-sentence-box {
+  background: var(--bg-gray-soft);
+  border: 1px solid var(--gray-line);
+  border-radius: var(--r-md);
+  padding: 18px 20px;
+  margin-bottom: 14px;
+}
+
+.written-sentence-box .ws-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-2);
+  margin-bottom: 8px;
+  letter-spacing: 0.01em;
+}
+
+.written-sentence-box .ws-text {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* 평가 항목 리스트 (개방형 과제용) */
+.rubric-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.rubric-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-gray-soft);
+  border-radius: var(--r-md);
+  border: 1px solid var(--gray-line);
+}
+
+.rubric-item .rubric-check {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.rubric-item.pass .rubric-check { background: var(--success); color: var(--white); }
+.rubric-item.warn .rubric-check { background: var(--warning); color: var(--white); }
+.rubric-item.fail .rubric-check { background: var(--point); color: var(--white); }
+
+.rubric-item .rubric-body { flex: 1; }
+
+.rubric-item .rubric-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.rubric-item .rubric-desc {
+  font-size: 13px;
+  color: var(--gray-1);
+  line-height: 1.55;
+}
+
+.hidden { display: none !important; }
+
+@media (max-width: 640px) {
+  .container { padding: 20px 16px 60px; }
+  .card { padding: 20px; }
+  .card-header .title-group h2 { font-size: 18px; }
+  .big-score { font-size: 44px; }
+  .fb-hero { padding: 24px; }
+}
+</style>
+</head>
+<body>
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <defs>
+    <symbol id="i-file-text" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></symbol>
+    <symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+    <symbol id="i-eraser" viewBox="0 0 24 24"><path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21"/><path d="m5.082 11.09 8.828 8.828"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></symbol>
+    <symbol id="i-square" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></symbol>
+    <symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-type" viewBox="0 0 24 24"><path d="M12 4v16"/><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.384 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol>
+    <symbol id="i-package" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+    <symbol id="i-message" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></symbol>
+  </defs>
+</svg>
+
+<header class="proto-header">
+  <div class="brand">
+    <div class="brand-logo">잼</div>
+    <div>
+      <div class="brand-name">글잼 라이팅<span class="ver">v0.4</span></div>
+    </div>
+  </div>
+  <div class="api-chip">
+    <span class="dot"></span>
+    Claude Vision API 연동됨
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="stepper" id="stepper">
+    <div class="step active" data-step="1"><span class="num">1</span>과제 선택</div>
+    <div class="divider"></div>
+    <div class="step" data-step="2"><span class="num">2</span>답안 입력</div>
+    <div class="divider"></div>
+    <div class="step" data-step="3"><span class="num">3</span>AI 분석</div>
+    <div class="divider"></div>
+    <div class="step" data-step="4"><span class="num">4</span>피드백</div>
+  </div>
+
+  <!-- STEP 1: 학년·과제 선택 -->
+  <div id="step-1">
+    <div class="card">
+      <div class="card-header">
+        <div class="icon-box">
+          <span class="icon icon-20"><svg><use href="#i-book"/></svg></span>
+        </div>
+        <div class="title-group">
+          <h2>학년과 과제를 선택하세요</h2>
+          <div class="desc">학년별 맞춤 글쓰기 활동을 제공해요</div>
+        </div>
+      </div>
+
+      <div class="grade-tabs" id="gradeTabs">
+        <button class="grade-tab selected" data-grade="1">
+          <div class="grade-num">1<span style="font-size:14px;">학년</span></div>
+          <div class="grade-type">받아쓰기</div>
+          <div class="grade-desc">소리를 듣고 쓰기</div>
+        </button>
+        <button class="grade-tab" data-grade="2">
+          <div class="grade-num">2<span style="font-size:14px;">학년</span></div>
+          <div class="grade-type">낱말 문장 만들기</div>
+          <div class="grade-desc">주제 낱말로 문장</div>
+        </button>
+        <button class="grade-tab" data-grade="3">
+          <div class="grade-num">3<span style="font-size:14px;">학년</span></div>
+          <div class="grade-type">그림 보고 쓰기</div>
+          <div class="grade-desc">장면을 묘사하기</div>
+        </button>
+        <button class="grade-tab" data-grade="4">
+          <div class="grade-num">4<span style="font-size:14px;">학년</span></div>
+          <div class="grade-type">물건 설명하기</div>
+          <div class="grade-desc">특징을 설명하기</div>
+        </button>
+      </div>
+
+      <!-- 문제 프리뷰 영역 (학년별로 다르게 렌더) -->
+      <div class="problem-preview" id="problemPreview">
+        <!-- 동적 생성 -->
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="goToStep(2)">
+        다음 · 답안 쓰기
+        <span class="icon icon-16"><svg><use href="#i-arrow-right"/></svg></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 2: 답안 입력 -->
+  <div id="step-2" class="hidden">
+    <div class="card">
+      <div class="card-header">
+        <div class="icon-box">
+          <span class="icon icon-20"><svg><use href="#i-pencil"/></svg></span>
+        </div>
+        <div class="title-group">
+          <h2>답안을 입력하세요</h2>
+          <div class="desc">세 가지 방식 중 편한 것을 선택해 주세요</div>
+        </div>
+      </div>
+
+      <!-- 문제 요약 (학년별 다르게) -->
+      <div class="task-summary" id="taskSummary">
+        <!-- 동적 생성 -->
+      </div>
+
+      <div class="input-tabs" id="inputTabs">
+        <button class="active" data-mode="upload">
+          <span class="icon icon-16"><svg><use href="#i-upload"/></svg></span>
+          파일 업로드
+        </button>
+        <button data-mode="camera">
+          <span class="icon icon-16"><svg><use href="#i-camera"/></svg></span>
+          카메라 촬영
+        </button>
+        <button data-mode="canvas">
+          <span class="icon icon-16"><svg><use href="#i-pencil"/></svg></span>
+          직접 쓰기
+        </button>
+      </div>
+
+      <div class="input-panel active" data-mode="upload">
+        <label class="drop-zone" id="dropZone" for="fileInput">
+          <div class="zone-icon icon icon-24" style="width:40px; height:40px;"><svg><use href="#i-upload"/></svg></div>
+          <div class="zone-title">종이에 쓴 사진을 올려 주세요</div>
+          <div class="zone-sub">클릭하거나 드래그해서 이미지를 업로드하세요 (JPG, PNG)</div>
+          <input type="file" id="fileInput" accept="image/*" style="display:none">
+        </label>
+      </div>
+
+      <div class="input-panel" data-mode="camera">
+        <div class="camera-stage">
+          <video id="cameraVideo" autoplay playsinline></video>
+          <div id="cameraPlaceholder" class="camera-placeholder">
+            <div class="icon-wrap icon icon-24" style="width:48px; height:48px;"><svg><use href="#i-camera"/></svg></div>
+            <div class="txt-main">카메라를 켜서 답안지를 촬영하세요</div>
+            <div class="txt-sub">HTTPS 환경 또는 로컬에서만 작동합니다</div>
+          </div>
+          <div class="corner-g tl"></div>
+          <div class="corner-g tr"></div>
+          <div class="corner-g bl"></div>
+          <div class="corner-g br"></div>
+        </div>
+        <div class="camera-controls">
+          <button class="chip-btn" id="startCameraBtn">
+            <span class="icon icon-16"><svg><use href="#i-video"/></svg></span>
+            카메라 켜기
+          </button>
+          <button class="chip-btn" id="captureBtn" style="display:none;">
+            <span class="icon icon-16"><svg><use href="#i-camera"/></svg></span>
+            촬영
+          </button>
+          <button class="chip-btn" id="stopCameraBtn" style="display:none;">
+            <span class="icon icon-16"><svg><use href="#i-square"/></svg></span>
+            중지
+          </button>
+        </div>
+      </div>
+
+      <div class="input-panel" data-mode="canvas">
+        <div class="canvas-wrap">
+          <canvas id="writeCanvas" width="800" height="280"></canvas>
+        </div>
+        <div class="canvas-hint">마우스나 손가락으로 원고지에 직접 써 보세요</div>
+        <div class="canvas-tools">
+          <button class="chip-btn active" id="penBtn">
+            <span class="icon icon-16"><svg><use href="#i-pencil"/></svg></span>
+            연필
+          </button>
+          <button class="chip-btn" id="eraserBtn">
+            <span class="icon icon-16"><svg><use href="#i-eraser"/></svg></span>
+            지우개
+          </button>
+          <button class="chip-btn" id="clearBtn">
+            <span class="icon icon-16"><svg><use href="#i-trash"/></svg></span>
+            전체 지우기
+          </button>
+        </div>
+      </div>
+
+      <div class="preview-box" id="previewBox">
+        <h4>제출할 이미지</h4>
+        <img id="previewImg" src="" alt="">
+      </div>
+
+      <div id="errorDisplay"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goToStep(1)">
+        <span class="icon icon-16"><svg><use href="#i-arrow-left"/></svg></span>
+        이전
+      </button>
+      <button class="btn btn-primary" id="submitBtn" onclick="runAnalysis()" disabled>
+        <span class="icon icon-16"><svg><use href="#i-sparkles"/></svg></span>
+        AI에게 검사받기
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 3: 분석 중 -->
+  <div id="step-3" class="hidden">
+    <div class="card">
+      <div class="analyzing">
+        <div class="analyze-visual">
+          <div class="ring"></div>
+          <div class="ring"></div>
+          <div class="core">
+            <span class="icon icon-20" style="color:white;"><svg><use href="#i-sparkle"/></svg></span>
+          </div>
+        </div>
+        <div class="analyze-title">글잼이 글씨를 읽고 있어요</div>
+        <div class="analyze-sub">잠시만 기다려 주세요 · Claude AI 분석 중</div>
+
+        <div class="analyze-steps" id="analyzeSteps">
+          <div class="st now" data-key="ocr">
+            <div class="chk">1</div>
+            <div>손글씨를 한 글자씩 읽고 있어요</div>
+          </div>
+          <div class="st" data-key="compare">
+            <div class="chk">2</div>
+            <div id="analyzeStep2Label">과제와 비교하고 있어요</div>
+          </div>
+          <div class="st" data-key="feedback">
+            <div class="chk">3</div>
+            <div>맞춤형 피드백을 만들고 있어요</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: 피드백 -->
+  <div id="step-4" class="hidden">
+
+    <!-- OCR 결과 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="icon-box">
+          <span class="icon icon-20"><svg><use href="#i-eye"/></svg></span>
+        </div>
+        <div class="title-group">
+          <h2 id="resultTitle">글잼이 이렇게 읽었어요</h2>
+          <div class="desc" id="resultDesc">내가 쓴 글과 AI가 인식한 결과를 확인해 보세요</div>
+        </div>
+      </div>
+
+      <div class="result-layout">
+        <div class="result-col">
+          <h3>
+            <span class="icon icon-16" style="color:var(--gray-2);"><svg><use href="#i-pencil"/></svg></span>
+            내가 제출한 답안
+          </h3>
+          <div class="submitted-img">
+            <img id="submittedImg" src="" alt="제출한 답안">
+          </div>
+        </div>
+
+        <div class="result-col">
+          <h3>
+            <span class="icon icon-16" style="color:var(--primary);"><svg><use href="#i-eye"/></svg></span>
+            AI가 읽은 글자
+          </h3>
+          <!-- 1학년: diff 모드 / 2~4학년: 쓴 문장 그대로 -->
+          <div class="ocr-output" id="ocrOutputGrade1">
+            <div class="target-ref">
+              <div class="lbl">정답 문장</div>
+              <div class="txt" id="targetRef">—</div>
+            </div>
+            <div class="ocr-text-display" id="ocrDisplay">—</div>
+          </div>
+          <div class="written-sentence-box hidden" id="ocrOutputOpen">
+            <div class="ws-label">AI가 읽어낸 내가 쓴 문장</div>
+            <div class="ws-text" id="writtenSentenceText">—</div>
+          </div>
+        </div>
+
+        <div class="confidence-bar">
+          <span class="icon icon-16" style="color:var(--gray-2);"><svg><use href="#i-chart"/></svg></span>
+          <span>인식 신뢰도</span>
+          <div class="bar"><div class="bar-fill" id="confBar" style="width:0%"></div></div>
+          <b id="confText">—</b>
+        </div>
+      </div>
+    </div>
+
+    <!-- 종합 평가 히어로 -->
+    <div class="fb-hero">
+      <span class="score-chip">AI 종합 평가</span>
+      <div class="big-score" id="totalScore">—<small>/100</small></div>
+      <div class="score-comment" id="teacherComment">—</div>
+
+      <div class="cat-bars-fb" id="catBarsFb">
+        <!-- 학년별로 다르게 동적 생성 -->
+      </div>
+    </div>
+
+    <!-- 글씨 가독성 (공통) -->
+    <div class="fb-card">
+      <div class="fb-card-head">
+        <div class="title">
+          <div class="icon-box blue">
+            <span class="icon icon-16"><svg><use href="#i-type"/></svg></span>
+          </div>
+          글씨 바르게 쓰기
+        </div>
+        <div class="score" id="legScoreMini">—<small>점</small></div>
+      </div>
+
+      <div class="legend-row">
+        <span class="lg-good">잘 썼어요</span>
+        <span class="lg-warn">조금 더!</span>
+        <span class="lg-bad">다시 한 번</span>
+      </div>
+
+      <div class="char-grid" id="charGrid"></div>
+
+      <div class="fb-tip">
+        <span class="icon icon-16 tip-icon"><svg><use href="#i-lightbulb"/></svg></span>
+        <span id="legTipText">—</span>
+      </div>
+    </div>
+
+    <!-- 1학년 전용: 맞춤법 -->
+    <div class="fb-card hidden" id="fbSpelling">
+      <div class="fb-card-head">
+        <div class="title">
+          <div class="icon-box red">
+            <span class="icon icon-16"><svg><use href="#i-file-text"/></svg></span>
+          </div>
+          맞춤법 · 띄어쓰기
+        </div>
+        <div class="score" id="spellScoreMini">—<small>점</small></div>
+      </div>
+
+      <div id="spellErrors"></div>
+
+      <div class="fb-tip">
+        <span class="icon icon-16 tip-icon"><svg><use href="#i-lightbulb"/></svg></span>
+        <span id="spellTipText">—</span>
+      </div>
+    </div>
+
+    <!-- 2~4학년 전용: 개방형 평가 루브릭 -->
+    <div class="fb-card hidden" id="fbRubric">
+      <div class="fb-card-head">
+        <div class="title">
+          <div class="icon-box green">
+            <span class="icon icon-16"><svg><use href="#i-circle-check"/></svg></span>
+          </div>
+          <span id="rubricSectionTitle">과제 수행 평가</span>
+        </div>
+        <div class="score" id="rubricScoreMini">—<small>점</small></div>
+      </div>
+
+      <div class="rubric-list" id="rubricList"></div>
+
+      <div class="fb-tip">
+        <span class="icon icon-16 tip-icon"><svg><use href="#i-message"/></svg></span>
+        <span id="rubricTipText">—</span>
+      </div>
+    </div>
+
+    <!-- 2~4학년 전용: 맞춤법/띄어쓰기 (있으면) -->
+    <div class="fb-card hidden" id="fbSpellingOpen">
+      <div class="fb-card-head">
+        <div class="title">
+          <div class="icon-box orange">
+            <span class="icon icon-16"><svg><use href="#i-file-text"/></svg></span>
+          </div>
+          맞춤법 · 띄어쓰기 · 문장 표현
+        </div>
+        <div class="score" id="spellScoreMiniOpen">—<small>점</small></div>
+      </div>
+
+      <div id="spellErrorsOpen"></div>
+
+      <div class="fb-tip">
+        <span class="icon icon-16 tip-icon"><svg><use href="#i-lightbulb"/></svg></span>
+        <span id="spellTipTextOpen">—</span>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goToStep(2)">
+        <span class="icon icon-16"><svg><use href="#i-arrow-left"/></svg></span>
+        다시 쓰기
+      </button>
+      <button class="btn btn-primary" onclick="goToStep(1)">
+        <span class="icon icon-16"><svg><use href="#i-home"/></svg></span>
+        처음으로
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ===========================================
+// Problem bank (학년별)
+// ===========================================
+const PROBLEM_BANK = {
+  1: [
+    { text: '맑은 하늘에 빨간 잠자리가 날아다녔다.', grade: '1학년·가을' },
+    { text: '학교에 가서 친구들을 만났어요.', grade: '1학년·학교' },
+    { text: '엄마와 같이 놀이터에서 놀았다.', grade: '1학년·생활' }
+  ],
+  2: [
+    { words: ['토끼', '깡충깡충'], hint: '두 낱말을 모두 사용해서 한 문장을 만들어 보세요' },
+    { words: ['봄', '꽃'], hint: '두 낱말을 모두 사용해서 한 문장을 만들어 보세요' },
+    { words: ['도서관', '책'], hint: '두 낱말을 모두 사용해서 한 문장을 만들어 보세요' }
+  ],
+  3: [
+    { emoji: '🌳🐶☀️', caption: '공원에서 강아지가 뛰어노는 모습', theme: '공원의 강아지' },
+    { emoji: '🍳🥚🔥', caption: '계란 프라이를 만드는 장면', theme: '요리하는 장면' },
+    { emoji: '🌧️☔👦', caption: '비 오는 날 우산을 쓴 아이', theme: '비 오는 날' }
+  ],
+  4: [
+    { emoji: '📱', name: '휴대 전화', hints: '생김새, 쓰임새, 특징' },
+    { emoji: '🎒', name: '책가방', hints: '모양, 색깔, 안에 든 것' },
+    { emoji: '🪥', name: '칫솔', hints: '모양, 재료, 쓰는 방법' }
+  ]
+};
+
+// ===========================================
+// State
+// ===========================================
+const state = {
+  currentStep: 1,
+  grade: 1,
+  problemIdx: 0,
+  imageData: null,
+  imageMediaType: 'image/png',
+  inputMode: 'upload',
+  cameraStream: null,
+  canvasContext: null,
+  isDrawing: false,
+  canvasTool: 'pen',
+  analysisResult: null,
+};
+
+function currentProblem() {
+  return PROBLEM_BANK[state.grade][state.problemIdx];
+}
+
+// ===========================================
+// Step Navigation
+// ===========================================
+function goToStep(n) {
+  document.querySelectorAll('[id^="step-"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById(`step-${n}`).classList.remove('hidden');
+
+  document.querySelectorAll('#stepper .step').forEach(el => {
+    const s = parseInt(el.dataset.step);
+    el.classList.remove('active', 'done');
+    if (s === n) el.classList.add('active');
+    else if (s < n) el.classList.add('done');
+  });
+
+  state.currentStep = n;
+
+  if (n !== 2 && state.cameraStream) stopCamera();
+
+  if (n === 2) {
+    renderTaskSummary();
+    document.getElementById('previewBox').classList.remove('show');
+    document.getElementById('submitBtn').disabled = true;
+    state.imageData = null;
+  }
+
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+// ===========================================
+// STEP 1: 학년·과제 렌더링
+// ===========================================
+function renderProblemPreview() {
+  const box = document.getElementById('problemPreview');
+  const p = currentProblem();
+  const grade = state.grade;
+
+  let content = '';
+  let labelIcon, labelText;
+
+  if (grade === 1) {
+    labelIcon = 'i-volume'; labelText = '소리를 듣고 받아쓰기';
+    content = `
+      <div class="pp-audio">
+        <button class="audio-play-btn" onclick="speakSentence()" id="audioBtn">
+          <span class="icon icon-24" style="color:white;"><svg><use href="#i-play"/></svg></span>
+        </button>
+        <div class="audio-info">
+          <div class="label">아래 버튼을 눌러 문장을 들어 보세요</div>
+          <div class="title hidden-sentence">🔒 문장은 숨겨져 있어요 · 듣고 받아쓰세요</div>
+          <div class="hint">※ 프로토타입에서는 확인을 위해 아래에서 정답을 볼 수 있어요</div>
+        </div>
+      </div>
+      <details style="margin-top:10px; font-size:12px; color:var(--gray-2);">
+        <summary style="cursor:pointer;">(프로토타입용) 정답 문장 보기</summary>
+        <div style="margin-top:8px; padding:10px; background:var(--white); border-radius:6px; font-weight:600; color:var(--text);">${escapeHtml(p.text)}</div>
+      </details>
+    `;
+  } else if (grade === 2) {
+    labelIcon = 'i-type'; labelText = '주제 낱말로 한 문장 만들기';
+    content = `
+      <div class="pp-words">
+        ${p.words.map(w => `<span class="word-chip">${escapeHtml(w)}</span>`).join('')}
+      </div>
+      <div class="pp-caption" style="margin-top:14px;">${escapeHtml(p.hint)}</div>
+    `;
+  } else if (grade === 3) {
+    labelIcon = 'i-image'; labelText = '그림을 보고 한 문장 쓰기';
+    content = `
+      <div class="pp-image">
+        <div>
+          <div class="pp-emoji-scene">${p.emoji}</div>
+          <div class="pp-caption">${escapeHtml(p.caption)}</div>
+        </div>
+      </div>
+      <div class="pp-caption" style="margin-top:14px;">이 장면을 한 문장으로 설명해 보세요</div>
+    `;
+  } else if (grade === 4) {
+    labelIcon = 'i-package'; labelText = '물건의 특징 설명하기';
+    content = `
+      <div class="pp-object">
+        <div class="obj-emoji">${p.emoji}</div>
+        <div class="obj-name">${escapeHtml(p.name)}</div>
+        <div class="obj-hints">힌트: ${escapeHtml(p.hints)}</div>
+      </div>
+      <div class="pp-caption" style="margin-top:14px;">이 물건을 두세 문장으로 설명해 보세요</div>
+    `;
+  }
+
+  // 문제 전환 버튼
+  const probs = PROBLEM_BANK[grade];
+  const switcher = probs.length > 1 ? `
+    <div class="problem-switcher">
+      <span class="sw-label">다른 문제 :</span>
+      ${probs.map((_, i) => `<button data-idx="${i}" class="${i === state.problemIdx ? 'active' : ''}">문제 ${i+1}</button>`).join('')}
+    </div>
+  ` : '';
+
+  box.innerHTML = `
+    <div class="pp-label">
+      <span class="icon icon-16"><svg><use href="#${labelIcon}"/></svg></span>
+      ${labelText}
+    </div>
+    ${content}
+    ${switcher}
+  `;
+
+  // 문제 전환 이벤트
+  box.querySelectorAll('.problem-switcher button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.problemIdx = parseInt(btn.dataset.idx);
+      renderProblemPreview();
+    });
+  });
+}
+
+// 학년 탭
+document.getElementById('gradeTabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('.grade-tab');
+  if (!btn) return;
+  document.querySelectorAll('.grade-tab').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.grade = parseInt(btn.dataset.grade);
+  state.problemIdx = 0;
+  renderProblemPreview();
+});
+
+// TTS (1학년)
+function speakSentence() {
+  if (state.grade !== 1) return;
+  const p = currentProblem();
+  const btn = document.getElementById('audioBtn');
+  if (!btn) return;
+
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(p.text);
+    utter.lang = 'ko-KR';
+    utter.rate = 0.85;
+    utter.onstart = () => btn.classList.add('playing');
+    utter.onend = () => btn.classList.remove('playing');
+    window.speechSynthesis.speak(utter);
+  } else {
+    alert('이 브라우저는 음성 재생을 지원하지 않아요.');
+  }
+}
+
+// STEP 2 요약 영역
+function renderTaskSummary() {
+  const box = document.getElementById('taskSummary');
+  const p = currentProblem();
+  const g = state.grade;
+
+  let content = '';
+  if (g === 1) {
+    content = `
+      <span class="label">받아쓰기</span>
+      <div class="content">
+        <span>선생님 목소리를 듣고 쓰세요</span>
+      </div>
+      <button class="replay-btn" onclick="speakSentence()">
+        <span class="icon icon-16"><svg><use href="#i-volume"/></svg></span>
+        다시 듣기
+      </button>
+    `;
+  } else if (g === 2) {
+    content = `
+      <span class="label">주제 낱말</span>
+      <div class="content">
+        ${p.words.map(w => `<span class="mini-word">${escapeHtml(w)}</span>`).join('')}
+        <span style="color:var(--gray-2); font-weight:500; font-size:13px;">→ 한 문장으로 만들기</span>
+      </div>
+    `;
+  } else if (g === 3) {
+    content = `
+      <span class="label">그림 보고 쓰기</span>
+      <div class="content">
+        <span class="mini-emoji">${p.emoji}</span>
+        <span>${escapeHtml(p.caption)}</span>
+      </div>
+    `;
+  } else if (g === 4) {
+    content = `
+      <span class="label">물건 설명</span>
+      <div class="content">
+        <span class="mini-emoji">${p.emoji}</span>
+        <span><b>${escapeHtml(p.name)}</b>의 특징을 설명해 보세요</span>
+      </div>
+    `;
+  }
+
+  box.innerHTML = content;
+}
+
+// ===========================================
+// STEP 2: input modes (변경 없음)
+// ===========================================
+document.getElementById('inputTabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  document.querySelectorAll('#inputTabs button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const mode = btn.dataset.mode;
+  state.inputMode = mode;
+  document.querySelectorAll('.input-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.input-panel[data-mode="${mode}"]`).classList.add('active');
+
+  if (mode === 'canvas') initCanvas();
+  if (mode !== 'camera' && state.cameraStream) stopCamera();
+
+  document.getElementById('previewBox').classList.remove('show');
+  document.getElementById('submitBtn').disabled = true;
+  state.imageData = null;
+});
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+fileInput.addEventListener('change', (e) => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+['dragover', 'dragenter'].forEach(ev => {
+  dropZone.addEventListener(ev, (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragging');
+  });
+});
+
+['dragleave', 'drop'].forEach(ev => {
+  dropZone.addEventListener(ev, (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragging');
+  });
+});
+
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) handleFile(file);
+});
+
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    state.imageData = e.target.result;
+    state.imageMediaType = file.type || 'image/png';
+    showPreview(e.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+const startCameraBtn = document.getElementById('startCameraBtn');
+const captureBtn = document.getElementById('captureBtn');
+const stopCameraBtn = document.getElementById('stopCameraBtn');
+const videoEl = document.getElementById('cameraVideo');
+const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+
+startCameraBtn.addEventListener('click', async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
+    });
+    state.cameraStream = stream;
+    videoEl.srcObject = stream;
+    videoEl.classList.add('active');
+    cameraPlaceholder.style.display = 'none';
+    startCameraBtn.style.display = 'none';
+    captureBtn.style.display = 'inline-flex';
+    stopCameraBtn.style.display = 'inline-flex';
+  } catch (err) {
+    showError('카메라를 열 수 없어요. 파일 업로드 방식을 이용해 주세요. (' + err.message + ')');
+  }
+});
+
+captureBtn.addEventListener('click', () => {
+  const canvas = document.createElement('canvas');
+  canvas.width = videoEl.videoWidth;
+  canvas.height = videoEl.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(videoEl, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+  state.imageData = dataUrl;
+  state.imageMediaType = 'image/jpeg';
+  showPreview(dataUrl);
+  stopCamera();
+});
+
+stopCameraBtn.addEventListener('click', stopCamera);
+
+function stopCamera() {
+  if (state.cameraStream) {
+    state.cameraStream.getTracks().forEach(t => t.stop());
+    state.cameraStream = null;
+  }
+  videoEl.classList.remove('active');
+  cameraPlaceholder.style.display = 'block';
+  startCameraBtn.style.display = 'inline-flex';
+  captureBtn.style.display = 'none';
+  stopCameraBtn.style.display = 'none';
+}
+
+function initCanvas() {
+  const canvas = document.getElementById('writeCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = 280 * dpr;
+  canvas.style.height = '280px';
+  ctx.scale(dpr, dpr);
+  state.canvasContext = ctx;
+  state.canvasWidth = rect.width;
+  state.canvasHeight = 280;
+
+  drawGrid();
+  bindCanvasEvents(canvas, ctx);
+}
+
+function drawGrid() {
+  const ctx = state.canvasContext;
+  const w = state.canvasWidth;
+  const h = state.canvasHeight;
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, w, h);
+
+  const cols = 12;
+  const rows = 2;
+  const cellW = w / cols;
+  const cellH = h / rows;
+
+  ctx.strokeStyle = '#D9D9D9';
+  ctx.lineWidth = 1;
+
+  for (let i = 0; i <= cols; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * cellW, 0);
+    ctx.lineTo(i * cellW, h);
+    ctx.stroke();
+  }
+  for (let i = 0; i <= rows; i++) {
+    ctx.beginPath();
+    ctx.moveTo(0, i * cellH);
+    ctx.lineTo(w, i * cellH);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = '#EEEEEE';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      ctx.beginPath();
+      ctx.arc(c * cellW + cellW/2, r * cellH + cellH/2, 1, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+}
+
+function bindCanvasEvents(canvas, ctx) {
+  const getPos = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return {
+      x: t.clientX - rect.left,
+      y: t.clientY - rect.top
+    };
+  };
+
+  const start = (e) => {
+    e.preventDefault();
+    state.isDrawing = true;
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  };
+
+  const move = (e) => {
+    if (!state.isDrawing) return;
+    e.preventDefault();
+    const pos = getPos(e);
+
+    if (state.canvasTool === 'pen') {
+      ctx.strokeStyle = '#212121';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.globalCompositeOperation = 'source-over';
+    } else {
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 18;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+  };
+
+  const end = () => {
+    state.isDrawing = false;
+    const dataUrl = canvas.toDataURL('image/png');
+    state.imageData = dataUrl;
+    state.imageMediaType = 'image/png';
+    showPreview(dataUrl);
+  };
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  canvas.addEventListener('mouseup', end);
+  canvas.addEventListener('mouseleave', end);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove', move, { passive: false });
+  canvas.addEventListener('touchend', end);
+}
+
+document.getElementById('penBtn').addEventListener('click', () => {
+  state.canvasTool = 'pen';
+  document.getElementById('penBtn').classList.add('active');
+  document.getElementById('eraserBtn').classList.remove('active');
+});
+
+document.getElementById('eraserBtn').addEventListener('click', () => {
+  state.canvasTool = 'eraser';
+  document.getElementById('eraserBtn').classList.add('active');
+  document.getElementById('penBtn').classList.remove('active');
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  drawGrid();
+  state.imageData = null;
+  document.getElementById('previewBox').classList.remove('show');
+  document.getElementById('submitBtn').disabled = true;
+});
+
+function showPreview(dataUrl) {
+  document.getElementById('previewImg').src = dataUrl;
+  document.getElementById('previewBox').classList.add('show');
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('errorDisplay').innerHTML = '';
+}
+
+function showError(msg) {
+  document.getElementById('errorDisplay').innerHTML =
+    `<div class="error-box">
+      <span class="icon icon-16"><svg><use href="#i-alert"/></svg></span>
+      ${msg}
+    </div>`;
+}
+
+// ===========================================
+// STEP 3 & 4: Claude Vision API
+// ===========================================
+async function runAnalysis() {
+  if (!state.imageData) {
+    showError('답안 이미지가 없습니다.');
+    return;
+  }
+
+  // 학년별 step2 라벨 업데이트
+  const step2Label = document.getElementById('analyzeStep2Label');
+  if (state.grade === 1) step2Label.textContent = '정답 문장과 비교하고 있어요';
+  else if (state.grade === 2) step2Label.textContent = '낱말이 잘 쓰였는지 확인하고 있어요';
+  else if (state.grade === 3) step2Label.textContent = '그림 내용을 잘 표현했는지 보고 있어요';
+  else if (state.grade === 4) step2Label.textContent = '물건의 특징을 잘 설명했는지 보고 있어요';
+
+  goToStep(3);
+  resetAnalyzeSteps();
+
+  try {
+    setAnalyzeStep('ocr', 'now');
+    await new Promise(r => setTimeout(r, 300));
+
+    const result = await callClaudeVision();
+
+    setAnalyzeStep('ocr', 'done');
+    setAnalyzeStep('compare', 'now');
+    await new Promise(r => setTimeout(r, 500));
+
+    setAnalyzeStep('compare', 'done');
+    setAnalyzeStep('feedback', 'now');
+    await new Promise(r => setTimeout(r, 500));
+
+    setAnalyzeStep('feedback', 'done');
+
+    state.analysisResult = result;
+    renderResult(result);
+    goToStep(4);
+  } catch (err) {
+    console.error(err);
+    showError('분석 중 오류가 발생했어요: ' + err.message);
+    goToStep(2);
+  }
+}
+
+function resetAnalyzeSteps() {
+  document.querySelectorAll('#analyzeSteps .st').forEach((s, i) => {
+    s.classList.remove('now', 'done');
+    s.querySelector('.chk').textContent = String(i+1);
+  });
+}
+
+function setAnalyzeStep(key, status) {
+  const el = document.querySelector(`#analyzeSteps .st[data-key="${key}"]`);
+  el.classList.remove('now', 'done');
+  el.classList.add(status);
+  if (status === 'done') {
+    el.querySelector('.chk').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  }
+}
+
+// ===========================================
+// 학년별 프롬프트 빌더
+// ===========================================
+function buildPrompt() {
+  const p = currentProblem();
+  const g = state.grade;
+
+  // 공통 시스템 베이스
+  const baseSystem = `당신은 대한민국 초등학교 저학년(1~4학년) 글쓰기 지도를 전문적으로 하는 국어 교사입니다.
+학생이 종이(원고지 또는 캔버스)에 연필로 직접 쓴 손글씨 이미지를 분석해, 한글 글씨 가독성과 과제 수행 정도를 평가하고 따뜻하고 구체적인 피드백을 JSON으로만 반환합니다.
+반드시 지정된 JSON 스키마만 출력하세요. 설명이나 마크다운 코드블록 없이 순수 JSON만 출력합니다.
+
+공통 규칙:
+- char_analysis는 "학생이 쓴 글자"를 순서대로 표현합니다 (공백은 status: "space"). 학생이 쓰지 않은 글자까지 상상해서 채우지 않습니다.
+- good: 바르게 잘 씀 / warn: 약간 삐뚤거나 받침이 모음 밖으로 나옴 / bad: 알아보기 힘듦 / space: 띄어쓰기
+- 손글씨가 전혀 보이지 않거나 빈 종이면 confidence 10 이하, teacher_comment는 "아직 글씨가 안 보여요".
+- 점수는 객관적 평가. 손글씨가 읽힐 정도면 legibility 70점 이상.
+- teacher_comment는 20자 이내 격려 존댓말.`;
+
+  if (g === 1) {
+    // 받아쓰기: 정답 비교
+    const system = `${baseSystem}
+
+[이번 과제 유형: 1학년 받아쓰기]
+학생은 선생님이 읽어 준 문장을 듣고 그대로 받아 썼습니다. 정답과 학생이 쓴 글을 비교해 맞춤법/띄어쓰기 오류를 짚어 주세요.
+
+출력 스키마:
+{
+  "task_type": "dictation",
+  "recognized_text": "학생이 쓴 글을 그대로 읽어낸 텍스트",
+  "confidence": 0-100,
+  "total_score": 0-100,
+  "legibility_score": 0-100,
+  "spelling_score": 0-100,
+  "spacing_score": 0-100,
+  "teacher_comment": "20자 이내 격려 존댓말",
+  "char_analysis": [{"char":"글자","status":"good|warn|bad|space","note":""}],
+  "legibility_tip": "글씨 개선 팁 1~2문장 존댓말",
+  "spelling_errors": [{"wrong":"틀린","right":"바른","reason":"이유 설명"}],
+  "spelling_tip": "오늘의 한 줄 배움"
+}`;
+    const user = `정답 문장: "${p.text}"
+
+첨부된 이미지에서 학생이 쓴 손글씨를 읽고, 정답과 비교해 위 스키마대로 분석해 주세요.`;
+    return { system, user };
+  }
+
+  if (g === 2) {
+    // 낱말로 한 문장 만들기
+    const system = `${baseSystem}
+
+[이번 과제 유형: 2학년 낱말로 한 문장 만들기]
+학생은 제시된 주제 낱말들을 모두 사용해서 한 문장을 만들어야 합니다. 정답은 없고, 평가 항목은:
+1) 제시된 낱말을 모두 사용했는가
+2) 문장이 완결되었는가 (주어-서술어 구조, 마침표)
+3) 맞춤법·띄어쓰기가 맞는가
+4) 글씨를 바르게 썼는가
+
+출력 스키마:
+{
+  "task_type": "word_to_sentence",
+  "recognized_text": "학생이 쓴 문장을 그대로 읽어낸 텍스트",
+  "confidence": 0-100,
+  "total_score": 0-100,
+  "legibility_score": 0-100,
+  "task_score": 0-100,
+  "language_score": 0-100,
+  "teacher_comment": "20자 이내 격려 존댓말",
+  "char_analysis": [{"char":"글자","status":"good|warn|bad|space","note":""}],
+  "legibility_tip": "글씨 개선 팁 1~2문장",
+  "rubric": [
+    {"title":"주제 낱말 사용","status":"pass|warn|fail","desc":"어떤 낱말을 썼고 어떤 낱말이 빠졌는지"},
+    {"title":"문장 완결성","status":"pass|warn|fail","desc":"문장으로 제대로 끝났는지"},
+    {"title":"맞춤법·띄어쓰기","status":"pass|warn|fail","desc":"오류가 있는지"}
+  ],
+  "spelling_errors": [{"wrong":"틀린","right":"바른","reason":"설명"}],
+  "language_tip": "문장 표현 개선 팁 1~2문장"
+}`;
+    const user = `주제 낱말: ${p.words.join(', ')}
+과제: 위 낱말들을 모두 사용해서 한 문장을 만드는 것이 과제입니다.
+
+첨부된 이미지에서 학생이 쓴 문장을 읽고 위 스키마대로 분석해 주세요. 학생이 쓴 문장을 recognized_text에 그대로 담아주세요.`;
+    return { system, user };
+  }
+
+  if (g === 3) {
+    const system = `${baseSystem}
+
+[이번 과제 유형: 3학년 그림 보고 한 문장 쓰기]
+학생은 제시된 장면(그림)을 보고 한 문장으로 설명해야 합니다. 평가 항목:
+1) 그림 내용(주요 대상·행동)을 반영했는가
+2) 문장이 완결되었는가
+3) 표현이 풍부한가 (꾸며 주는 말 사용 등)
+4) 맞춤법·띄어쓰기가 맞는가
+5) 글씨를 바르게 썼는가
+
+출력 스키마:
+{
+  "task_type": "picture_to_sentence",
+  "recognized_text": "학생이 쓴 문장",
+  "confidence": 0-100,
+  "total_score": 0-100,
+  "legibility_score": 0-100,
+  "task_score": 0-100,
+  "expression_score": 0-100,
+  "teacher_comment": "20자 이내 격려 존댓말",
+  "char_analysis": [{"char":"글자","status":"good|warn|bad|space","note":""}],
+  "legibility_tip": "글씨 개선 팁",
+  "rubric": [
+    {"title":"그림 내용 반영","status":"pass|warn|fail","desc":"주요 대상과 행동이 문장에 담겼는지"},
+    {"title":"문장 완결성","status":"pass|warn|fail","desc":""},
+    {"title":"표현의 풍부함","status":"pass|warn|fail","desc":"꾸며 주는 말 등이 있는지"},
+    {"title":"맞춤법·띄어쓰기","status":"pass|warn|fail","desc":""}
+  ],
+  "spelling_errors": [{"wrong":"틀린","right":"바른","reason":"설명"}],
+  "language_tip": "문장 표현 개선 팁"
+}`;
+    const user = `그림(장면): ${p.caption} (이모지: ${p.emoji})
+과제: 이 장면을 한 문장으로 설명하는 것이 과제입니다.
+
+첨부된 이미지에서 학생이 쓴 문장을 읽고 분석해 주세요.`;
+    return { system, user };
+  }
+
+  if (g === 4) {
+    const system = `${baseSystem}
+
+[이번 과제 유형: 4학년 물건 설명하기]
+학생은 제시된 물건의 특징을 두세 문장으로 설명해야 합니다. 평가 항목:
+1) 물건의 특징을 정확히 설명했는가 (생김새/쓰임새 등)
+2) 두 문장 이상 썼는가
+3) 문장 간 흐름이 자연스러운가
+4) 맞춤법·띄어쓰기가 맞는가
+5) 글씨를 바르게 썼는가
+
+출력 스키마:
+{
+  "task_type": "object_description",
+  "recognized_text": "학생이 쓴 글 (여러 문장)",
+  "confidence": 0-100,
+  "total_score": 0-100,
+  "legibility_score": 0-100,
+  "task_score": 0-100,
+  "logic_score": 0-100,
+  "teacher_comment": "20자 이내 격려 존댓말",
+  "char_analysis": [{"char":"글자","status":"good|warn|bad|space","note":""}],
+  "legibility_tip": "글씨 개선 팁",
+  "rubric": [
+    {"title":"특징 설명의 정확성","status":"pass|warn|fail","desc":"물건의 어떤 특징을 잘 짚었는지"},
+    {"title":"충분한 분량","status":"pass|warn|fail","desc":"두 문장 이상 썼는지"},
+    {"title":"설명의 흐름","status":"pass|warn|fail","desc":"문장 연결이 자연스러운지"},
+    {"title":"맞춤법·띄어쓰기","status":"pass|warn|fail","desc":""}
+  ],
+  "spelling_errors": [{"wrong":"틀린","right":"바른","reason":"설명"}],
+  "language_tip": "설명글 작성 개선 팁"
+}`;
+    const user = `설명할 물건: ${p.name} (이모지: ${p.emoji})
+참고 힌트: ${p.hints}
+과제: 이 물건의 특징을 두세 문장으로 설명하는 것이 과제입니다.
+
+첨부된 이미지에서 학생이 쓴 글을 읽고 분석해 주세요.`;
+    return { system, user };
+  }
+}
+
+async function callClaudeVision() {
+  const base64Data = state.imageData.split(',')[1];
+  const cleanMediaType = (state.imageMediaType || 'image/png').toLowerCase();
+  const { system, user } = buildPrompt();
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2500,
+      system: system,
+      messages: [{
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: { type: "base64", media_type: cleanMediaType, data: base64Data }
+          },
+          { type: "text", text: user }
+        ]
+      }]
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`API 오류 (${response.status}): ${errText.substring(0, 200)}`);
+  }
+
+  const data = await response.json();
+  const text = data.content
+    .filter(c => c.type === 'text')
+    .map(c => c.text)
+    .join('\n');
+
+  const cleaned = text.replace(/```json\s*|\s*```/g, '').trim();
+
+  let parsed;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (e) {
+    const m = cleaned.match(/\{[\s\S]*\}/);
+    if (m) parsed = JSON.parse(m[0]);
+    else throw new Error('AI 응답을 해석할 수 없어요: ' + cleaned.substring(0, 120));
+  }
+
+  return parsed;
+}
+
+// ===========================================
+// 결과 렌더링
+// ===========================================
+function renderResult(r) {
+  document.getElementById('submittedImg').src = state.imageData;
+  const g = state.grade;
+
+  // ------- OCR 영역 분기 -------
+  const ocrGrade1 = document.getElementById('ocrOutputGrade1');
+  const ocrOpen = document.getElementById('ocrOutputOpen');
+
+  if (g === 1) {
+    ocrGrade1.classList.remove('hidden');
+    ocrOpen.classList.add('hidden');
+    document.getElementById('targetRef').textContent = currentProblem().text;
+    document.getElementById('ocrDisplay').innerHTML = renderDiffHtml(currentProblem().text, r.recognized_text || '');
+  } else {
+    ocrGrade1.classList.add('hidden');
+    ocrOpen.classList.remove('hidden');
+    document.getElementById('writtenSentenceText').textContent = r.recognized_text || '(읽을 수 있는 글자가 없어요)';
+  }
+
+  // ------- 신뢰도 -------
+  const conf = Math.max(0, Math.min(100, r.confidence || 0));
+  document.getElementById('confBar').style.width = conf + '%';
+  document.getElementById('confText').textContent = conf + '%';
+
+  // ------- 종합 점수 -------
+  document.getElementById('totalScore').innerHTML = (r.total_score ?? 0) + '<small>/100</small>';
+  document.getElementById('teacherComment').textContent = r.teacher_comment || '';
+
+  // ------- 범주 점수 (학년별) -------
+  const catBox = document.getElementById('catBarsFb');
+  let cats = [];
+  if (g === 1) {
+    cats = [
+      { name: '글씨 가독성', val: r.legibility_score ?? 0 },
+      { name: '맞춤법', val: r.spelling_score ?? 0 },
+      { name: '띄어쓰기', val: r.spacing_score ?? 0 }
+    ];
+  } else if (g === 2) {
+    cats = [
+      { name: '글씨 가독성', val: r.legibility_score ?? 0 },
+      { name: '과제 수행', val: r.task_score ?? 0 },
+      { name: '문장·표현', val: r.language_score ?? 0 }
+    ];
+  } else if (g === 3) {
+    cats = [
+      { name: '글씨 가독성', val: r.legibility_score ?? 0 },
+      { name: '그림 표현', val: r.task_score ?? 0 },
+      { name: '표현력', val: r.expression_score ?? 0 }
+    ];
+  } else if (g === 4) {
+    cats = [
+      { name: '글씨 가독성', val: r.legibility_score ?? 0 },
+      { name: '설명 정확성', val: r.task_score ?? 0 },
+      { name: '논리·흐름', val: r.logic_score ?? 0 }
+    ];
+  }
+  catBox.innerHTML = cats.map((c, i) => `
+    <div class="cat-block">
+      <div class="name">${escapeHtml(c.name)}</div>
+      <div class="val">${c.val}</div>
+      <div class="mini-bar"><div class="mini-bar-fill" data-barfill="${i}" style="width:0%"></div></div>
+    </div>
+  `).join('');
+
+  requestAnimationFrame(() => {
+    cats.forEach((c, i) => {
+      const el = catBox.querySelector(`[data-barfill="${i}"]`);
+      if (el) el.style.width = c.val + '%';
+    });
+  });
+
+  // ------- 글씨 가독성 (공통) -------
+  document.getElementById('legScoreMini').innerHTML = (r.legibility_score ?? 0) + '<small>점</small>';
+
+  const grid = document.getElementById('charGrid');
+  grid.innerHTML = '';
+  (r.char_analysis || []).forEach(c => {
+    const cell = document.createElement('div');
+    cell.className = 'char-cell ' + (c.status || 'good');
+    if (c.status === 'space') {
+      cell.innerHTML = '';
+    } else {
+      cell.textContent = c.char || '';
+      const tagMap = { good: '★', warn: '!', bad: '✕' };
+      if (c.status !== 'good') {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'tag';
+        tagEl.textContent = tagMap[c.status] || '';
+        cell.appendChild(tagEl);
+      }
+      if (c.note) cell.title = c.note;
+    }
+    grid.appendChild(cell);
+  });
+  document.getElementById('legTipText').innerHTML = (r.legibility_tip || '—').replace(/"([^"]+)"/g, '<b>"$1"</b>');
+
+  // ------- 1학년: 맞춤법 영역 -------
+  const fbSpelling = document.getElementById('fbSpelling');
+  const fbRubric = document.getElementById('fbRubric');
+  const fbSpellingOpen = document.getElementById('fbSpellingOpen');
+
+  if (g === 1) {
+    fbSpelling.classList.remove('hidden');
+    fbRubric.classList.add('hidden');
+    fbSpellingOpen.classList.add('hidden');
+
+    document.getElementById('spellScoreMini').innerHTML = (r.spelling_score ?? 0) + '<small>점</small>';
+
+    const errBox = document.getElementById('spellErrors');
+    errBox.innerHTML = '';
+    const errs = r.spelling_errors || [];
+    if (errs.length === 0) {
+      errBox.innerHTML = `
+        <div class="perfect-box">
+          <span class="icon icon-20"><svg><use href="#i-circle-check"/></svg></span>
+          완벽해요! 맞춤법과 띄어쓰기가 모두 정확해요.
+        </div>`;
+    } else {
+      errs.forEach(e => {
+        const item = document.createElement('div');
+        item.className = 'spell-error';
+        item.innerHTML = `
+          <div class="spell-compare">
+            <span class="wrong">${escapeHtml(e.wrong || '')}</span>
+            <span class="arrow">
+              <span class="icon icon-16"><svg><use href="#i-arrow-right"/></svg></span>
+            </span>
+            <span class="right">${escapeHtml(e.right || '')}</span>
+          </div>
+          <div class="spell-reason">${escapeHtml(e.reason || '')}</div>
+        `;
+        errBox.appendChild(item);
+      });
+    }
+    document.getElementById('spellTipText').innerHTML = '<b>오늘의 한 줄 배움:</b> ' + escapeHtml(r.spelling_tip || '');
+  } else {
+    // 2~4학년
+    fbSpelling.classList.add('hidden');
+    fbRubric.classList.remove('hidden');
+
+    // 루브릭 섹션 타이틀
+    const rubricTitle = {
+      2: '낱말 문장 만들기 평가',
+      3: '그림 표현 평가',
+      4: '설명 글 평가'
+    }[g];
+    document.getElementById('rubricSectionTitle').textContent = rubricTitle;
+
+    const scoreKey = g === 2 ? 'task_score' : (g === 3 ? 'task_score' : 'task_score');
+    document.getElementById('rubricScoreMini').innerHTML = (r[scoreKey] ?? 0) + '<small>점</small>';
+
+    // 루브릭 렌더
+    const rubricList = document.getElementById('rubricList');
+    rubricList.innerHTML = '';
+    (r.rubric || []).forEach(item => {
+      const statusIcon = {
+        pass: '#i-check',
+        warn: '#i-alert',
+        fail: '#i-alert'
+      }[item.status] || '#i-check';
+      const el = document.createElement('div');
+      el.className = `rubric-item ${item.status || 'pass'}`;
+      el.innerHTML = `
+        <div class="rubric-check">
+          <span class="icon icon-16"><svg><use href="${statusIcon}"/></svg></span>
+        </div>
+        <div class="rubric-body">
+          <div class="rubric-title">${escapeHtml(item.title || '')}</div>
+          <div class="rubric-desc">${escapeHtml(item.desc || '')}</div>
+        </div>
+      `;
+      rubricList.appendChild(el);
+    });
+
+    document.getElementById('rubricTipText').innerHTML =
+      '<b>선생님 한마디:</b> ' + escapeHtml(r.language_tip || r.spelling_tip || '잘 했어요!');
+
+    // 맞춤법 오류가 있으면 추가 카드로
+    const errs = r.spelling_errors || [];
+    if (errs.length > 0) {
+      fbSpellingOpen.classList.remove('hidden');
+      const langScore = r.language_score ?? r.expression_score ?? r.logic_score ?? 0;
+      document.getElementById('spellScoreMiniOpen').innerHTML = langScore + '<small>점</small>';
+      const errBox = document.getElementById('spellErrorsOpen');
+      errBox.innerHTML = '';
+      errs.forEach(e => {
+        const item = document.createElement('div');
+        item.className = 'spell-error';
+        item.innerHTML = `
+          <div class="spell-compare">
+            <span class="wrong">${escapeHtml(e.wrong || '')}</span>
+            <span class="arrow">
+              <span class="icon icon-16"><svg><use href="#i-arrow-right"/></svg></span>
+            </span>
+            <span class="right">${escapeHtml(e.right || '')}</span>
+          </div>
+          <div class="spell-reason">${escapeHtml(e.reason || '')}</div>
+        `;
+        errBox.appendChild(item);
+      });
+      document.getElementById('spellTipTextOpen').innerHTML = '<b>참고:</b> ' + escapeHtml(r.language_tip || '');
+    } else {
+      fbSpellingOpen.classList.add('hidden');
+    }
+  }
+}
+
+function renderDiffHtml(target, recognized) {
+  if (!recognized) return '<span style="color:var(--point)">읽을 수 있는 글자가 없어요</span>';
+
+  const a = [...target];
+  const b = [...recognized];
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m+1}, () => new Array(n+1).fill(0));
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (a[i-1] === b[j-1]) dp[i][j] = dp[i-1][j-1] + 1;
+      else dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+    }
+  }
+
+  const ops = [];
+  let i = m, j = n;
+  while (i > 0 && j > 0) {
+    if (a[i-1] === b[j-1]) {
+      ops.unshift({type: 'same', ch: b[j-1]});
+      i--; j--;
+    } else if (dp[i-1][j] >= dp[i][j-1]) {
+      ops.unshift({type: 'remove', ch: a[i-1]});
+      i--;
+    } else {
+      ops.unshift({type: 'add', ch: b[j-1]});
+      j--;
+    }
+  }
+  while (i > 0) { ops.unshift({type: 'remove', ch: a[i-1]}); i--; }
+  while (j > 0) { ops.unshift({type: 'add', ch: b[j-1]}); j--; }
+
+  return ops.map(op => {
+    const ch = escapeHtml(op.ch);
+    if (op.type === 'same') return ch;
+    if (op.type === 'add') return `<span class="diff-remove">${ch}</span>`;
+    return `<span class="diff-add">${ch}</span>`;
+  }).join('');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+// 초기 렌더
+renderProblemPreview();
+</script>
+
+</body>
+</html>
