@@ -1287,6 +1287,58 @@ html, body {
 .char-cell.warn .tag { background: var(--warning); color: var(--white); }
 .char-cell.bad .tag { background: var(--point); color: var(--white); }
 
+/* ===== 맞춤법 오류 표시 (배경=가독성, 테두리=맞춤법) ===== */
+.char-cell.spell-error {
+  box-shadow: 0 0 0 2.5px var(--point);
+  position: relative;
+  z-index: 1;
+}
+
+.char-cell.spell-error::after {
+  content: '📝';
+  position: absolute;
+  top: -8px;
+  left: -6px;
+  font-size: 12px;
+  background: var(--point);
+  color: white;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  z-index: 2;
+}
+
+.char-cell.spell-error[data-correction]:hover::before {
+  content: attr(data-correction);
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--white);
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 10;
+  letter-spacing: 0;
+}
+
+@keyframes spell-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+.char-cell.spell-error {
+  animation: spell-shake 0.4s ease-in-out;
+}
+
 .legend-row {
   display: flex;
   gap: 16px;
@@ -1874,10 +1926,20 @@ html, body {
         <div class="score" id="legScoreMini">—<small>점</small></div>
       </div>
 
-      <div class="legend-row">
-        <span class="lg-good">잘 썼어요</span>
-        <span class="lg-warn">조금 더!</span>
-        <span class="lg-bad">다시 한 번</span>
+      <div class="legend-row" style="flex-direction:column; align-items:flex-start; gap:6px;">
+        <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center;">
+          <span style="font-size:11px; color:var(--gray-2); font-weight:600;">글씨 품질:</span>
+          <span class="lg-good">잘 썼어요</span>
+          <span class="lg-warn">조금 더!</span>
+          <span class="lg-bad">다시 한 번</span>
+        </div>
+        <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center;">
+          <span style="font-size:11px; color:var(--gray-2); font-weight:600;">맞춤법:</span>
+          <span style="display:inline-flex; align-items:center; gap:6px;">
+            <span style="display:inline-block; width:14px; height:14px; border-radius:3px; background:white; box-shadow:0 0 0 2px var(--point);"></span>
+            <span style="font-size:12px; color:var(--gray-1);">빨간 테두리 = 맞춤법 다시 보기</span>
+          </span>
+        </div>
       </div>
 
       <div class="char-grid" id="charGrid"></div>
@@ -3337,6 +3399,35 @@ async function callClaudeVision() {
 // 결과 렌더링
 // ===========================================
 
+// 맞춤법 오류 글자 위치 계산
+function computeSpellErrorRanges(recognizedText, spellingErrors) {
+  const ranges = new Map();
+  if (!recognizedText || !Array.isArray(spellingErrors) || spellingErrors.length === 0) {
+    return ranges;
+  }
+
+  spellingErrors.forEach(err => {
+    const wrong = (err.wrong || '').trim();
+    const right = (err.right || '').trim();
+    if (!wrong) return;
+
+    let searchFrom = 0;
+    while (true) {
+      const idx = recognizedText.indexOf(wrong, searchFrom);
+      if (idx === -1) break;
+
+      for (let i = 0; i < wrong.length; i++) {
+        const charIdx = idx + i;
+        if (wrong[i] === ' ') continue;
+        ranges.set(charIdx, `${wrong} → ${right}`);
+      }
+      searchFrom = idx + wrong.length;
+    }
+  });
+
+  return ranges;
+}
+
 // char_analysis와 recognized_text 일치 검증·보정
 // AI가 잘못 반환한 경우 recognized_text 기준으로 char_analysis를 재생성
 function reconcileCharAnalysis(r) {
@@ -3450,9 +3541,12 @@ function renderResult(r) {
   // ------- 글씨 가독성 (공통) -------
   document.getElementById('legScoreMini').innerHTML = (r.legibility_score ?? 0) + '<small>점</small>';
 
+  // 맞춤법 오류 글자 위치 계산
+  const spellErrorRanges = computeSpellErrorRanges(r.recognized_text || '', r.spelling_errors || []);
+
   const grid = document.getElementById('charGrid');
   grid.innerHTML = '';
-  (r.char_analysis || []).forEach(c => {
+  (r.char_analysis || []).forEach((c, idx) => {
     const cell = document.createElement('div');
     cell.className = 'char-cell ' + (c.status || 'good');
     if (c.status === 'space') {
@@ -3467,6 +3561,13 @@ function renderResult(r) {
         cell.appendChild(tagEl);
       }
       if (c.note) cell.title = c.note;
+
+      // 맞춤법 오류 위치면 spell-error 클래스 추가
+      if (spellErrorRanges.has(idx)) {
+        cell.classList.add('spell-error');
+        const correction = spellErrorRanges.get(idx);
+        if (correction) cell.dataset.correction = correction;
+      }
     }
     grid.appendChild(cell);
   });
