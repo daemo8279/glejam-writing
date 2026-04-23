@@ -1729,6 +1729,74 @@ html, body {
     </div>
   </div>
 
+  <!-- CONFIRM MODAL: AI 인식 결과 확인 -->
+  <div id="confirmModal" style="display:none; position:fixed; inset:0; background:rgba(33,33,33,0.6); z-index:200; align-items:center; justify-content:center; padding:20px; overflow-y:auto;">
+    <div style="background:white; border-radius:16px; padding:28px; max-width:820px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,0.2); margin:auto;">
+      <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:18px;">
+        <div style="width:40px; height:40px; background:var(--bg-primary-soft); color:var(--primary); border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <span class="icon icon-20"><svg><use href="#i-eye"/></svg></span>
+        </div>
+        <div style="flex:1;">
+          <h3 style="font-size:18px; font-weight:700; color:var(--text); margin-bottom:4px;">AI가 이렇게 읽었어요</h3>
+          <div style="font-size:13px; color:var(--gray-2); line-height:1.55;">
+            AI가 내 글씨를 잘 읽었는지 확인해 주세요. 다르게 읽은 부분이 있으면 수정해 주세요.
+          </div>
+        </div>
+      </div>
+
+      <div id="confirmCompareGrid" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+        <div>
+          <div style="font-size:11px; font-weight:600; color:var(--gray-2); margin-bottom:6px;">📷 내가 쓴 답안</div>
+          <div style="background:var(--bg-gray-soft); border:1px solid var(--gray-line); border-radius:var(--r-md); padding:10px; height:180px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+            <img id="confirmSubmittedImg" src="" alt="" style="max-width:100%; max-height:100%; object-fit:contain;">
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px; font-weight:600; color:var(--gray-2); margin-bottom:6px;">🤖 AI가 읽은 내용</div>
+          <div style="background:var(--bg-primary-soft); border:1px solid rgba(22, 119, 255, 0.2); border-radius:var(--r-md); padding:14px; height:180px; overflow-y:auto;">
+            <div id="confirmOcrText" style="font-size:16px; font-weight:600; color:var(--text); line-height:1.6;">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+          <div style="font-size:12px; font-weight:600; color:var(--text);">✏️ 다르게 읽은 부분 수정</div>
+          <div style="display:flex; gap:4px;">
+            <button class="chip-btn confirm-mode-btn active" data-mode="text" onclick="switchConfirmMode('text')" style="font-size:11px;">📝 문장으로</button>
+            <button class="chip-btn confirm-mode-btn" data-mode="char" onclick="switchConfirmMode('char')" style="font-size:11px;">🔤 글자로</button>
+          </div>
+        </div>
+
+        <div id="confirmTextMode">
+          <textarea id="confirmTextArea" rows="2" style="width:100%; padding:12px 14px; border:1.5px solid var(--gray-line); border-radius:var(--r-md); font-family:inherit; font-size:15px; color:var(--text); line-height:1.5; resize:vertical;"></textarea>
+        </div>
+
+        <div id="confirmCharMode" style="display:none;">
+          <div style="background:var(--bg-gray-soft); border:1px solid var(--gray-line); border-radius:var(--r-md); padding:10px;">
+            <div id="confirmCharGrid" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
+          </div>
+        </div>
+
+        <div style="font-size:11px; color:var(--gray-3); margin-top:6px; line-height:1.5;">
+          💡 <b style="color:var(--warning);">맞춤법은 그대로 두세요!</b> AI가 잘못 읽은 글자만 고쳐 주세요. (예: "판다"를 썼는데 AI가 "핀다"로 읽었으면 → "판다"로 수정)
+        </div>
+      </div>
+
+      <div id="confirmDiffIndicator" style="display:none; background:var(--warning-soft); color:var(--warning); padding:8px 12px; border-radius:var(--r-sm); font-size:12px; margin-bottom:14px; font-weight:500;">
+        <span id="confirmDiffText">—</span>
+      </div>
+
+      <div style="display:flex; gap:8px; justify-content:space-between; flex-wrap:wrap;">
+        <button class="btn btn-ghost" onclick="cancelConfirmModal()" style="padding:10px 18px; font-size:13px;">← 다시 쓸래요</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-ghost" id="confirmResetBtn" onclick="resetConfirmText()" style="padding:10px 18px; font-size:13px; display:none;">↺ 되돌리기</button>
+          <button class="btn btn-primary" onclick="confirmAndProceed()" style="padding:10px 22px; font-size:13px;">✓ 이대로 맞아요</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- STEP 4: 피드백 -->
   <div id="step-4" class="hidden">
 
@@ -2576,12 +2644,215 @@ async function runAnalysis() {
     setAnalyzeStep('feedback', 'done');
 
     state.analysisResult = result;
-    renderResult(result);
-    goToStep(4);
+    state.originalOcrText = result.recognized_text || '';
+
+    // ⭐ step-4로 바로 가지 않고 확인 모달을 먼저 띄움
+    await new Promise(r => setTimeout(r, 300));
+    openConfirmModal(result);
   } catch (err) {
     console.error(err);
     showError('분석 중 오류가 발생했어요: ' + err.message);
     goToStep(2);
+  }
+}
+
+// ===========================================
+// 확인 모달 (AI 인식 결과 사용자 확인)
+// ===========================================
+function openConfirmModal(result) {
+  const modal = document.getElementById('confirmModal');
+  const ocrText = result.recognized_text || '';
+
+  document.getElementById('confirmSubmittedImg').src = state.imageData;
+  document.getElementById('confirmOcrText').textContent = ocrText;
+  document.getElementById('confirmTextArea').value = ocrText;
+  renderConfirmCharGrid(ocrText);
+  switchConfirmMode('text');
+  document.getElementById('confirmDiffIndicator').style.display = 'none';
+  document.getElementById('confirmResetBtn').style.display = 'none';
+
+  const textArea = document.getElementById('confirmTextArea');
+  textArea.oninput = () => checkConfirmDiff();
+
+  modal.style.display = 'flex';
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirmModal').style.display = 'none';
+}
+
+function switchConfirmMode(mode) {
+  document.querySelectorAll('.confirm-mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  document.getElementById('confirmTextMode').style.display = mode === 'text' ? 'block' : 'none';
+  document.getElementById('confirmCharMode').style.display = mode === 'char' ? 'block' : 'none';
+
+  if (mode === 'char') {
+    const text = document.getElementById('confirmTextArea').value;
+    renderConfirmCharGrid(text);
+  } else {
+    const text = collectCharGridText();
+    if (text) document.getElementById('confirmTextArea').value = text;
+  }
+  checkConfirmDiff();
+}
+
+function renderConfirmCharGrid(text) {
+  const grid = document.getElementById('confirmCharGrid');
+  grid.innerHTML = '';
+  [...text].forEach((ch, i) => {
+    const cell = document.createElement('div');
+    cell.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:3px;';
+    if (ch === ' ') {
+      const spaceCell = document.createElement('div');
+      spaceCell.style.cssText = 'width:36px; height:44px; border:1.5px dashed var(--gray-line); border-radius:var(--r-sm); background:var(--bg-gray-soft); display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--gray-3);';
+      spaceCell.textContent = '띄';
+      spaceCell.dataset.idx = i;
+      spaceCell.dataset.char = ' ';
+      cell.appendChild(spaceCell);
+    } else {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.maxLength = 1;
+      input.value = ch;
+      input.dataset.idx = i;
+      input.style.cssText = 'width:36px; height:44px; border:1.5px solid var(--gray-line); border-radius:var(--r-sm); text-align:center; font-size:18px; font-weight:600; font-family:inherit; padding:0; background:white;';
+      input.onfocus = () => input.style.borderColor = 'var(--primary)';
+      input.onblur = () => input.style.borderColor = 'var(--gray-line)';
+      input.oninput = () => checkConfirmDiff();
+      cell.appendChild(input);
+    }
+    grid.appendChild(cell);
+  });
+}
+
+function collectCharGridText() {
+  const grid = document.getElementById('confirmCharGrid');
+  const cells = grid.children;
+  let text = '';
+  for (const cell of cells) {
+    const el = cell.firstChild;
+    if (el.dataset.char === ' ') text += ' ';
+    else text += (el.value || '');
+  }
+  return text;
+}
+
+function getCurrentConfirmText() {
+  const activeMode = document.querySelector('.confirm-mode-btn.active').dataset.mode;
+  if (activeMode === 'text') {
+    return document.getElementById('confirmTextArea').value;
+  } else {
+    return collectCharGridText();
+  }
+}
+
+function checkConfirmDiff() {
+  const current = getCurrentConfirmText();
+  const original = state.originalOcrText || '';
+  const indicator = document.getElementById('confirmDiffIndicator');
+  const resetBtn = document.getElementById('confirmResetBtn');
+
+  if (current !== original && current.trim() !== '') {
+    const diffCount = countDiff(original, current);
+    document.getElementById('confirmDiffText').textContent =
+      `✏️ 수정됨: ${diffCount}글자 변경 — 저장 시 AI가 수정된 내용으로 다시 평가해요`;
+    indicator.style.display = 'block';
+    resetBtn.style.display = 'inline-flex';
+  } else {
+    indicator.style.display = 'none';
+    resetBtn.style.display = 'none';
+  }
+}
+
+function countDiff(a, b) {
+  const aArr = [...a], bArr = [...b];
+  const m = aArr.length, n = bArr.length;
+  const dp = Array.from({length: m+1}, () => new Array(n+1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) {
+    if (aArr[i-1] === bArr[j-1]) dp[i][j] = dp[i-1][j-1];
+    else dp[i][j] = 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+  }
+  return dp[m][n];
+}
+
+function resetConfirmText() {
+  const original = state.originalOcrText || '';
+  document.getElementById('confirmTextArea').value = original;
+  renderConfirmCharGrid(original);
+  checkConfirmDiff();
+}
+
+function cancelConfirmModal() {
+  closeConfirmModal();
+  goToStep(2);
+}
+
+async function confirmAndProceed() {
+  const finalText = getCurrentConfirmText().trim();
+  if (!finalText) {
+    alert('수정된 내용이 비어 있어요. 글씨를 입력해 주세요.');
+    return;
+  }
+
+  const original = state.originalOcrText || '';
+  const wasModified = finalText !== original;
+
+  closeConfirmModal();
+
+  if (!wasModified) {
+    renderResult(state.analysisResult);
+    goToStep(4);
+    return;
+  }
+
+  // 수정됨 → 텍스트 기반 재평가
+  goToStep(3);
+  resetAnalyzeSteps();
+  document.querySelector('.analyze-title').textContent = '수정된 내용으로 다시 평가해요';
+  document.querySelector('.analyze-sub').textContent = '내가 실제로 쓴 글을 바탕으로 평가 중';
+
+  try {
+    setAnalyzeStep('ocr', 'done');
+    setAnalyzeStep('compare', 'now');
+    await new Promise(r => setTimeout(r, 400));
+
+    const updatedResult = await reevaluateWithCorrectedText(finalText);
+
+    setAnalyzeStep('compare', 'done');
+    setAnalyzeStep('feedback', 'now');
+    await new Promise(r => setTimeout(r, 500));
+
+    setAnalyzeStep('feedback', 'done');
+
+    const mergedResult = {
+      ...state.analysisResult,
+      recognized_text: finalText,
+      total_score: updatedResult.total_score,
+      teacher_comment: updatedResult.teacher_comment,
+      spelling_errors: updatedResult.spelling_errors || [],
+      spelling_tip: updatedResult.spelling_tip || state.analysisResult.spelling_tip,
+      rubric: updatedResult.rubric || state.analysisResult.rubric,
+      language_tip: updatedResult.language_tip || state.analysisResult.language_tip,
+      task_score: updatedResult.task_score ?? state.analysisResult.task_score,
+      language_score: updatedResult.language_score ?? state.analysisResult.language_score,
+      expression_score: updatedResult.expression_score ?? state.analysisResult.expression_score,
+      logic_score: updatedResult.logic_score ?? state.analysisResult.logic_score,
+      spelling_score: updatedResult.spelling_score ?? state.analysisResult.spelling_score,
+      spacing_score: updatedResult.spacing_score ?? state.analysisResult.spacing_score,
+      confidence: 100
+    };
+    state.analysisResult = mergedResult;
+    renderResult(mergedResult);
+    goToStep(4);
+  } catch (err) {
+    console.error(err);
+    const fallback = { ...state.analysisResult, recognized_text: finalText, confidence: 100 };
+    renderResult(fallback);
+    goToStep(4);
   }
 }
 
@@ -2613,6 +2884,21 @@ function buildPrompt() {
 학생이 종이(원고지 또는 캔버스)에 연필로 직접 쓴 손글씨 이미지를 분석해, 한글 글씨 가독성과 과제 수행 정도를 평가하고 따뜻하고 구체적인 피드백을 JSON으로만 반환합니다.
 반드시 지정된 JSON 스키마만 출력하세요. 설명이나 마크다운 코드블록 없이 순수 JSON만 출력합니다.
 
+★ 가장 중요한 원칙 — OCR 정확성 ★
+recognized_text는 반드시 "학생이 실제로 쓴 글자 그대로"를 담아야 합니다. 다음은 절대 금지:
+
+1. 자동 교정 금지: 학생이 "판다"라고 썼으면 "핀다"로 고치지 마세요. "녀써"를 "녔다"로 추측하지 마세요. 학생의 오류는 그대로 유지해야 맞춤법 교정이 의미 있어집니다.
+2. 의미적 보정 금지: 문맥상 "예쁜"이 자연스러워도 "여러"라고 썼으면 "여러"입니다. 학생이 쓴 글자 하나하나를 그대로 읽으세요.
+3. 창의적 해석 금지: 글자가 불분명할 때 "이 문장이라면 이런 단어일 것"이라는 추측으로 채우지 마세요. 시각적으로 가장 비슷한 글자를 선택하세요.
+4. 자모 단위 충실성: 받침, 모음의 형태를 있는 그대로 반영하세요. "든"을 "들"로, "으"를 "어"로 바꾸지 마세요.
+
+판독이 어려운 경우의 원칙:
+- 매우 불확실한 글자: 시각적으로 가장 비슷한 글자를 선택하고 char_analysis에서 status를 "bad"로 표시
+- 완전히 읽을 수 없는 글자: "□" 또는 "?"로 표시하고 note에 "판독 불가" 기록
+- confidence는 실제 확신 정도를 반영 (불확실하면 낮게)
+
+recognized_text와 char_analysis는 "있는 그대로 OCR 결과"이고, spelling_errors와 피드백은 "교정이 필요한 부분"입니다. 이 두 역할을 절대 섞지 마세요.
+
 공통 규칙:
 - char_analysis는 "학생이 쓴 글자"를 순서대로 표현합니다 (공백은 status: "space"). 학생이 쓰지 않은 글자까지 상상해서 채우지 않습니다.
 - good: 바르게 잘 씀 / warn: 약간 삐뚤거나 받침이 모음 밖으로 나옴 / bad: 알아보기 힘듦 / space: 띄어쓰기
@@ -2626,6 +2912,12 @@ function buildPrompt() {
 
 [이번 과제 유형: 1학년 받아쓰기]
 학생은 선생님이 읽어 준 문장을 듣고 그대로 받아 썼습니다. 정답과 학생이 쓴 글을 비교해 맞춤법/띄어쓰기 오류를 짚어 주세요.
+
+⚠️ 받아쓰기 특별 주의사항:
+받아쓰기는 "학생이 실제로 쓴 글자"를 정확히 파악하는 것이 가장 중요합니다. 
+정답을 알고 있다고 해서 학생의 오류를 recognized_text에서 자동으로 고치면 안 됩니다.
+예: 정답이 "날아다녔다"이고 학생이 "날아다녀써"라고 썼으면, recognized_text는 반드시 "날아다녀써"여야 합니다.
+그래야 spelling_errors에서 "녀써 → 녔다"로 정확한 교정 피드백을 줄 수 있습니다.
 
 출력 스키마:
 {
@@ -2644,7 +2936,9 @@ function buildPrompt() {
 }`;
     const user = `정답 문장: "${p.text}"
 
-첨부된 이미지에서 학생이 쓴 손글씨를 읽고, 정답과 비교해 위 스키마대로 분석해 주세요.`;
+첨부된 이미지에서 학생이 쓴 손글씨를 읽고, 정답과 비교해 위 스키마대로 분석해 주세요.
+
+💡 recognized_text에는 "학생이 실제로 쓴 글자 그대로"를 담으세요. 정답을 참고해서 자동 교정하지 마세요. 학생의 오류가 spelling_errors에 정확히 포착되어야 교육적 가치가 있습니다.`;
     return { system, user };
   }
 
@@ -2682,7 +2976,9 @@ function buildPrompt() {
     const user = `주제 낱말: ${p.words.join(', ')}
 과제: 위 낱말들을 모두 사용해서 한 문장을 만드는 것이 과제입니다.
 
-첨부된 이미지에서 학생이 쓴 문장을 읽고 위 스키마대로 분석해 주세요. 학생이 쓴 문장을 recognized_text에 그대로 담아주세요.`;
+첨부된 이미지에서 학생이 쓴 문장을 읽고 위 스키마대로 분석해 주세요. 
+
+💡 recognized_text에는 학생이 실제로 쓴 글자를 그대로 담아주세요. "여쁜"을 "예쁜"으로, "판다"를 "핀다"로 자동 교정하지 마세요. 의미가 어색해도 시각적으로 보이는 글자를 그대로 옮기세요.`;
     return { system, user };
   }
 
@@ -2721,7 +3017,9 @@ function buildPrompt() {
     const user = `그림(장면): ${p.caption} (이모지: ${p.emoji})
 과제: 이 장면을 한 문장으로 설명하는 것이 과제입니다.
 
-첨부된 이미지에서 학생이 쓴 문장을 읽고 분석해 주세요.`;
+첨부된 이미지에서 학생이 쓴 문장을 읽고 분석해 주세요.
+
+💡 recognized_text에는 학생이 실제로 쓴 글자를 그대로 담으세요. 띄어쓰기 오류("뛰어놀고있어요"처럼 붙여 쓴 경우 등)나 맞춤법 오류도 원본 그대로 반영하세요. 자동 교정 금지.`;
     return { system, user };
   }
 
@@ -2761,8 +3059,157 @@ function buildPrompt() {
 참고 힌트: ${p.hints}
 과제: 이 물건의 특징을 두세 문장으로 설명하는 것이 과제입니다.
 
-첨부된 이미지에서 학생이 쓴 글을 읽고 분석해 주세요.`;
+첨부된 이미지에서 학생이 쓴 글을 읽고 분석해 주세요.
+
+💡 recognized_text에는 학생이 실제로 쓴 글자를 그대로 담으세요. 맞춤법이나 논리 오류가 있어도 원본 그대로 반영해야 정확한 피드백이 가능합니다. 자동 교정 금지.`;
     return { system, user };
+  }
+}
+
+// ===========================================
+// 수정된 텍스트 기반 재평가 (이미지 없이, 가벼움)
+// ===========================================
+async function reevaluateWithCorrectedText(correctedText) {
+  const cfg = getProxyConfig();
+  if (!cfg.password) throw new Error('프록시 비밀번호가 필요합니다.');
+
+  const p = currentProblem();
+  const g = state.grade;
+
+  let system = '';
+  let user = '';
+
+  const baseSystemEval = `당신은 대한민국 초등학교 저학년 글쓰기 지도 교사입니다.
+학생이 쓴 글을 텍스트로 받아서, 맞춤법·띄어쓰기·과제 수행 정도를 평가합니다.
+반드시 JSON만 출력합니다. 설명이나 마크다운 코드블록 없이 순수 JSON만.
+teacher_comment는 20자 이내 격려 존댓말입니다.`;
+
+  if (g === 1) {
+    system = `${baseSystemEval}
+
+[1학년 받아쓰기 평가]
+학생이 쓴 글을 정답과 비교해 맞춤법/띄어쓰기 오류를 평가합니다.
+
+출력 스키마:
+{
+  "total_score": 0-100,
+  "spelling_score": 0-100,
+  "spacing_score": 0-100,
+  "teacher_comment": "20자 이내 격려",
+  "spelling_errors": [{"wrong":"틀린", "right":"바른", "reason":"이유"}],
+  "spelling_tip": "오늘의 한 줄 배움"
+}`;
+    user = `정답 문장: "${p.text}"
+학생이 쓴 문장: "${correctedText}"
+
+위 둘을 비교해 평가해 주세요.`;
+  } else if (g === 2) {
+    system = `${baseSystemEval}
+
+[2학년 낱말로 한 문장 만들기 평가]
+학생은 주제 낱말을 모두 사용해 한 문장을 만들어야 합니다.
+
+출력 스키마:
+{
+  "total_score": 0-100,
+  "task_score": 0-100,
+  "language_score": 0-100,
+  "teacher_comment": "20자 이내 격려",
+  "rubric": [
+    {"title":"주제 낱말 사용", "status":"pass|warn|fail", "desc":"어떤 낱말을 썼고 어떤 낱말이 빠졌는지"},
+    {"title":"문장 완결성", "status":"pass|warn|fail", "desc":"주어-서술어 구조, 마침표"},
+    {"title":"맞춤법·띄어쓰기", "status":"pass|warn|fail", "desc":"오류 유무"}
+  ],
+  "spelling_errors": [{"wrong":"", "right":"", "reason":""}],
+  "language_tip": "문장 표현 개선 팁 1~2문장"
+}`;
+    user = `주제 낱말: ${p.words.join(', ')}
+학생이 쓴 문장: "${correctedText}"
+
+위 문장을 평가해 주세요.`;
+  } else if (g === 3) {
+    system = `${baseSystemEval}
+
+[3학년 그림 보고 한 문장 쓰기 평가]
+학생은 제시된 장면을 한 문장으로 설명해야 합니다.
+
+출력 스키마:
+{
+  "total_score": 0-100,
+  "task_score": 0-100,
+  "expression_score": 0-100,
+  "teacher_comment": "20자 이내 격려",
+  "rubric": [
+    {"title":"그림 내용 반영", "status":"pass|warn|fail", "desc":""},
+    {"title":"문장 완결성", "status":"pass|warn|fail", "desc":""},
+    {"title":"표현의 풍부함", "status":"pass|warn|fail", "desc":"꾸며 주는 말 등"},
+    {"title":"맞춤법·띄어쓰기", "status":"pass|warn|fail", "desc":""}
+  ],
+  "spelling_errors": [{"wrong":"", "right":"", "reason":""}],
+  "language_tip": "문장 표현 개선 팁"
+}`;
+    user = `장면: ${p.caption}
+학생이 쓴 문장: "${correctedText}"
+
+위 문장을 평가해 주세요.`;
+  } else {
+    system = `${baseSystemEval}
+
+[4학년 물건 설명하기 평가]
+학생은 물건의 특징을 두세 문장으로 설명해야 합니다.
+
+출력 스키마:
+{
+  "total_score": 0-100,
+  "task_score": 0-100,
+  "logic_score": 0-100,
+  "teacher_comment": "20자 이내 격려",
+  "rubric": [
+    {"title":"특징 설명의 정확성", "status":"pass|warn|fail", "desc":""},
+    {"title":"충분한 분량", "status":"pass|warn|fail", "desc":"두 문장 이상"},
+    {"title":"설명의 흐름", "status":"pass|warn|fail", "desc":"자연스러운 연결"},
+    {"title":"맞춤법·띄어쓰기", "status":"pass|warn|fail", "desc":""}
+  ],
+  "spelling_errors": [{"wrong":"", "right":"", "reason":""}],
+  "language_tip": "설명글 개선 팁"
+}`;
+    user = `설명할 물건: ${p.name}
+참고 힌트: ${p.hints}
+학생이 쓴 글: "${correctedText}"
+
+위 글을 평가해 주세요.`;
+  }
+
+  const proxyUrl = resolveProxyUrl();
+  const response = await fetch(proxyUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-access-password": cfg.password || ''
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1500,
+      system: system,
+      messages: [{ role: "user", content: user }]
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => '');
+    throw new Error(`재평가 실패 (${response.status}): ${errText.substring(0, 100)}`);
+  }
+
+  const data = await response.json();
+  const text = data.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
+  const cleaned = text.replace(/```json\s*|\s*```/g, '').trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch (e) {
+    const m = cleaned.match(/\{[\s\S]*\}/);
+    if (m) return JSON.parse(m[0]);
+    throw new Error('재평가 응답을 해석할 수 없어요.');
   }
 }
 
