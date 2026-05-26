@@ -3075,9 +3075,6 @@ recognized_text와 char_analysis가 서로 다른 글자를 담으면 안 됩니
 3. memory_tip (기억하는 방법): 외우기 쉬운 연상법 (50자 이내)
    - 예: "도서 = 책 → 도서관 = 책을 보는 곳!"
    - 예: "ㅆ은 받침이 두 개! 강하게 발음할 때 써요"
-4. similar_examples: 비슷한 단어 1~2개 (선택, 학습 확장)
-   - 예: ["도서: 책", "서점: 책을 파는 가게"]
-   - 어린 학년일수록 2개 이내로 단순하게
 
 학년별 톤:
 - 1학년: "와! 이런 글자가 있어요" / 큰 발견의 느낌, 짧고 간단
@@ -3114,8 +3111,7 @@ recognized_text와 char_analysis가 서로 다른 글자를 담으면 안 됩니
     "wrong":"틀린 글자",
     "right":"바른 글자",
     "reason":"왜 이게 맞는지 설명 (1학년 눈높이, 어원/뜻 풀이 우선, 80자 이내, 친근한 존댓말)",
-    "memory_tip":"기억하는 방법 (연상법, 비유, 그림 묘사 등, 50자 이내, 친근한 존댓말)",
-    "similar_examples":["비슷한 예시 1 (예: 도서: 책)", "비슷한 예시 2 (선택)"]
+    "memory_tip":"기억하는 방법 (연상법, 비유, 그림 묘사 등, 50자 이내, 친근한 존댓말)"
   }],
   "spelling_tip": "오늘의 한 줄 배움 (전체 학습 포인트, 30자 이내)"
 }`;
@@ -3155,7 +3151,7 @@ recognized_text와 char_analysis가 서로 다른 글자를 담으면 안 됩니
     {"title":"문장 완결성","status":"pass|warn|fail","desc":"문장으로 제대로 끝났는지"},
     {"title":"맞춤법·띄어쓰기","status":"pass|warn|fail","desc":"오류가 있는지"}
   ],
-  "spelling_errors": [{"wrong":"틀린 글자","right":"바른 글자","reason":"왜 이게 맞는지 학년 눈높이 설명 (80자 이내, 어원·뜻·문법 규칙 활용, 친근한 존댓말)","memory_tip":"기억법 (50자 이내, 친근한 존댓말)","similar_examples":["비슷한 예시 1","비슷한 예시 2 (선택)"]}],
+  "spelling_errors": [{"wrong":"틀린 글자","right":"바른 글자","reason":"왜 이게 맞는지 학년 눈높이 설명 (80자 이내, 어원·뜻·문법 규칙 활용, 친근한 존댓말)","memory_tip":"기억법 (50자 이내, 친근한 존댓말)"}],
   "language_tip": "문장 표현 개선 팁 1~2문장"
 }`;
     const user = `주제 낱말: ${p.words.join(', ')}
@@ -3196,7 +3192,7 @@ recognized_text와 char_analysis가 서로 다른 글자를 담으면 안 됩니
     {"title":"표현의 풍부함","status":"pass|warn|fail","desc":"꾸며 주는 말 등이 있는지"},
     {"title":"맞춤법·띄어쓰기","status":"pass|warn|fail","desc":""}
   ],
-  "spelling_errors": [{"wrong":"틀린 글자","right":"바른 글자","reason":"왜 이게 맞는지 학년 눈높이 설명 (80자 이내, 어원·뜻·문법 규칙 활용, 친근한 존댓말)","memory_tip":"기억법 (50자 이내, 친근한 존댓말)","similar_examples":["비슷한 예시 1","비슷한 예시 2 (선택)"]}],
+  "spelling_errors": [{"wrong":"틀린 글자","right":"바른 글자","reason":"왜 이게 맞는지 학년 눈높이 설명 (80자 이내, 어원·뜻·문법 규칙 활용, 친근한 존댓말)","memory_tip":"기억법 (50자 이내, 친근한 존댓말)"}],
   "language_tip": "문장 표현 개선 팁"
 }`;
     const user = `그림(장면): ${p.caption} (이모지: ${p.emoji})
@@ -3237,7 +3233,7 @@ recognized_text와 char_analysis가 서로 다른 글자를 담으면 안 됩니
     {"title":"설명의 흐름","status":"pass|warn|fail","desc":"문장 연결이 자연스러운지"},
     {"title":"맞춤법·띄어쓰기","status":"pass|warn|fail","desc":""}
   ],
-  "spelling_errors": [{"wrong":"틀린 글자","right":"바른 글자","reason":"왜 이게 맞는지 학년 눈높이 설명 (80자 이내, 어원·뜻·문법 규칙 활용, 친근한 존댓말)","memory_tip":"기억법 (50자 이내, 친근한 존댓말)","similar_examples":["비슷한 예시 1","비슷한 예시 2 (선택)"]}],
+  "spelling_errors": [{"wrong":"틀린 글자","right":"바른 글자","reason":"왜 이게 맞는지 학년 눈높이 설명 (80자 이내, 어원·뜻·문법 규칙 활용, 친근한 존댓말)","memory_tip":"기억법 (50자 이내, 친근한 존댓말)"}],
   "language_tip": "설명글 작성 개선 팁"
 }`;
     const user = `설명할 물건: ${p.name} (이모지: ${p.emoji})
@@ -3272,8 +3268,7 @@ teacher_comment는 20자 이내 격려 존댓말입니다.
 ★ spelling_errors는 다음 4가지 필드 모두 포함:
 1. wrong / right: 틀린 표기와 바른 표기
 2. reason: "왜 이게 맞을까?" 학년 눈높이 설명 (80자 이내, 친근한 존댓말, 어원·뜻 활용)
-3. memory_tip: 기억법 (50자 이내, 친근한 존댓말, 연상법 활용)
-4. similar_examples: 비슷한 단어 1~2개 (선택, 어린 학년일수록 단순하게)`;
+3. memory_tip: 기억법 (50자 이내, 친근한 존댓말, 연상법 활용)`;
 
   if (g === 1) {
     system = `${baseSystemEval}
@@ -3779,16 +3774,13 @@ function renderResult(r) {
   }
 }
 
-// 맞춤법 오류 카드 빌더 (4섹션 구조: 비교/이유/기억법/예시)
+// 맞춤법 오류 카드 빌더 (2섹션 구조: 비교/맞는 맞춤법/잘 기억하는 방법)
 function buildSpellErrorCard(e) {
   const item = document.createElement('div');
   item.className = 'spell-error';
 
   const reason = (e.reason || '').trim();
   const memoryTip = (e.memory_tip || '').trim();
-  const examples = Array.isArray(e.similar_examples)
-    ? e.similar_examples.filter(x => x && String(x).trim())
-    : [];
 
   let html = `
     <div class="spell-error-header">
@@ -3807,7 +3799,7 @@ function buildSpellErrorCard(e) {
       <div class="spell-section">
         <div class="spell-section-icon">📖</div>
         <div class="spell-section-body">
-          <div class="spell-section-label">왜 이게 맞을까?</div>
+          <div class="spell-section-label">맞는 맞춤법은 무엇일까?</div>
           <div class="spell-section-content">${escapeHtml(reason)}</div>
         </div>
       </div>
@@ -3819,22 +3811,8 @@ function buildSpellErrorCard(e) {
       <div class="spell-section tip">
         <div class="spell-section-icon">💡</div>
         <div class="spell-section-body">
-          <div class="spell-section-label">기억하는 방법</div>
+          <div class="spell-section-label">잘 기억하는 방법</div>
           <div class="spell-section-content">${escapeHtml(memoryTip)}</div>
-        </div>
-      </div>
-    `;
-  }
-
-  if (examples.length > 0) {
-    html += `
-      <div class="spell-section examples">
-        <div class="spell-section-icon">✏️</div>
-        <div class="spell-section-body">
-          <div class="spell-section-label">비슷한 예시</div>
-          <div class="spell-examples-list">
-            ${examples.map(ex => `<span class="spell-example-chip">${escapeHtml(ex)}</span>`).join('')}
-          </div>
         </div>
       </div>
     `;
