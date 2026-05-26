@@ -1390,16 +1390,24 @@ html, body {
   background: var(--bg-gray-soft);
   border: 1px solid var(--gray-line);
   border-radius: var(--r-md);
-  padding: 14px 16px;
-  margin-bottom: 10px;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 18px;
-  align-items: center;
+  padding: 0;
+  margin-bottom: 14px;
+  overflow: hidden;
+  transition: all 0.2s;
 }
 
-@media (max-width: 640px) {
-  .spell-error { grid-template-columns: 1fr; gap: 10px; }
+.spell-error:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.08);
+}
+
+.spell-error-header {
+  background: white;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--gray-line);
 }
 
 .spell-compare {
@@ -1408,6 +1416,7 @@ html, body {
   gap: 10px;
   font-size: 18px;
   font-weight: 700;
+  flex: 1;
 }
 
 .spell-compare .wrong {
@@ -1418,6 +1427,83 @@ html, body {
 
 .spell-compare .arrow { color: var(--gray-3); }
 .spell-compare .right { color: var(--primary); }
+
+.spell-section {
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.spell-section:last-child {
+  border-bottom: 0;
+}
+
+.spell-section-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--bg-primary-soft);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.spell-section.tip .spell-section-icon {
+  background: #FFF4E0;
+  color: #FF9F1C;
+}
+
+.spell-section.examples .spell-section-icon {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.spell-section-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.spell-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-2);
+  margin-bottom: 3px;
+  letter-spacing: 0.01em;
+}
+
+.spell-section-content {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.spell-examples-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.spell-example-chip {
+  background: var(--success-soft);
+  color: var(--success);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .spell-section { padding: 10px 14px; }
+  .spell-error-header { padding: 12px 14px; }
+}
 
 .spell-reason {
   font-size: 13px;
@@ -2976,7 +3062,28 @@ recognized_text와 char_analysis가 서로 다른 글자를 담으면 안 됩니
 - good: 바르게 잘 씀 / warn: 약간 삐뚤거나 받침이 모음 밖으로 나옴 / bad: 알아보기 힘듦 / space: 띄어쓰기
 - 손글씨가 전혀 보이지 않거나 빈 종이면 confidence 10 이하, teacher_comment는 "아직 글씨가 안 보여요".
 - 점수는 객관적 평가. 손글씨가 읽힐 정도면 legibility 70점 이상.
-- teacher_comment는 20자 이내 격려 존댓말.`;
+- teacher_comment는 20자 이내 격려 존댓말.
+
+★ spelling_errors 작성 가이드 (매우 중요) ★
+각 맞춤법 오류는 다음 4가지를 모두 포함해 학생이 "왜 틀렸는지" 진짜 이해할 수 있게 설명하세요:
+
+1. wrong / right: 틀린 표기와 바른 표기
+2. reason (왜 이게 맞을까?): 어원, 뜻, 문법 규칙 등을 학년 눈높이로 설명
+   - 1~2학년: 단순한 비유, 그림 묘사 우선
+   - 3~4학년: 어원, 한자어 뜻, 문법 규칙 활용 가능
+   - 모두 친근한 존댓말, 80자 이내, "~예요/~이에요" 톤
+3. memory_tip (기억하는 방법): 외우기 쉬운 연상법 (50자 이내)
+   - 예: "도서 = 책 → 도서관 = 책을 보는 곳!"
+   - 예: "ㅆ은 받침이 두 개! 강하게 발음할 때 써요"
+4. similar_examples: 비슷한 단어 1~2개 (선택, 학습 확장)
+   - 예: ["도서: 책", "서점: 책을 파는 가게"]
+   - 어린 학년일수록 2개 이내로 단순하게
+
+학년별 톤:
+- 1학년: "와! 이런 글자가 있어요" / 큰 발견의 느낌, 짧고 간단
+- 2학년: "이렇게 알아두면 좋아요" / 친근한 안내
+- 3학년: "이 글자는 ~라는 뜻이에요" / 의미 설명 강화
+- 4학년: "한자어로는 ~이에요" / 어원·논리 강조`;
 
   if (g === 1) {
     // 받아쓰기: 정답 비교
@@ -3003,8 +3110,14 @@ recognized_text와 char_analysis가 서로 다른 글자를 담으면 안 됩니
   "teacher_comment": "20자 이내 격려 존댓말",
   "char_analysis": [{"char":"글자","status":"good|warn|bad|space","note":""}],
   "legibility_tip": "글씨 개선 팁 1~2문장 존댓말",
-  "spelling_errors": [{"wrong":"틀린","right":"바른","reason":"이유 설명"}],
-  "spelling_tip": "오늘의 한 줄 배움"
+  "spelling_errors": [{
+    "wrong":"틀린 글자",
+    "right":"바른 글자",
+    "reason":"왜 이게 맞는지 설명 (1학년 눈높이, 어원/뜻 풀이 우선, 80자 이내, 친근한 존댓말)",
+    "memory_tip":"기억하는 방법 (연상법, 비유, 그림 묘사 등, 50자 이내, 친근한 존댓말)",
+    "similar_examples":["비슷한 예시 1 (예: 도서: 책)", "비슷한 예시 2 (선택)"]
+  }],
+  "spelling_tip": "오늘의 한 줄 배움 (전체 학습 포인트, 30자 이내)"
 }`;
     const user = `정답 문장: "${p.text}"
 
@@ -3042,7 +3155,7 @@ recognized_text와 char_analysis가 서로 다른 글자를 담으면 안 됩니
     {"title":"문장 완결성","status":"pass|warn|fail","desc":"문장으로 제대로 끝났는지"},
     {"title":"맞춤법·띄어쓰기","status":"pass|warn|fail","desc":"오류가 있는지"}
   ],
-  "spelling_errors": [{"wrong":"틀린","right":"바른","reason":"설명"}],
+  "spelling_errors": [{"wrong":"틀린 글자","right":"바른 글자","reason":"왜 이게 맞는지 학년 눈높이 설명 (80자 이내, 어원·뜻·문법 규칙 활용, 친근한 존댓말)","memory_tip":"기억법 (50자 이내, 친근한 존댓말)","similar_examples":["비슷한 예시 1","비슷한 예시 2 (선택)"]}],
   "language_tip": "문장 표현 개선 팁 1~2문장"
 }`;
     const user = `주제 낱말: ${p.words.join(', ')}
@@ -3083,7 +3196,7 @@ recognized_text와 char_analysis가 서로 다른 글자를 담으면 안 됩니
     {"title":"표현의 풍부함","status":"pass|warn|fail","desc":"꾸며 주는 말 등이 있는지"},
     {"title":"맞춤법·띄어쓰기","status":"pass|warn|fail","desc":""}
   ],
-  "spelling_errors": [{"wrong":"틀린","right":"바른","reason":"설명"}],
+  "spelling_errors": [{"wrong":"틀린 글자","right":"바른 글자","reason":"왜 이게 맞는지 학년 눈높이 설명 (80자 이내, 어원·뜻·문법 규칙 활용, 친근한 존댓말)","memory_tip":"기억법 (50자 이내, 친근한 존댓말)","similar_examples":["비슷한 예시 1","비슷한 예시 2 (선택)"]}],
   "language_tip": "문장 표현 개선 팁"
 }`;
     const user = `그림(장면): ${p.caption} (이모지: ${p.emoji})
@@ -3124,7 +3237,7 @@ recognized_text와 char_analysis가 서로 다른 글자를 담으면 안 됩니
     {"title":"설명의 흐름","status":"pass|warn|fail","desc":"문장 연결이 자연스러운지"},
     {"title":"맞춤법·띄어쓰기","status":"pass|warn|fail","desc":""}
   ],
-  "spelling_errors": [{"wrong":"틀린","right":"바른","reason":"설명"}],
+  "spelling_errors": [{"wrong":"틀린 글자","right":"바른 글자","reason":"왜 이게 맞는지 학년 눈높이 설명 (80자 이내, 어원·뜻·문법 규칙 활용, 친근한 존댓말)","memory_tip":"기억법 (50자 이내, 친근한 존댓말)","similar_examples":["비슷한 예시 1","비슷한 예시 2 (선택)"]}],
   "language_tip": "설명글 작성 개선 팁"
 }`;
     const user = `설명할 물건: ${p.name} (이모지: ${p.emoji})
@@ -3154,7 +3267,13 @@ async function reevaluateWithCorrectedText(correctedText) {
   const baseSystemEval = `당신은 대한민국 초등학교 저학년 글쓰기 지도 교사입니다.
 학생이 쓴 글을 텍스트로 받아서, 맞춤법·띄어쓰기·과제 수행 정도를 평가합니다.
 반드시 JSON만 출력합니다. 설명이나 마크다운 코드블록 없이 순수 JSON만.
-teacher_comment는 20자 이내 격려 존댓말입니다.`;
+teacher_comment는 20자 이내 격려 존댓말입니다.
+
+★ spelling_errors는 다음 4가지 필드 모두 포함:
+1. wrong / right: 틀린 표기와 바른 표기
+2. reason: "왜 이게 맞을까?" 학년 눈높이 설명 (80자 이내, 친근한 존댓말, 어원·뜻 활용)
+3. memory_tip: 기억법 (50자 이내, 친근한 존댓말, 연상법 활용)
+4. similar_examples: 비슷한 단어 1~2개 (선택, 어린 학년일수록 단순하게)`;
 
   if (g === 1) {
     system = `${baseSystemEval}
@@ -3596,19 +3715,7 @@ function renderResult(r) {
         </div>`;
     } else {
       errs.forEach(e => {
-        const item = document.createElement('div');
-        item.className = 'spell-error';
-        item.innerHTML = `
-          <div class="spell-compare">
-            <span class="wrong">${escapeHtml(e.wrong || '')}</span>
-            <span class="arrow">
-              <span class="icon icon-16"><svg><use href="#i-arrow-right"/></svg></span>
-            </span>
-            <span class="right">${escapeHtml(e.right || '')}</span>
-          </div>
-          <div class="spell-reason">${escapeHtml(e.reason || '')}</div>
-        `;
-        errBox.appendChild(item);
+        errBox.appendChild(buildSpellErrorCard(e));
       });
     }
     document.getElementById('spellTipText').innerHTML = '<b>오늘의 한 줄 배움:</b> ' + escapeHtml(r.spelling_tip || '');
@@ -3663,25 +3770,78 @@ function renderResult(r) {
       const errBox = document.getElementById('spellErrorsOpen');
       errBox.innerHTML = '';
       errs.forEach(e => {
-        const item = document.createElement('div');
-        item.className = 'spell-error';
-        item.innerHTML = `
-          <div class="spell-compare">
-            <span class="wrong">${escapeHtml(e.wrong || '')}</span>
-            <span class="arrow">
-              <span class="icon icon-16"><svg><use href="#i-arrow-right"/></svg></span>
-            </span>
-            <span class="right">${escapeHtml(e.right || '')}</span>
-          </div>
-          <div class="spell-reason">${escapeHtml(e.reason || '')}</div>
-        `;
-        errBox.appendChild(item);
+        errBox.appendChild(buildSpellErrorCard(e));
       });
-      document.getElementById('spellTipTextOpen').innerHTML = '<b>참고:</b> ' + escapeHtml(r.language_tip || '');
+      document.getElementById('spellTipTextOpen').innerHTML = '<b>참고:</b>' + escapeHtml(r.language_tip || '');
     } else {
       fbSpellingOpen.classList.add('hidden');
     }
   }
+}
+
+// 맞춤법 오류 카드 빌더 (4섹션 구조: 비교/이유/기억법/예시)
+function buildSpellErrorCard(e) {
+  const item = document.createElement('div');
+  item.className = 'spell-error';
+
+  const reason = (e.reason || '').trim();
+  const memoryTip = (e.memory_tip || '').trim();
+  const examples = Array.isArray(e.similar_examples)
+    ? e.similar_examples.filter(x => x && String(x).trim())
+    : [];
+
+  let html = `
+    <div class="spell-error-header">
+      <div class="spell-compare">
+        <span class="wrong">${escapeHtml(e.wrong || '')}</span>
+        <span class="arrow">
+          <span class="icon icon-16"><svg><use href="#i-arrow-right"/></svg></span>
+        </span>
+        <span class="right">${escapeHtml(e.right || '')}</span>
+      </div>
+    </div>
+  `;
+
+  if (reason) {
+    html += `
+      <div class="spell-section">
+        <div class="spell-section-icon">📖</div>
+        <div class="spell-section-body">
+          <div class="spell-section-label">왜 이게 맞을까?</div>
+          <div class="spell-section-content">${escapeHtml(reason)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (memoryTip) {
+    html += `
+      <div class="spell-section tip">
+        <div class="spell-section-icon">💡</div>
+        <div class="spell-section-body">
+          <div class="spell-section-label">기억하는 방법</div>
+          <div class="spell-section-content">${escapeHtml(memoryTip)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (examples.length > 0) {
+    html += `
+      <div class="spell-section examples">
+        <div class="spell-section-icon">✏️</div>
+        <div class="spell-section-body">
+          <div class="spell-section-label">비슷한 예시</div>
+          <div class="spell-examples-list">
+            ${examples.map(ex => `<span class="spell-example-chip">${escapeHtml(ex)}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  item.innerHTML = html;
+  return item;
 }
 
 function renderDiffHtml(target, recognized) {
