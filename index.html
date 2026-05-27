@@ -1985,11 +1985,6 @@ html, body {
         </div>
       </div>
 
-      <div class="preview-box" id="previewBox">
-        <h4>제출할 이미지</h4>
-        <img id="previewImg" src="" alt="">
-      </div>
-
       <div id="errorDisplay"></div>
     </div>
 
@@ -2372,7 +2367,7 @@ function goToStep(n) {
 
   if (n === 2) {
     renderTaskSummary();
-    document.getElementById('previewBox').classList.remove('show');
+    // preview removed
     document.getElementById('submitBtn').disabled = true;
     state.imageData = null;
   }
@@ -2654,7 +2649,7 @@ document.getElementById('inputTabs').addEventListener('click', (e) => {
   if (mode === 'canvas') initCanvas();
   if (mode !== 'camera' && state.cameraStream) stopCamera();
 
-  document.getElementById('previewBox').classList.remove('show');
+  // preview removed
   document.getElementById('submitBtn').disabled = true;
   state.imageData = null;
 });
@@ -2804,13 +2799,18 @@ function initCanvas() {
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
+
+  // 학년별 캔버스 높이: 1~2학년 2줄(280px), 3~4학년 4줄(440px)
+  const isLongForm = state.grade >= 3;
+  const canvasHeight = isLongForm ? 440 : 280;
+
   canvas.width = rect.width * dpr;
-  canvas.height = 280 * dpr;
-  canvas.style.height = '280px';
+  canvas.height = canvasHeight * dpr;
+  canvas.style.height = canvasHeight + 'px';
   ctx.scale(dpr, dpr);
   state.canvasContext = ctx;
   state.canvasWidth = rect.width;
-  state.canvasHeight = 280;
+  state.canvasHeight = canvasHeight;
 
   drawGrid();
   bindCanvasEvents(canvas, ctx);
@@ -2824,8 +2824,10 @@ function drawGrid() {
   ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, w, h);
 
-  const cols = 12;
-  const rows = 2;
+  // 학년별 그리드: 1~2학년 2줄×12칸(24자), 3~4학년 4줄×10칸(40자)
+  const isLongForm = state.grade >= 3;
+  const cols = isLongForm ? 10 : 12;
+  const rows = isLongForm ? 4 : 2;
   const cellW = w / cols;
   const cellH = h / rows;
 
@@ -2927,13 +2929,12 @@ document.getElementById('eraserBtn').addEventListener('click', () => {
 document.getElementById('clearBtn').addEventListener('click', () => {
   drawGrid();
   state.imageData = null;
-  document.getElementById('previewBox').classList.remove('show');
+  // preview removed
   document.getElementById('submitBtn').disabled = true;
 });
 
 function showPreview(dataUrl) {
-  document.getElementById('previewImg').src = dataUrl;
-  document.getElementById('previewBox').classList.add('show');
+  // preview removed
   document.getElementById('submitBtn').disabled = false;
   document.getElementById('errorDisplay').innerHTML = '';
 }
