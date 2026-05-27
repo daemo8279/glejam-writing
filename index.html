@@ -518,6 +518,100 @@ html, body {
   border-color: var(--primary);
 }
 
+/* ============ Retry Options ============ */
+.retry-section {
+  background: var(--white);
+  border-radius: var(--r-lg);
+  padding: 24px 20px;
+  margin-top: 18px;
+  border: 1px solid var(--gray-line);
+}
+
+.retry-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 18px;
+}
+
+.retry-emoji { font-size: 22px; }
+
+.retry-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 640px) {
+  .retry-cards { grid-template-columns: 1fr; }
+}
+
+.retry-card {
+  background: var(--bg-gray-soft);
+  border: 1.5px solid var(--gray-line);
+  border-radius: var(--r-md);
+  padding: 18px 14px;
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.18s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.retry-card:hover:not(:disabled) {
+  background: var(--white);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(22, 119, 255, 0.10);
+}
+
+.retry-card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--bg-gray-soft);
+}
+
+.retry-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.retry-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.retry-card-desc {
+  font-size: 11px;
+  color: var(--gray-2);
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.retry-footer {
+  display: flex;
+  justify-content: center;
+  padding-top: 12px;
+  border-top: 1px dashed var(--gray-line);
+}
+
 /* ============ Buttons ============ */
 .btn-row {
   display: flex;
@@ -1097,6 +1191,20 @@ html, body {
   overflow: hidden;
 }
 
+/* 점수 구간별 그라데이션 */
+.fb-hero.tier-excellent {
+  background: linear-gradient(135deg, #FFB100 0%, #FF6B00 50%, #FF3D00 100%);
+}
+.fb-hero.tier-great {
+  background: linear-gradient(135deg, var(--primary) 0%, #0E62E0 100%);
+}
+.fb-hero.tier-good {
+  background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+}
+.fb-hero.tier-keep-going {
+  background: linear-gradient(135deg, #F472B6 0%, #EC4899 100%);
+}
+
 .fb-hero::before {
   content: '';
   position: absolute;
@@ -1106,6 +1214,41 @@ html, body {
   height: 220px;
   background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%);
   pointer-events: none;
+}
+
+.fb-celebration {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  font-size: 36px;
+  z-index: 3;
+  pointer-events: none;
+  animation: celebration-bounce 1.5s ease-in-out infinite;
+}
+
+@keyframes celebration-bounce {
+  0%, 100% { transform: translateY(0) rotate(-5deg); }
+  50% { transform: translateY(-8px) rotate(5deg); }
+}
+
+.fb-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.fb-confetti span {
+  position: absolute;
+  top: -10px;
+  font-size: 16px;
+  animation: confetti-fall 3s ease-in infinite;
+  opacity: 0;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(300px) rotate(360deg); opacity: 0; }
 }
 
 .score-chip {
@@ -1129,12 +1272,44 @@ html, body {
   letter-spacing: -0.03em;
   position: relative;
   z-index: 2;
+  animation: score-popup 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes score-popup {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 .big-score small {
   font-size: 20px;
   opacity: 0.7;
   font-weight: 500;
+}
+
+.encouragement-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  position: relative;
+  z-index: 2;
+  letter-spacing: -0.02em;
+  animation: fadeup 0.6s ease 0.2s both;
+}
+
+.encouragement-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.9);
+  font-weight: 500;
+  margin-bottom: 14px;
+  position: relative;
+  z-index: 2;
+  animation: fadeup 0.6s ease 0.35s both;
+}
+
+@keyframes fadeup {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .score-comment {
@@ -1650,14 +1825,9 @@ html, body {
   <div class="brand">
     <div class="brand-logo">잼</div>
     <div>
-      <div class="brand-name">글잼 라이팅<span class="ver">v0.4</span></div>
+      <div class="brand-name">글잼 라이팅</div>
+      <div style="font-size:11px; color:var(--gray-2); font-weight:500; margin-top:1px;">손글씨로 만나는 AI 글쓰기 선생님</div>
     </div>
-  </div>
-  <div style="display:flex; align-items:center; gap:10px;">
-    <button class="api-chip" id="apiKeyBtn" style="cursor:pointer; border:0; font-family:inherit;">
-      <span class="dot" id="apiKeyDot"></span>
-      <span id="apiKeyLabel">연결 설정 필요</span>
-    </button>
   </div>
 </header>
 
@@ -1990,9 +2160,13 @@ html, body {
     </div>
 
     <!-- 종합 평가 히어로 -->
-    <div class="fb-hero">
-      <span class="score-chip">AI 종합 평가</span>
+    <div class="fb-hero" id="fbHero">
+      <div class="fb-confetti" id="fbConfetti"></div>
+      <div class="fb-celebration" id="fbCelebration"></div>
+      <span class="score-chip" id="scoreChip">AI 종합 평가</span>
       <div class="big-score" id="totalScore">—<small>/100</small></div>
+      <div class="encouragement-title" id="encouragementTitle"></div>
+      <div class="encouragement-sub" id="encouragementSub"></div>
       <div class="score-comment" id="teacherComment">—</div>
 
       <div class="cat-bars-fb" id="catBarsFb">
@@ -2096,15 +2270,35 @@ html, body {
       </div>
     </div>
 
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="goToStep(2)">
-        <span class="icon icon-16"><svg><use href="#i-arrow-left"/></svg></span>
-        다시 쓰기
-      </button>
-      <button class="btn btn-primary" onclick="goToStep(1)">
-        <span class="icon icon-16"><svg><use href="#i-home"/></svg></span>
-        처음으로
-      </button>
+    <!-- 재시도 옵션 영역 -->
+    <div class="retry-section">
+      <div class="retry-header">
+        <span class="retry-emoji">🎯</span>
+        <span>다음에 어떻게 할까요?</span>
+      </div>
+      <div class="retry-cards">
+        <button class="retry-card" onclick="retryWrongOnly()" id="retryWrongBtn">
+          <div class="retry-icon" style="background:#FEE2E2; color:#DC2626;">✏️</div>
+          <div class="retry-card-title">틀린 부분만<br>다시 써보기</div>
+          <div class="retry-card-desc" id="retryWrongDesc">맞춤법 글자를<br>연습해 보세요</div>
+        </button>
+        <button class="retry-card" onclick="retrySameProblem()">
+          <div class="retry-icon" style="background:#DBEAFE; color:#2563EB;">🔄</div>
+          <div class="retry-card-title">이 과제<br>다시 도전</div>
+          <div class="retry-card-desc">점수를 더 올려<br>볼까요?</div>
+        </button>
+        <button class="retry-card" onclick="retryNewProblem()">
+          <div class="retry-icon" style="background:#D1FAE5; color:#059669;">🆕</div>
+          <div class="retry-card-title">다른 과제<br>풀어보기</div>
+          <div class="retry-card-desc">새 문제로<br>실력 키우기</div>
+        </button>
+      </div>
+      <div class="retry-footer">
+        <button class="btn btn-ghost" onclick="goToStep(1)" style="padding:10px 22px;">
+          <span class="icon icon-16"><svg><use href="#i-home"/></svg></span>
+          처음 화면으로
+        </button>
+      </div>
     </div>
   </div>
 
@@ -2207,13 +2401,9 @@ function renderProblemPreview() {
         <div class="audio-info">
           <div class="label">아래 버튼을 눌러 문장을 들어 보세요</div>
           <div class="title hidden-sentence">🔒 문장은 숨겨져 있어요 · 듣고 받아쓰세요</div>
-          <div class="hint">※ 프로토타입에서는 확인을 위해 아래에서 정답을 볼 수 있어요</div>
+          <div class="hint">선생님 목소리를 잘 듣고 종이에 써 보세요</div>
         </div>
       </div>
-      <details style="margin-top:10px; font-size:12px; color:var(--gray-2);">
-        <summary style="cursor:pointer;">(프로토타입용) 정답 문장 보기</summary>
-        <div style="margin-top:8px; padding:10px; background:var(--white); border-radius:6px; font-weight:600; color:var(--text);">${escapeHtml(p.text)}</div>
-      </details>
     `;
   } else if (grade === 2) {
     labelIcon = 'i-type'; labelText = '주제 낱말로 한 문장 만들기';
@@ -3251,8 +3441,7 @@ recognized_text와 char_analysis가 서로 다른 글자를 담으면 안 됩니
 // 수정된 텍스트 기반 재평가 (이미지 없이, 가벼움)
 // ===========================================
 async function reevaluateWithCorrectedText(correctedText) {
-  const cfg = getProxyConfig();
-  if (!cfg.password) throw new Error('프록시 비밀번호가 필요합니다.');
+  // 프로덕션 모드: 인증은 서버에서 처리
 
   const p = currentProblem();
   const g = state.grade;
@@ -3371,7 +3560,7 @@ teacher_comment는 20자 이내 격려 존댓말입니다.
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-access-password": cfg.password || ''
+      "x-access-password": ''
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
@@ -3400,13 +3589,7 @@ teacher_comment는 20자 이내 격려 존댓말입니다.
 }
 
 async function callClaudeVision() {
-  // 프록시 설정 확인
-  const cfg = getProxyConfig();
-  if (!cfg.password) {
-    openApiKeyModal();
-    throw new Error('AI 분석 비밀번호가 필요해요. 우측 상단 버튼으로 설정해 주세요.');
-  }
-
+  // 프로덕션 모드: 인증은 서버에서만 처리됨
   const base64Data = state.imageData.split(',')[1];
   const cleanMediaType = (state.imageMediaType || 'image/png').toLowerCase();
   const { system, user } = buildPrompt();
@@ -3426,7 +3609,7 @@ async function callClaudeVision() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-access-password": cfg.password || ''
+        "x-access-password": ''
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
@@ -3460,8 +3643,7 @@ async function callClaudeVision() {
     } catch(e) { errDetail = errText.substring(0, 120); }
 
     if (response.status === 401) {
-      openApiKeyModal();
-      throw new Error('팀 비밀번호가 올바르지 않아요. 다시 확인해 주세요.');
+      throw new Error('서비스 접근이 거부됐어요. 잠시 후 다시 시도해 주세요.');
     }
     if (response.status === 403) {
       throw new Error('허용되지 않은 출처에서의 요청이에요. 팀장에게 문의해 주세요.');
@@ -3507,6 +3689,82 @@ async function callClaudeVision() {
   }
 
   return parsed;
+}
+
+// ===========================================
+// 점수 구간별 격려 시스템 (학년별 톤 차별화)
+// ===========================================
+
+const ENCOURAGEMENT_MESSAGES = {
+  excellent: {
+    1: { title: '와! 정말정말 잘했어요!', sub: '엄청 멋진 글이에요!', emoji: '🎉', chip: '🌟 최고예요!' },
+    2: { title: '정말정말 잘 썼어요!', sub: '대단해요! 완벽한 문장이에요!', emoji: '🎊', chip: '🌟 최고예요!' },
+    3: { title: '정말 잘 표현했어요!', sub: '글잼 친구도 깜짝 놀랐어요!', emoji: '✨', chip: '🌟 최고예요!' },
+    4: { title: '논리적이고 명확한 글이에요!', sub: '설명이 아주 자연스러워요!', emoji: '🏆', chip: '🌟 최고예요!' }
+  },
+  great: {
+    1: { title: '잘하고 있어요!', sub: '조금만 더 연습하면 완벽해질 거예요!', emoji: '⭐', chip: '👍 잘했어요' },
+    2: { title: '잘 썼어요!', sub: '거의 다 맞았어요. 조금만 더!', emoji: '⭐', chip: '👍 잘했어요' },
+    3: { title: '잘 표현했어요!', sub: '조금 더 자세히 쓰면 더 좋아요!', emoji: '⭐', chip: '👍 잘했어요' },
+    4: { title: '잘 설명했어요!', sub: '논리가 잘 잡혀 있어요. 더 다듬어 볼까요?', emoji: '⭐', chip: '👍 잘했어요' }
+  },
+  good: {
+    1: { title: '잘 도전했어요!', sub: '같이 차근차근 봐볼까요?', emoji: '💪', chip: '🌱 성장 중' },
+    2: { title: '열심히 썼어요!', sub: '한 번만 더 다듬으면 좋아질 거예요!', emoji: '💪', chip: '🌱 성장 중' },
+    3: { title: '도전해서 멋져요!', sub: '몇 가지 부분만 같이 살펴봐요!', emoji: '💪', chip: '🌱 성장 중' },
+    4: { title: '시도가 좋았어요!', sub: '조금 더 명확하게 표현해 볼까요?', emoji: '💪', chip: '🌱 성장 중' }
+  },
+  keepGoing: {
+    1: { title: '괜찮아요, 도전한 게 대단해요!', sub: '같이 어떤 부분이 어려웠는지 봐볼까요?', emoji: '🤗', chip: '🌈 함께해요' },
+    2: { title: '잘 도전했어요!', sub: '어려운 부분은 같이 차근차근 봐봐요!', emoji: '🤗', chip: '🌈 함께해요' },
+    3: { title: '도전이 멋져요!', sub: '아래 피드백을 보고 다시 한 번 써봐요!', emoji: '🤗', chip: '🌈 함께해요' },
+    4: { title: '시작이 반이에요!', sub: '하나씩 짚어가면서 더 나아갈 수 있어요!', emoji: '🤗', chip: '🌈 함께해요' }
+  }
+};
+
+function getScoreTier(score) {
+  if (score >= 90) return 'excellent';
+  if (score >= 70) return 'great';
+  if (score >= 50) return 'good';
+  return 'keepGoing';
+}
+
+function getTierClass(tier) {
+  return {
+    excellent: 'tier-excellent',
+    great: 'tier-great',
+    good: 'tier-good',
+    keepGoing: 'tier-keep-going'
+  }[tier] || 'tier-great';
+}
+
+function applyEncouragement(score, grade) {
+  const tier = getScoreTier(score);
+  const gradeKey = grade || 1;
+  const msg = ENCOURAGEMENT_MESSAGES[tier][gradeKey] || ENCOURAGEMENT_MESSAGES[tier][1];
+
+  const hero = document.getElementById('fbHero');
+  hero.classList.remove('tier-excellent', 'tier-great', 'tier-good', 'tier-keep-going');
+  hero.classList.add(getTierClass(tier));
+
+  document.getElementById('encouragementTitle').textContent = msg.title;
+  document.getElementById('encouragementSub').textContent = msg.sub;
+  document.getElementById('fbCelebration').textContent = msg.emoji;
+  document.getElementById('scoreChip').textContent = msg.chip;
+
+  const confettiBox = document.getElementById('fbConfetti');
+  confettiBox.innerHTML = '';
+  if (tier === 'excellent') {
+    const emojis = ['🎉', '🎊', '✨', '⭐', '🌟', '💫'];
+    for (let i = 0; i < 15; i++) {
+      const piece = document.createElement('span');
+      piece.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      piece.style.left = (Math.random() * 100) + '%';
+      piece.style.animationDelay = (Math.random() * 2) + 's';
+      piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+      confettiBox.appendChild(piece);
+    }
+  }
 }
 
 // ===========================================
@@ -3608,6 +3866,18 @@ function renderResult(r) {
   // ------- 종합 점수 -------
   document.getElementById('totalScore').innerHTML = (r.total_score ?? 0) + '<small>/100</small>';
   document.getElementById('teacherComment').textContent = r.teacher_comment || '';
+
+  // ⭐ 점수 구간별 격려 시스템 적용
+  applyEncouragement(r.total_score ?? 0, state.grade);
+
+  // 재시도 카드 상태 업데이트
+  updateRetryCards(r);
+
+  // 이전 점수가 있으면 비교
+  if (state.isRetry && state.previousScore !== null) {
+    showScoreComparison(state.previousScore, r.total_score ?? 0);
+    state.isRetry = false;
+  }
 
   // ------- 범주 점수 (학년별) -------
   const catBox = document.getElementById('catBarsFb');
@@ -3862,6 +4132,207 @@ function renderDiffHtml(target, recognized) {
   }).join('');
 }
 
+// ===========================================
+// 재시도 옵션 (3가지 다른 방식)
+// ===========================================
+
+// 1. 틀린 부분만 다시 써보기
+// 맞춤법 오류가 있는 글자들을 모아서 캔버스에 한 글자씩 연습할 수 있게
+function retryWrongOnly() {
+  const result = state.analysisResult;
+  if (!result || !result.spelling_errors || result.spelling_errors.length === 0) {
+    alert('맞춤법 오류가 없어요! 다른 옵션을 선택해 주세요.');
+    return;
+  }
+
+  // 틀린 단어들 모으기
+  const wrongWords = result.spelling_errors
+    .map(e => ({ wrong: e.wrong, right: e.right }))
+    .filter(w => w.wrong && w.right);
+
+  if (wrongWords.length === 0) {
+    alert('연습할 글자가 없어요. 다른 옵션을 선택해 주세요.');
+    return;
+  }
+
+  // state에 연습 모드 정보 저장
+  state.practiceMode = true;
+  state.practiceWords = wrongWords;
+  state.practiceIndex = 0;
+
+  // 캔버스 모드로 step 2 진입
+  goToStep(2);
+  // 입력 탭을 캔버스로
+  setInputTab('canvas');
+  // 안내 메시지 표시
+  showPracticeBanner();
+}
+
+// 2. 이 과제 다시 도전
+// 같은 문제로 처음부터 다시
+function retrySameProblem() {
+  // 이전 점수 저장 (재도전 시 비교용)
+  state.previousScore = state.analysisResult?.total_score ?? 0;
+  state.isRetry = true;
+
+  // 입력 데이터만 초기화하고 같은 문제 유지
+  state.imageData = null;
+  state.imageMediaType = 'image/png';
+  state.analysisResult = null;
+
+  goToStep(2);
+}
+
+// 3. 다른 과제 풀어보기
+// 같은 학년의 다른 문제로 자동 이동
+function retryNewProblem() {
+  const grade = state.grade;
+  const problems = PROBLEM_BANK[grade];
+  if (!problems || problems.length <= 1) {
+    alert('이 학년의 다른 문제가 준비 중이에요. 처음 화면으로 돌아가요.');
+    goToStep(1);
+    return;
+  }
+
+  // 현재 문제와 다른 문제 랜덤 선택
+  let nextIdx;
+  do {
+    nextIdx = Math.floor(Math.random() * problems.length);
+  } while (nextIdx === state.problemIdx && problems.length > 1);
+
+  state.problemIdx = nextIdx;
+  state.imageData = null;
+  state.analysisResult = null;
+  state.isRetry = false;
+  state.previousScore = null;
+
+  // 학년 화면 다시 그리기
+  renderGradeContent();
+  goToStep(1);
+}
+
+// 연습 모드 배너 표시
+function showPracticeBanner() {
+  const card = document.querySelector('#step-2 .card');
+  if (!card) return;
+
+  // 기존 배너 제거
+  const existing = document.getElementById('practiceBanner');
+  if (existing) existing.remove();
+
+  const words = state.practiceWords || [];
+  const wordsList = words.map(w =>
+    `<span style="background:#FEE2E2; color:#DC2626; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; margin-right:6px;">${escapeHtml(w.wrong)} → ${escapeHtml(w.right)}</span>`
+  ).join('');
+
+  const banner = document.createElement('div');
+  banner.id = 'practiceBanner';
+  banner.style.cssText = 'background:linear-gradient(135deg,#FEE2E2 0%,#FECACA 100%); border:1.5px solid #DC2626; border-radius:var(--r-md); padding:14px 16px; margin-bottom:16px; display:flex; flex-direction:column; gap:8px;';
+  banner.innerHTML = `
+    <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:#991B1B; font-size:14px;">
+      <span style="font-size:18px;">✏️</span>
+      <span>틀린 글자 연습 모드</span>
+      <button onclick="exitPracticeMode()" style="margin-left:auto; background:white; border:1px solid #DC2626; color:#DC2626; padding:4px 10px; border-radius:6px; font-size:11px; cursor:pointer; font-family:inherit; font-weight:600;">연습 끝내기</button>
+    </div>
+    <div style="font-size:12px; color:#991B1B; line-height:1.5;">
+      아래 글자들을 종이에 또박또박 다시 써 보세요. 캔버스에 직접 써도 좋아요!
+    </div>
+    <div style="margin-top:4px;">${wordsList}</div>
+  `;
+  card.insertBefore(banner, card.children[1]);
+}
+
+function exitPracticeMode() {
+  state.practiceMode = false;
+  state.practiceWords = [];
+  state.practiceIndex = 0;
+  const banner = document.getElementById('practiceBanner');
+  if (banner) banner.remove();
+}
+
+// 입력 탭 전환 헬퍼
+function setInputTab(mode) {
+  const tabBtn = document.querySelector(`#inputTabs button[data-mode="${mode}"]`);
+  if (tabBtn) tabBtn.click();
+}
+
+// 재시도 카드 활성/비활성 결정
+function updateRetryCards(result) {
+  const wrongBtn = document.getElementById('retryWrongBtn');
+  if (!wrongBtn) return;
+
+  const errs = result?.spelling_errors || [];
+  if (errs.length > 0) {
+    wrongBtn.disabled = false;
+    document.getElementById('retryWrongDesc').innerHTML =
+      `맞춤법 ${errs.length}개를<br>연습해 보세요`;
+  } else {
+    wrongBtn.disabled = true;
+    document.getElementById('retryWrongDesc').innerHTML =
+      `맞춤법 오류가<br>없어요!`;
+  }
+}
+
+// 재시도 후 점수 비교 토스트
+function showScoreComparison(prev, current) {
+  const diff = current - prev;
+  let icon, color, bg, message;
+
+  if (diff > 0) {
+    icon = '🎉';
+    color = '#059669';
+    bg = 'linear-gradient(135deg, #D1FAE5, #A7F3D0)';
+    message = `이전 ${prev}점 → 지금 ${current}점 (▲ ${diff}점 향상!)`;
+  } else if (diff === 0) {
+    icon = '💪';
+    color = '#0E62E0';
+    bg = 'linear-gradient(135deg, #DBEAFE, #BFDBFE)';
+    message = `이전과 같은 ${current}점이에요! 한 번 더 도전해 봐요!`;
+  } else {
+    icon = '🌱';
+    color = '#7C3AED';
+    bg = 'linear-gradient(135deg, #EDE9FE, #DDD6FE)';
+    message = `이전 ${prev}점 → 지금 ${current}점. 천천히 같이 해봐요!`;
+  }
+
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: ${bg};
+    color: ${color};
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    z-index: 9999;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 90vw;
+  `;
+  toast.innerHTML = `<span style="font-size:18px;">${icon}</span><span>${message}</span>`;
+  document.body.appendChild(toast);
+
+  // 등장
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+  });
+
+  // 5초 후 사라짐
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(-20px)';
+    setTimeout(() => toast.remove(), 400);
+  }, 5000);
+}
+
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -3872,233 +4343,23 @@ function escapeHtml(s) {
 renderProblemPreview();
 </script>
 
-<!-- Proxy Config Modal -->
-<div id="apiKeyModal" style="display:none; position:fixed; inset:0; background:rgba(33,33,33,0.6); z-index:200; align-items:center; justify-content:center; padding:20px;">
-  <div style="background:white; border-radius:16px; padding:28px; max-width:480px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
-    <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:18px;">
-      <div style="width:40px; height:40px; background:var(--bg-primary-soft); color:var(--primary); border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-        <span class="icon icon-20"><svg><use href="#i-sparkle"/></svg></span>
-      </div>
-      <div>
-        <h3 style="font-size:18px; font-weight:700; color:var(--text); margin-bottom:4px;">AI 분석 사용 시작하기</h3>
-        <div style="font-size:13px; color:var(--gray-2); line-height:1.55;">
-          팀장에게 받은 <b>비밀번호</b>를 입력하면<br>
-          바로 AI 분석을 사용할 수 있어요.
-        </div>
-      </div>
-    </div>
-
-    <div style="background:var(--bg-primary-soft); border-left:3px solid var(--primary); border-radius:0 8px 8px 0; padding:12px 14px; margin-bottom:18px; font-size:12px; color:var(--gray-1); line-height:1.65;">
-      <b style="color:var(--text);">💡 팀원 안내</b><br>
-      비밀번호는 이 브라우저에만 저장되어 다음번 방문 시<br>
-      자동으로 연결돼요.
-    </div>
-
-    <label style="display:block; font-size:12px; font-weight:600; color:var(--gray-1); margin-bottom:6px;">팀 공유 비밀번호</label>
-    <input type="password" id="accessPasswordInput" placeholder="팀장에게 받은 비밀번호"
-      style="width:100%; padding:12px 14px; border:1px solid var(--gray-line); border-radius:8px; font-family:inherit; font-size:14px; color:var(--text); margin-bottom:10px;">
-
-    <div style="font-size:11px; color:var(--gray-3); margin-bottom:18px;">
-      ※ 비밀번호는 이 브라우저의 localStorage에만 저장돼요.
-    </div>
-
-    <details style="margin-bottom:14px; font-size:12px; color:var(--gray-2);">
-      <summary style="cursor:pointer; user-select:none;">고급 설정 (프록시 URL 변경)</summary>
-      <div style="margin-top:10px;">
-        <label style="display:block; font-size:12px; font-weight:600; color:var(--gray-1); margin-bottom:6px;">프록시 서버 주소</label>
-        <input type="text" id="proxyUrlInput" placeholder="/api/proxy (기본값)"
-          style="width:100%; padding:10px 12px; border:1px solid var(--gray-line); border-radius:8px; font-family:monospace; font-size:12px; color:var(--text);">
-        <div style="font-size:11px; color:var(--gray-3); margin-top:6px;">
-          비워두면 같은 도메인의 /api/proxy를 사용해요.
-        </div>
-      </div>
-    </details>
-
-    <div style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
-      <button class="btn btn-ghost" id="apiKeyClear" style="padding:10px 18px; font-size:13px;">설정 초기화</button>
-      <button class="btn btn-ghost" onclick="closeApiKeyModal()" style="padding:10px 18px; font-size:13px;">취소</button>
-      <button class="btn btn-primary" id="apiKeySave" style="padding:10px 18px; font-size:13px;">저장하고 연결 테스트</button>
-    </div>
-
-    <div id="connectionTestResult" style="margin-top:14px; display:none;"></div>
-  </div>
-</div>
 
 
 <script>
 // ===========================================
-// Proxy Config Management
+// 프로덕션 모드 (인증 불필요, 비밀번호 자동 처리)
 // ===========================================
-const PROXY_URL_STORAGE = 'geuljam_proxy_url';
-const PROXY_PWD_STORAGE = 'geuljam_proxy_password';
-const DEFAULT_PROXY_PATH = '/api/proxy'; // 같은 도메인의 Vercel 함수
+const DEFAULT_PROXY_PATH = '/api/proxy';
 
-function getProxyConfig() {
-  try {
-    return {
-      url: localStorage.getItem(PROXY_URL_STORAGE) || '',
-      password: localStorage.getItem(PROXY_PWD_STORAGE) || ''
-    };
-  } catch(e) {
-    return { url: '', password: '' };
-  }
-}
-
-// 실제 요청에 쓸 URL 반환 (빈 값이면 기본 경로 사용)
 function resolveProxyUrl() {
-  const cfg = getProxyConfig();
-  if (cfg.url) return cfg.url.replace(/\/+$/, '');
   return DEFAULT_PROXY_PATH;
 }
 
-function setProxyConfig(url, password) {
-  try {
-    if (url) localStorage.setItem(PROXY_URL_STORAGE, url);
-    else localStorage.removeItem(PROXY_URL_STORAGE);
-    if (password) localStorage.setItem(PROXY_PWD_STORAGE, password);
-    else localStorage.removeItem(PROXY_PWD_STORAGE);
-  } catch(e) {
-    console.warn('localStorage 접근 불가', e);
-  }
-  updateApiKeyUI();
+// 비밀번호는 더 이상 사용자 입력이 아닌 서버 환경변수로만 처리
+// 프록시 호출 시 빈 헤더로 보내고 서버에서 검증
+function getProxyConfig() {
+  return { url: '', password: '' };
 }
-
-function updateApiKeyUI() {
-  const cfg = getProxyConfig();
-  const label = document.getElementById('apiKeyLabel');
-  const dot = document.getElementById('apiKeyDot');
-  if (!label || !dot) return;
-
-  // 비밀번호만 있으면 연결된 것으로 간주 (URL은 기본값 사용)
-  if (cfg.password) {
-    label.textContent = 'AI 연결됨';
-    dot.style.background = 'var(--success)';
-    label.parentElement.style.background = 'var(--success-soft)';
-    label.parentElement.style.color = 'var(--success)';
-  } else {
-    label.textContent = '비밀번호 입력 필요';
-    dot.style.background = 'var(--warning)';
-    label.parentElement.style.background = 'var(--warning-soft)';
-    label.parentElement.style.color = 'var(--warning)';
-  }
-}
-
-function openApiKeyModal() {
-  const modal = document.getElementById('apiKeyModal');
-  modal.style.display = 'flex';
-  const cfg = getProxyConfig();
-  const urlInput = document.getElementById('proxyUrlInput');
-  if (urlInput) urlInput.value = cfg.url;
-  document.getElementById('accessPasswordInput').value = cfg.password;
-  document.getElementById('connectionTestResult').style.display = 'none';
-  setTimeout(() => document.getElementById('accessPasswordInput').focus(), 50);
-}
-
-function closeApiKeyModal() {
-  document.getElementById('apiKeyModal').style.display = 'none';
-}
-
-async function testConnection(url, password) {
-  const resultBox = document.getElementById('connectionTestResult');
-  resultBox.style.display = 'block';
-  resultBox.innerHTML = `
-    <div style="padding:12px 14px; background:var(--bg-primary-soft); color:var(--primary); border-radius:8px; font-size:13px; font-weight:500;">
-      🔄 연결 테스트 중...
-    </div>`;
-
-  try {
-    const testPayload = {
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 10,
-      messages: [{ role: 'user', content: 'hi' }]
-    };
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-access-password': password
-      },
-      body: JSON.stringify(testPayload)
-    });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (response.ok) {
-      resultBox.innerHTML = `
-        <div style="padding:12px 14px; background:var(--success-soft); color:var(--success); border-radius:8px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px;">
-          <span class="icon icon-16"><svg><use href="#i-circle-check"/></svg></span>
-          연결 성공! AI 분석을 사용할 수 있어요.
-        </div>`;
-      setTimeout(closeApiKeyModal, 1200);
-      return true;
-    } else {
-      const errMsg = (data.error && data.error.message) ? data.error.message : `서버 오류 (${response.status})`;
-      resultBox.innerHTML = `
-        <div style="padding:12px 14px; background:var(--error-soft); color:var(--error); border-radius:8px; font-size:13px; font-weight:500;">
-          <b>연결 실패</b><br>
-          ${escapeHtml(errMsg)}
-        </div>`;
-      return false;
-    }
-  } catch (err) {
-    resultBox.innerHTML = `
-      <div style="padding:12px 14px; background:var(--error-soft); color:var(--error); border-radius:8px; font-size:13px; font-weight:500;">
-        <b>연결 실패</b><br>
-        프록시 서버에 접근할 수 없어요. 관리자에게 문의해 주세요. (${escapeHtml(err.message)})
-      </div>`;
-    return false;
-  }
-}
-
-document.getElementById('apiKeyBtn').addEventListener('click', openApiKeyModal);
-
-document.getElementById('apiKeySave').addEventListener('click', async () => {
-  const urlInput = document.getElementById('proxyUrlInput');
-  const url = urlInput ? urlInput.value.trim() : '';
-  const password = document.getElementById('accessPasswordInput').value.trim();
-
-  if (!password) {
-    alert('비밀번호를 입력해 주세요.');
-    return;
-  }
-
-  // URL이 비어있으면 기본 경로 사용
-  const effectiveUrl = url || DEFAULT_PROXY_PATH;
-  if (url && !/^https?:\/\//.test(url) && !url.startsWith('/')) {
-    alert('프록시 주소는 http:// , https:// 또는 / 로 시작해야 해요.');
-    return;
-  }
-
-  const ok = await testConnection(effectiveUrl, password);
-  if (ok) {
-    setProxyConfig(url, password); // 사용자가 명시적으로 입력한 값만 저장
-  }
-});
-
-document.getElementById('apiKeyClear').addEventListener('click', () => {
-  if (confirm('저장된 설정을 모두 삭제할까요?')) {
-    setProxyConfig('', '');
-    const urlInput = document.getElementById('proxyUrlInput');
-    if (urlInput) urlInput.value = '';
-    document.getElementById('accessPasswordInput').value = '';
-    document.getElementById('connectionTestResult').style.display = 'none';
-  }
-});
-
-document.getElementById('apiKeyModal').addEventListener('click', (e) => {
-  if (e.target.id === 'apiKeyModal') closeApiKeyModal();
-});
-
-// 초기 UI
-updateApiKeyUI();
-
-// 첫 방문자 자동 모달
-window.addEventListener('load', () => {
-  const cfg = getProxyConfig();
-  if (!cfg.password) {
-    setTimeout(openApiKeyModal, 400);
-  }
-});
 </script>
 
 </body>
