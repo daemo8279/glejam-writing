@@ -2521,7 +2521,10 @@ function getTodayTask(level) {
     taskTypeIdx = Math.floor(Math.random() * lv.t.length);
   }
   const taskName = lv.t[taskTypeIdx] || lv.t[0];
-  const topic = (mData.tp && mData.tp[0]) ? mData.tp[0] : '';
+  // 월 전반(1~15일): tp[0], 후반(16일~): tp[1] (없으면 tp[0])
+  const dayOfMonth = now.getDate();
+  const topicIdx = (mData.tp && mData.tp.length >= 2 && dayOfMonth >= 16) ? 1 : 0;
+  const topic = (mData.tp && mData.tp[topicIdx]) ? mData.tp[topicIdx] : '';
 
   // 오늘 날짜 기반 시드 (같은 날 같은 문제)
   const daySeed = now.getDate();
@@ -2926,20 +2929,34 @@ function renderProblemPreview() {
         </div>`;
       break;
 
-    case 'word_expand':
+    case 'word_expand': {
+      // hint: "[낱말]을 넣어 문장을 완성해 보세요.\n낱말로 _______."
+      const hLines = (p.hint || '').split('\n');
+      const instruction = hLines[0] || '';
+      const template = hLines[1] || '';
       content = `
-        <div class="pp-words"><span class="word-chip">${escapeHtml(p.keyword)}</span></div>
-        <div class="pp-caption" style="margin-top:14px;">${escapeHtml(p.hint)}</div>
-        <div class="pp-caption" style="margin-top:6px; font-size:12px; color:var(--gray-3);">${escapeHtml(p.example || '')}</div>`;
+        <div style="display:flex;flex-direction:column;gap:14px;padding:4px 0;">
+          <div style="display:flex;justify-content:center;">
+            <span class="word-chip" style="font-size:22px;font-weight:800;padding:10px 24px;letter-spacing:-0.02em;">${escapeHtml(p.keyword)}</span>
+          </div>
+          <div style="font-size:13px;color:var(--gray-2);text-align:center;">${escapeHtml(instruction)}</div>
+          ${template ? `<div style="background:var(--bg-gray-soft);border-radius:var(--r-md);padding:14px 16px;font-size:15px;font-weight:600;color:var(--text);text-align:center;letter-spacing:-0.01em;">${escapeHtml(template)}</div>` : ''}
+        </div>`;
       break;
+    }
 
-    case 'descriptive':
+    case 'descriptive': {
+      // 장면명·선택지는 AI 채점용으로만 사용, 학생에게는 빈칸 문장만 노출
+      const dLines = (p.hint || '').split('\n');
+      const dSentence = dLines[1] || dLines[0] || '';
       content = `
-        <div class="pp-image"><div><div class="pp-emoji-scene" style="font-size:48px;">✍️</div>
-        <div class="pp-caption" style="font-size:16px; font-weight:700; margin-top:8px;">${escapeHtml(p.scene)}</div></div></div>
-        <div class="pp-caption" style="margin-top:12px;">${escapeHtml(p.hint)}</div>
-        <div class="pp-caption" style="margin-top:6px; font-size:12px; color:var(--gray-3);">${escapeHtml(p.example || '')}</div>`;
+        <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:8px 0;">
+          <div style="font-size:40px;">✍️</div>
+          <div style="font-size:13px;color:var(--gray-2);">빈칸에 어울리는 말을 넣어 문장을 완성해 보세요.</div>
+          ${dSentence ? `<div style="background:var(--bg-gray-soft);border-radius:var(--r-md);padding:16px 20px;font-size:16px;font-weight:700;color:var(--text);text-align:center;width:100%;">${escapeHtml(dSentence)}</div>` : ''}
+        </div>`;
       break;
+    }
 
     case 'emotion':
       content = `
@@ -2949,7 +2966,7 @@ function renderProblemPreview() {
           <div class="pp-caption" style="margin-top:4px; color:var(--primary);">감정 키워드: <b>${escapeHtml(p.emotion)}</b></div>
         </div></div>
         <div class="pp-caption" style="margin-top:12px;">${escapeHtml(p.hint)}</div>
-        <div class="pp-caption" style="margin-top:6px; font-size:12px; color:var(--gray-3);">${escapeHtml(p.example || '')}</div>`;
+`;
       break;
 
     case 'picture':
@@ -3380,15 +3397,16 @@ rubric 4항목: "주제 낱말 포함" / "완전한 문장 구성" / "자연스�
 
 [레벨1 꾸며주는 말 쓰기]
 장면: "${p.scene}"
-힌트(선택지 포함): ${p.hint}
-모범 예시: ${p.example || '없음'}
+빈칸 문장: ${(() => { const l = (p.hint||'').split('\n'); return l[1]||l[0]; })()}
+※ 학생에게는 선택지를 보여주지 않고 자유롭게 꾸며주는 말을 쓰게 함
+모범 어휘(참고용, 공개 안 함): ${p.example || '없음'}
 
 ★ 채점 기준 (합계 100점) ★
 - legibility_score(20점): 글씨 가독성
   20: 또렷 | 15: 대체로 읽힘 | 10: 일부 불명확 | 5: 많이 불명확
-- task_score(40점): 꾸며주는 말 선택 & 사용
-  [올바른 선택 20점] 20: 힌트에서 제시된 적절한 어휘 선택 | 10: 다른 적절한 꾸며주는 말 | 0: 꾸며주는 말 없음
-  [어울리는 사용 20점] 20: 장면과 완벽히 어울림 | 15: 대체로 어울림 | 8: 어색 | 0: 전혀 어울리지 않음
+- task_score(40점): 꾸며주는 말 사용 & 적절성
+  [꾸며주는 말(형용사·부사) 사용 20점] 20: 꾸며주는 말 포함 | 10: 일반 명사·동사만 사용 | 0: 미사용
+  [장면·문장에 어울리는 표현 20점] 20: "${p.scene}" 장면에 완벽히 어울림 | 15: 대체로 어울림 | 8: 어색 | 0: 전혀 어울리지 않음
 - language_score(40점): 맞춤법·띄어쓰기·문장 자연스러움
   [맞춤법·띄어쓰기 20점] 20: 오류 없음 | 15: 오류 1 | 10: 오류 2 | 5: 오류 3 이상
   [문장 자연스러움 20점] 20: 매우 자연 | 15: 대체로 | 8: 어색
