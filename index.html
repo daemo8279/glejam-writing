@@ -247,13 +247,9 @@ html, body {
 /* ============ STEP 1: 학년·유형 선택 ============ */
 .grade-tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
-  margin-bottom: 24px;
-}
-
-@media (max-width: 640px) {
-  .grade-tabs { grid-template-columns: repeat(2, 1fr); }
+  margin-bottom: 16px;
 }
 
 .grade-tab {
@@ -516,6 +512,16 @@ html, body {
   background: var(--primary);
   color: var(--white);
   border-color: var(--primary);
+}
+
+.problem-num-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--bg-primary-soft);
+  padding: 3px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
 }
 
 /* ============ Retry Options ============ */
@@ -1784,6 +1790,71 @@ html, body {
   .big-score { font-size: 44px; }
   .fb-hero { padding: 24px; }
 }
+
+/* ============ Today's Task Panel ============ */
+.today-task-panel {
+  background: var(--bg-primary-soft);
+  border: 1.5px solid rgba(22, 119, 255, 0.25);
+  border-radius: var(--r-md);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.today-task-panel .tt-badge {
+  background: var(--primary);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.today-task-panel .tt-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+}
+.today-task-panel .tt-topic {
+  font-size: 12px;
+  color: var(--gray-2);
+  font-weight: 500;
+}
+/* ============ Retry Low Score Warning ============ */
+.retry-warn-banner {
+  background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+  border: 1.5px solid #F59E0B;
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.retry-warn-banner .warn-icon { font-size: 22px; flex-shrink: 0; }
+.retry-warn-banner .warn-body { flex: 1; }
+.retry-warn-banner .warn-title { font-size: 14px; font-weight: 700; color: #92400E; margin-bottom: 3px; }
+.retry-warn-banner .warn-desc { font-size: 12px; color: #B45309; line-height: 1.5; }
+.retry-card.recommended {
+  background: var(--bg-primary-soft);
+  border-color: var(--primary);
+  border-width: 2px;
+  box-shadow: 0 4px 16px rgba(22,119,255,0.15);
+}
+.retry-card.recommended .retry-card-title { color: var(--primary); }
+.retry-recommend-badge {
+  display: inline-block;
+  background: var(--primary);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-bottom: 4px;
+}
 </style>
 </head>
 <body>
@@ -1851,35 +1922,23 @@ html, body {
           <span class="icon icon-20"><svg><use href="#i-book"/></svg></span>
         </div>
         <div class="title-group">
-          <h2>학년과 과제를 선택하세요</h2>
-          <div class="desc">학년별 맞춤 글쓰기 활동을 제공해요</div>
+          <h2>레벨을 선택하세요</h2>
+          <div class="desc">오늘의 글쓰기 과제가 자동으로 나와요</div>
         </div>
       </div>
 
       <div class="grade-tabs" id="gradeTabs">
-        <button class="grade-tab selected" data-grade="1">
-          <div class="grade-num">1<span style="font-size:14px;">학년</span></div>
-          <div class="grade-type">받아쓰기</div>
-          <div class="grade-desc">소리를 듣고 쓰기</div>
-        </button>
-        <button class="grade-tab" data-grade="2">
-          <div class="grade-num">2<span style="font-size:14px;">학년</span></div>
-          <div class="grade-type">낱말 문장 만들기</div>
-          <div class="grade-desc">주제 낱말로 문장</div>
-        </button>
-        <button class="grade-tab" data-grade="3">
-          <div class="grade-num">3<span style="font-size:14px;">학년</span></div>
-          <div class="grade-type">그림 보고 쓰기</div>
-          <div class="grade-desc">장면을 묘사하기</div>
-        </button>
-        <button class="grade-tab" data-grade="4">
-          <div class="grade-num">4<span style="font-size:14px;">학년</span></div>
-          <div class="grade-type">물건 설명하기</div>
-          <div class="grade-desc">특징을 설명하기</div>
-        </button>
+        <!-- 동적 생성: renderLevelTabs() -->
       </div>
 
-      <!-- 문제 프리뷰 영역 (학년별로 다르게 렌더) -->
+      <!-- 오늘의 과제 패널 -->
+      <div class="today-task-panel hidden" id="todayTaskPanel">
+        <span class="tt-badge">오늘의 과제</span>
+        <span class="tt-name" id="todayTaskName">—</span>
+        <span class="tt-topic" id="todayTaskTopic"></span>
+      </div>
+
+      <!-- 문제 프리뷰 영역 -->
       <div class="problem-preview" id="problemPreview">
         <!-- 동적 생성 -->
       </div>
@@ -2271,18 +2330,29 @@ html, body {
         <span class="retry-emoji">🎯</span>
         <span>다음에 어떻게 할까요?</span>
       </div>
+
+      <!-- 70점 미만 시 경고 배너 (동적으로 표시) -->
+      <div class="retry-warn-banner hidden" id="retryWarnBanner">
+        <span class="warn-icon">⚠️</span>
+        <div class="warn-body">
+          <div class="warn-title">70점 이상이 되면 다음 과제로 넘어가요!</div>
+          <div class="warn-desc">조금만 더 연습하면 잘할 수 있어요. 이 과제를 한 번 더 해볼까요?</div>
+        </div>
+      </div>
+
       <div class="retry-cards">
         <button class="retry-card" onclick="retryWrongOnly()" id="retryWrongBtn">
           <div class="retry-icon" style="background:#FEE2E2; color:#DC2626;">✏️</div>
           <div class="retry-card-title">틀린 부분만<br>다시 써보기</div>
           <div class="retry-card-desc" id="retryWrongDesc">맞춤법 글자를<br>연습해 보세요</div>
         </button>
-        <button class="retry-card" onclick="retrySameProblem()">
+        <button class="retry-card" id="retrySameBtn" onclick="retrySameProblem()">
           <div class="retry-icon" style="background:#DBEAFE; color:#2563EB;">🔄</div>
+          <div class="retry-recommend-badge hidden" id="retryRecommendBadge">강력 추천!</div>
           <div class="retry-card-title">이 과제<br>다시 도전</div>
           <div class="retry-card-desc">점수를 더 올려<br>볼까요?</div>
         </button>
-        <button class="retry-card" onclick="retryNewProblem()">
+        <button class="retry-card" id="retryNewBtn" onclick="retryNewProblem()">
           <div class="retry-icon" style="background:#D1FAE5; color:#059669;">🆕</div>
           <div class="retry-card-title">다른 과제<br>풀어보기</div>
           <div class="retry-card-desc">새 문제로<br>실력 키우기</div>
@@ -2301,29 +2371,422 @@ html, body {
 
 <script>
 // ===========================================
-// Problem bank (학년별)
+// 커리큘럼 데이터 (글잼 오늘의쓰기)
+// ===========================================
+const C = {
+  1:{g:"초등 1학년",s:"1문장",
+    t:["받아쓰기","낱말 확장 글쓰기","꾸며주는 말 쓰기"],
+    q:[
+      {ttl:"글자·낱말 기초",per:"3~5월",m:[
+        {m:"3월",w:[0,1,0,0,1,0,2],tp:["입학·개학","학교 교실"]},
+        {m:"4월",w:[0,1,0,1,0,0,2],tp:["봄소풍","봄꽃·자연"]},
+        {m:"5월",w:[0,1,2,0,1,0,1],tp:["어버이날","가족·봄꽃"]}]},
+      {ttl:"낱말로 문장 만들기",per:"6~8월",m:[
+        {m:"6월",w:[1,0,1,2,1,0,1],tp:["여름 준비","가족·집"]},
+        {m:"7월",w:[1,2,1,0,1,2,1],tp:["여름방학","캠핑·여행"]},
+        {m:"8월",w:[1,2,0,1,2,1,2],tp:["여름자연","방학생활"]}]},
+      {ttl:"꾸며주는 말 심화",per:"9~11월",m:[
+        {m:"9월",w:[2,1,2,0,2,1,2],tp:["개학·2학기","가을자연"]},
+        {m:"10월",w:[2,1,2,2,0,1,2],tp:["단풍놀이","가을소풍"]},
+        {m:"11월",w:[2,0,2,1,2,2,1],tp:["낙엽·감정","가을마무리"]}]},
+      {ttl:"1학년 문장 완성",per:"12~2월",m:[
+        {m:"12월",w:[0,1,2,0,1,2,5],tp:["겨울·크리스마스","연말"]},
+        {m:"1월",w:[1,2,0,1,2,0,5],tp:["새해·겨울방학","눈"]},
+        {m:"2월",w:[2,0,1,2,0,1,5],tp:["학년말","봄준비"]}]}
+    ]},
+  2:{g:"초등 2학년",s:"2문장",
+    t:["감정 표현하기","그림 보고 쓰기","문장 고쳐 쓰기"],
+    q:[
+      {ttl:"문장 고쳐 쓰기 기초",per:"3~5월",m:[
+        {m:"3월",w:[2,0,2,1,2,0,2],tp:["입학·개학","학교 교실"]},
+        {m:"4월",w:[2,0,2,1,2,1,2],tp:["봄소풍","봄나들이"]},
+        {m:"5월",w:[2,0,1,2,0,2,1],tp:["어버이날","가족·봄꽃"]}]},
+      {ttl:"감정 표현하기",per:"6~8월",m:[
+        {m:"6월",w:[0,1,2,0,0,1,2],tp:["여름 준비","가족·집"]},
+        {m:"7월",w:[0,2,0,1,0,2,0],tp:["여름방학","캠핑·여행"]},
+        {m:"8월",w:[0,1,0,2,0,1,2],tp:["여름자연","방학생활"]}]},
+      {ttl:"그림 보고 2문장 쓰기",per:"9~11월",m:[
+        {m:"9월",w:[1,0,1,2,1,0,1],tp:["개학·2학기","가을자연"]},
+        {m:"10월",w:[1,0,1,1,2,0,1],tp:["단풍놀이","가을소풍"]},
+        {m:"11월",w:[1,2,1,0,1,1,2],tp:["낙엽·감정","가을마무리"]}]},
+      {ttl:"2학년 문장 완성",per:"12~2월",m:[
+        {m:"12월",w:[0,1,2,0,1,2,5],tp:["겨울·크리스마스","연말"]},
+        {m:"1월",w:[1,2,0,1,2,0,5],tp:["새해·겨울방학","눈"]},
+        {m:"2월",w:[2,0,1,2,0,1,5],tp:["학년말","봄준비"]}]}
+    ]},
+  3:{g:"초등 3학년",s:"3문장",
+    t:["그림보고 쓰기","상상해서 쓰기","소개하기","연결어 넣기"],
+    q:[
+      {ttl:"연결어 기초",per:"3~5월",m:[
+        {m:"3월",w:[3,0,3,1,3,0,3],tp:["입학·개학","학교 교실"]},
+        {m:"4월",w:[3,0,3,1,3,0,1],tp:["봄소풍","봄나들이"]},
+        {m:"5월",w:[3,0,3,1,0,2,3],tp:["어버이날","가족·봄꽃"]}]},
+      {ttl:"그림 보고 3문장 쓰기",per:"6~8월",m:[
+        {m:"6월",w:[0,1,3,0,1,3,0],tp:["여름 준비","가족·집"]},
+        {m:"7월",w:[0,1,0,3,1,0,1],tp:["여름방학","캠핑·여행"]},
+        {m:"8월",w:[0,1,2,0,1,3,1],tp:["여름자연","방학생활"]}]},
+      {ttl:"상상·소개 글쓰기",per:"9~11월",m:[
+        {m:"9월",w:[2,1,2,0,1,2,3],tp:["개학·2학기","가을자연"]},
+        {m:"10월",w:[2,0,2,1,2,0,1],tp:["단풍놀이","가을소풍"]},
+        {m:"11월",w:[2,1,2,0,2,1,3],tp:["낙엽·감정","가을마무리"]}]},
+      {ttl:"3학년 문단 완성",per:"12~2월",m:[
+        {m:"12월",w:[0,1,2,3,0,1,5],tp:["겨울·크리스마스","연말"]},
+        {m:"1월",w:[1,2,3,0,1,2,5],tp:["새해·겨울방학","눈"]},
+        {m:"2월",w:[2,3,0,1,2,3,5],tp:["학년말","봄준비"]}]}
+    ]},
+  4:{g:"초등 4학년",s:"3~4문장",
+    t:["관찰 글쓰기","이야기 이어쓰기","의견 쓰기","순서 글쓰기","일기 쓰기"],
+    q:[
+      {ttl:"관찰·순서 글쓰기",per:"3~5월",m:[
+        {m:"3월",w:[0,3,0,3,0,1,3],tp:["봄자연 관찰","학교 개학"]},
+        {m:"4월",w:[0,3,0,1,3,0,3],tp:["봄소풍·관찰","학교생활"]},
+        {m:"5월",w:[0,3,1,0,3,2,4],tp:["어버이날","자연 관찰"]}]},
+      {ttl:"이야기 이어쓰기 + 의견",per:"6~8월",m:[
+        {m:"6월",w:[1,2,1,2,0,1,2],tp:["여름 준비","가족·집"]},
+        {m:"7월",w:[1,2,0,1,2,1,4],tp:["여름방학","캠핑·여행"]},
+        {m:"8월",w:[1,2,4,1,2,0,1],tp:["여름자연","방학생활"]}]},
+      {ttl:"일기 + 의견 심화",per:"9~11월",m:[
+        {m:"9월",w:[4,2,4,1,2,4,2],tp:["개학·2학기","가을자연"]},
+        {m:"10월",w:[4,2,4,0,2,4,1],tp:["단풍·소풍","감정경험"]},
+        {m:"11월",w:[4,2,4,1,2,0,4],tp:["낙엽·감정","가을마무리"]}]},
+      {ttl:"4학년 글쓰기 완성",per:"12~2월",m:[
+        {m:"12월",w:[0,1,2,3,4,1,5],tp:["겨울·크리스마스","연말"]},
+        {m:"1월",w:[1,2,3,4,0,3,5],tp:["새해·겨울방학","눈"]},
+        {m:"2월",w:[2,3,4,0,1,4,5],tp:["학년말","봄준비"]}]}
+    ]},
+  5:{g:"초등 5학년",s:"1문단(최대 200자)",
+    t:["편지 쓰기","주장하는 글쓰기","AI글 고쳐 쓰기","장르 변환 글쓰기","안내·소개 글쓰기"],
+    q:[
+      {ttl:"편지·안내 글쓰기",per:"3~5월",m:[
+        {m:"3월",w:[0,4,0,2,4,0,4],tp:["입학·개학","학교 교실"]},
+        {m:"4월",w:[0,4,0,2,0,4,2],tp:["봄소풍","학교생활"]},
+        {m:"5월",w:[0,4,2,0,1,4,2],tp:["어버이날","가족·봄꽃"]}]},
+      {ttl:"주장하는 글쓰기",per:"6~8월",m:[
+        {m:"6월",w:[1,2,1,0,2,1,2],tp:["사회·환경","여름준비"]},
+        {m:"7월",w:[1,2,1,3,2,1,0],tp:["사회·환경","여름생활"]},
+        {m:"8월",w:[1,2,3,1,2,0,1],tp:["사회·환경","방학생활"]}]},
+      {ttl:"AI글 고치기·장르 변환",per:"9~11월",m:[
+        {m:"9월",w:[2,3,2,3,1,2,3],tp:["개학·2학기","가을감정"]},
+        {m:"10월",w:[2,3,2,3,2,0,3],tp:["단풍·소풍","감정경험"]},
+        {m:"11월",w:[2,3,2,1,3,2,3],tp:["낙엽·감정","가을마무리"]}]},
+      {ttl:"5학년 1문단 완성",per:"12~2월",m:[
+        {m:"12월",w:[0,1,2,3,4,1,5],tp:["겨울·크리스마스","문화"]},
+        {m:"1월",w:[1,2,3,4,0,3,5],tp:["새해·방학","진로"]},
+        {m:"2월",w:[2,3,4,0,1,4,5],tp:["학년말","봄준비"]}]}
+    ]},
+  6:{g:"초등 6학년",s:"1문단(최대 250자)",
+    t:["관찰 기록 글쓰기","보고하는 글쓰기","AI글 비평·고쳐쓰기","독자 맞춤 글쓰기","매체 변환 글쓰기"],
+    q:[
+      {ttl:"관찰·보고 글쓰기",per:"3~5월",m:[
+        {m:"3월",w:[0,1,0,2,1,0,1],tp:["봄자연 관찰","학교 개학"]},
+        {m:"4월",w:[0,1,2,0,1,0,1],tp:["봄 관찰·기록","학교생활"]},
+        {m:"5월",w:[0,1,2,3,0,1,2],tp:["자연 관찰","어버이날"]}]},
+      {ttl:"AI 비평 + 매체 변환",per:"6~8월",m:[
+        {m:"6월",w:[2,4,2,4,1,2,4],tp:["사회·환경","문화·여름"]},
+        {m:"7월",w:[2,4,2,0,4,2,4],tp:["사회·환경","여름생활"]},
+        {m:"8월",w:[2,4,3,2,4,0,2],tp:["환경·사회","방학생활"]}]},
+      {ttl:"독자 맞춤 글쓰기",per:"9~11월",m:[
+        {m:"9월",w:[3,2,3,4,3,2,3],tp:["개학·2학기","진로"]},
+        {m:"10월",w:[3,2,3,4,2,3,0],tp:["단풍·소풍","진로·감정"]},
+        {m:"11월",w:[3,2,3,1,3,4,2],tp:["낙엽·감정","가을마무리"]}]},
+      {ttl:"6학년 1문단 완성",per:"12~2월",m:[
+        {m:"12월",w:[0,1,2,3,4,1,5],tp:["겨울·자연","역사문화"]},
+        {m:"1월",w:[1,2,3,4,0,3,5],tp:["겨울방학","역사문화"]},
+        {m:"2월",w:[2,3,4,0,1,4,5],tp:["학년말","봄준비"]}]}
+    ]}
+};
+
+// ===========================================
+// 오늘의 과제 계산
+// ===========================================
+function getTodayTask(level) {
+  const now = new Date();
+  const month = now.getMonth() + 1; // 1~12
+  const jsDow = now.getDay();       // 0=Sun … 6=Sat
+  const korDow = (jsDow + 6) % 7;  // 0=Mon … 6=Sun
+
+  let qIdx = 0, mIdx = 0;
+  if (month >= 3 && month <= 5)  { qIdx = 0; mIdx = month - 3; }
+  else if (month >= 6 && month <= 8)  { qIdx = 1; mIdx = month - 6; }
+  else if (month >= 9 && month <= 11) { qIdx = 2; mIdx = month - 9; }
+  else { qIdx = 3; mIdx = month === 12 ? 0 : month === 1 ? 1 : 2; }
+
+  const lv = C[level];
+  if (!lv) return { taskTypeIdx: 0, taskName: '받아쓰기', topic: '', problemIdx: 0 };
+
+  const q = lv.q[qIdx] || lv.q[0];
+  const mData = q.m[mIdx] || q.m[0];
+  let taskTypeIdx = mData.w[korDow];
+  if (taskTypeIdx === 5) {
+    taskTypeIdx = Math.floor(Math.random() * lv.t.length);
+  }
+  const taskName = lv.t[taskTypeIdx] || lv.t[0];
+  const topic = (mData.tp && mData.tp[0]) ? mData.tp[0] : '';
+
+  // 오늘 날짜 기반 시드 (같은 날 같은 문제)
+  const daySeed = now.getDate();
+
+  // 소재 카테고리 매칭 → 이달 주제와 cat이 겹치는 문제 우선
+  const pool = (PROBLEM_BANK[level] || {})[taskTypeIdx] || [];
+  let problemIdx = 0;
+  if (pool.length > 0) {
+    const topicKey = topic ? topic.split('·')[0] : '';
+    const catMatches = pool.reduce((acc, p, i) => {
+      if (p.cat && topicKey && p.cat.includes(topicKey)) acc.push(i);
+      return acc;
+    }, []);
+    if (catMatches.length > 0) {
+      problemIdx = catMatches[daySeed % catMatches.length];
+    } else {
+      // 분기(qi) 기준 필터: 현재 분기 이하인 문제
+      const qiMatches = pool.reduce((acc, p, i) => {
+        if (p.qi === undefined || p.qi <= qIdx) acc.push(i);
+        return acc;
+      }, []);
+      if (qiMatches.length > 0) {
+        problemIdx = qiMatches[daySeed % qiMatches.length];
+      } else {
+        problemIdx = daySeed % pool.length;
+      }
+    }
+  }
+
+  return { taskTypeIdx, taskName, topic, problemIdx };
+}
+
+
+// ===========================================
+// Problem Bank (레벨 × 과제유형)
 // ===========================================
 const PROBLEM_BANK = {
-  1: [
-    { text: '맑은 하늘에 빨간 잠자리가 날아다녔다.', grade: '1학년·가을' },
-    { text: '학교에 가서 친구들을 만났어요.', grade: '1학년·학교' },
-    { text: '엄마와 같이 놀이터에서 놀았다.', grade: '1학년·생활' }
-  ],
-  2: [
-    { words: ['토끼', '깡충깡충'], hint: '두 낱말을 모두 사용해서 한 문장을 만들어 보세요' },
-    { words: ['봄', '꽃'], hint: '두 낱말을 모두 사용해서 한 문장을 만들어 보세요' },
-    { words: ['도서관', '책'], hint: '두 낱말을 모두 사용해서 한 문장을 만들어 보세요' }
-  ],
-  3: [
-    { emoji: '🌳🐶☀️', caption: '공원에서 강아지가 뛰어노는 모습', theme: '공원의 강아지' },
-    { emoji: '🍳🥚🔥', caption: '계란 프라이를 만드는 장면', theme: '요리하는 장면' },
-    { emoji: '🌧️☔👦', caption: '비 오는 날 우산을 쓴 아이', theme: '비 오는 날' }
-  ],
-  4: [
-    { emoji: '📱', name: '휴대 전화', hints: '생김새, 쓰임새, 특징' },
-    { emoji: '🎒', name: '책가방', hints: '모양, 색깔, 안에 든 것' },
-    { emoji: '🪥', name: '칫솔', hints: '모양, 재료, 쓰는 방법' }
-  ]
+  1: {
+    0: [ // 받아쓰기 (12개 — DB v1.0)
+      { type:'dictation', text:'선생님이 교실에서 그림을 그려요.', qi:0, cat:'학교·교실' },
+      { type:'dictation', text:'우리 반 친구들이 운동장에서 달리기를 해요.', qi:1, cat:'학교·교실' },
+      { type:'dictation', text:'봄꽃이 활짝 피었어요.', qi:0, cat:'봄·자연' },
+      { type:'dictation', text:'나비가 예쁜 꽃 위에서 날아다녀요.', qi:1, cat:'봄·자연' },
+      { type:'dictation', text:'엄마와 함께 시장에서 장을 봐요.', qi:0, cat:'가족·집' },
+      { type:'dictation', text:'아빠가 맛있는 저녁밥을 만들어요.', qi:1, cat:'가족·집' },
+      { type:'dictation', text:'여름에는 수박이 달콤하고 시원해요.', qi:1, cat:'여름·계절' },
+      { type:'dictation', text:'바다에서 파도가 높이 쳐요.', qi:2, cat:'여름·계절' },
+      { type:'dictation', text:'강아지가 공원에서 신나게 뛰어놀아요.', qi:1, cat:'동물' },
+      { type:'dictation', text:'고양이가 창문 옆에서 잠을 자요.', qi:2, cat:'동물' },
+      { type:'dictation', text:'떡볶이가 맵고 달콤해서 맛있어요.', qi:2, cat:'음식·요리' },
+      { type:'dictation', text:'할머니가 만든 김밥이 정말 맛있어요.', qi:3, cat:'음식·요리' }
+    ],
+    1: [ // 낱말 확장 글쓰기 (12개 — DB v1.0)
+      { type:'word_expand', keyword:'칠판', hint:'[칠판]을 넣어 문장을 완성해 보세요.\n칠판에 _______.', example:'칠판에 글자가 많이 있어요.', qi:0, cat:'학교·교실' },
+      { type:'word_expand', keyword:'지우개', hint:'[지우개]를 넣어 문장을 완성해 보세요.\n지우개로 _______.', example:'지우개로 연필 자국을 지워요.', qi:0, cat:'학교·교실' },
+      { type:'word_expand', keyword:'나비', hint:'[나비]를 넣어 문장을 완성해 보세요.\n나비가 _______.', example:'나비가 꽃 위에서 날아다녀요.', qi:0, cat:'봄·자연' },
+      { type:'word_expand', keyword:'씨앗', hint:'[씨앗]을 넣어 문장을 완성해 보세요.\n씨앗을 _______.', example:'씨앗을 화분에 심었어요.', qi:1, cat:'봄·자연' },
+      { type:'word_expand', keyword:'엄마', hint:'[엄마]를 넣어 문장을 완성해 보세요.\n엄마가 _______.', example:'엄마가 밥을 만들어요.', qi:0, cat:'가족·집' },
+      { type:'word_expand', keyword:'동생', hint:'[동생]을 넣어 문장을 완성해 보세요.\n동생이 _______.', example:'동생이 거실에서 블록 놀이를 해요.', qi:1, cat:'가족·집' },
+      { type:'word_expand', keyword:'수박', hint:'[수박]을 넣어 문장을 완성해 보세요.\n수박이 _______.', example:'수박이 달콤하고 시원해서 맛있어요.', qi:1, cat:'여름·계절' },
+      { type:'word_expand', keyword:'선풍기', hint:'[선풍기]를 넣어 문장을 완성해 보세요.\n선풍기가 _______.', example:'선풍기가 방 안을 시원하게 해 주어요.', qi:2, cat:'여름·계절' },
+      { type:'word_expand', keyword:'토끼', hint:'[토끼]를 넣어 문장을 완성해 보세요.\n토끼가 _______.', example:'토끼가 당근을 맛있게 먹어요.', qi:1, cat:'동물' },
+      { type:'word_expand', keyword:'물고기', hint:'[물고기]를 넣어 문장을 완성해 보세요.\n물고기가 _______.', example:'물고기가 어항 속에서 헤엄쳐요.', qi:2, cat:'동물' },
+      { type:'word_expand', keyword:'김밥', hint:'[김밥]을 넣어 문장을 완성해 보세요.\n김밥을 _______.', example:'김밥을 소풍 때 먹으려고 쌌어요.', qi:2, cat:'음식·요리' },
+      { type:'word_expand', keyword:'라면', hint:'[라면]을 넣어 문장을 완성해 보세요.\n라면이 _______.', example:'라면이 뜨겁고 맛있어서 좋아요.', qi:3, cat:'음식·요리' }
+    ],
+    2: [ // 꾸며주는 말 쓰기 (12개 — DB v1.0)
+      { type:'descriptive', scene:'친절한 선생님', hint:'빈칸에 어울리는 말을 골라 쓰세요.\n___ 선생님이 이야기해 주셔요.\n[친절한 / 빠른 / 달콤한]', example:'정답: 친절한', qi:0, cat:'학교·교실' },
+      { type:'descriptive', scene:'운동장 달리기', hint:'빈칸에 어울리는 말을 골라 쓰세요.\n친구가 ___ 달려왔어요.\n[빠르게 / 달콤하게 / 파랗게]', example:'정답: 빠르게', qi:1, cat:'학교·교실' },
+      { type:'descriptive', scene:'봄꽃이 피는 들판', hint:'빈칸에 어울리는 말을 골라 쓰세요.\n___ 꽃이 피었어요.\n[예쁜 / 시끄러운 / 짠]', example:'정답: 예쁜', qi:0, cat:'봄·자연' },
+      { type:'descriptive', scene:'나비가 나는 꽃밭', hint:'빈칸에 어울리는 말을 골라 쓰세요.\n나비가 ___ 날아다녀요.\n[가볍게 / 무겁게 / 달콤하게]', example:'정답: 가볍게', qi:1, cat:'봄·자연' },
+      { type:'descriptive', scene:'할머니의 따뜻한 손', hint:'빈칸에 어울리는 말을 골라 쓰세요.\n___ 할머니가 손을 잡아 주셨어요.\n[따뜻한 / 시끄러운 / 빠른]', example:'정답: 따뜻한', qi:0, cat:'가족·집' },
+      { type:'descriptive', scene:'방긋 웃는 아기', hint:'빈칸에 어울리는 말을 골라 쓰세요.\n아기가 ___ 웃어요.\n[방긋 / 무겁게 / 짜게]', example:'정답: 방긋', qi:1, cat:'가족·집' },
+      { type:'descriptive', scene:'달콤한 여름 수박', hint:'빈칸에 어울리는 말을 골라 쓰세요.\n___ 수박이 너무 맛있어요.\n[달콤한 / 슬픈 / 빠른]', example:'정답: 달콤한', qi:2, cat:'여름·계절' },
+      { type:'descriptive', scene:'시원한 여름 바람', hint:'빈칸에 어울리는 말을 골라 쓰세요.\n바람이 ___ 불어요.\n[시원하게 / 맵게 / 파랗게]', example:'정답: 시원하게', qi:2, cat:'여름·계절' },
+      { type:'descriptive', scene:'귀여운 강아지', hint:'빈칸에 어울리는 말을 골라 쓰세요.\n___ 강아지가 꼬리를 흔들어요.\n[귀여운 / 달콤한 / 시끄러운]', example:'정답: 귀여운', qi:1, cat:'동물' },
+      { type:'descriptive', scene:'살금살금 걷는 고양이', hint:'빈칸에 어울리는 말을 골라 쓰세요.\n고양이가 ___ 걸어요.\n[살금살금 / 달콤하게 / 파랗게]', example:'정답: 살금살금', qi:2, cat:'동물' },
+      { type:'descriptive', scene:'맛있는 떡볶이', hint:'빈칸에 어울리는 말을 골라 쓰세요.\n___ 떡볶이를 먹었어요.\n[맛있는 / 파란 / 빠른]', example:'정답: 맛있는', qi:3, cat:'음식·요리' },
+      { type:'descriptive', scene:'할머니의 따뜻한 요리', hint:'빈칸에 어울리는 말을 골라 쓰세요.\n할머니가 ___ 요리를 해 주셨어요.\n[따뜻한 / 시끄러운 / 차가운]', example:'정답: 따뜻한', qi:3, cat:'음식·요리' }
+    ]
+  },
+  2: {
+    0: [ // 감정 표현하기 (12개 — DB v1.0)
+      { type:'emotion', situation:'친구들이 깜짝 파티를 열어 준 상황', emotion:'놀라움·기쁨', hint:'그림 속 아이의 말풍선을 채워 2문장을 써 보세요.', example:'정말 깜짝 놀랐어요! 너무 고마워요!', qi:1, cat:'학교·교실' },
+      { type:'emotion', situation:'달리기에서 1등을 한 상황', emotion:'신남·뿌듯함', hint:'기쁜 마음을 2문장으로 표현해 보세요.', example:'우리가 1등을 해서 정말 신나요!', qi:1, cat:'학교·교실' },
+      { type:'emotion', situation:'강아지를 처음 만진 상황', emotion:'설레임·행복', hint:'그림 속 아이의 감정을 2문장으로 표현해 보세요.', example:'강아지 털이 부드러워서 너무 좋아요.', qi:2, cat:'동물' },
+      { type:'emotion', situation:'엄마가 아파서 병원에 간 상황', emotion:'걱정·불안', hint:'걱정되는 마음을 2문장으로 표현해 보세요.', example:'엄마가 빨리 나으셨으면 좋겠어요.', qi:2, cat:'가족·집' },
+      { type:'emotion', situation:'시험에서 100점을 받은 상황', emotion:'기쁨·뿌듯함', hint:'기쁜 마음을 2문장으로 표현해 보세요.', example:'100점이에요! 열심히 공부하길 잘했어요!', qi:1, cat:'학교·교실' },
+      { type:'emotion', situation:'싸웠던 친구와 화해하는 상황', emotion:'안도·기쁨', hint:'화해하는 마음을 2문장으로 표현해 보세요.', example:'우리 다시 사이좋게 지내자. 미안해.', qi:1, cat:'학교·교실' },
+      { type:'emotion', situation:'수업 시간에 발표하기 전 긴장한 상황', emotion:'긴장·설렘', hint:'긴장된 마음을 2문장으로 표현해 보세요.', example:'떨려요. 그래도 열심히 해 볼게요.', qi:2, cat:'학교·교실' },
+      { type:'emotion', situation:'소풍 전날 밤 설레는 상황', emotion:'설렘·기대', hint:'설레는 마음을 2문장으로 표현해 보세요.', example:'내일 소풍이라 너무 설레서 잠이 안 와요!', qi:0, cat:'학교·교실' },
+      { type:'emotion', situation:'마트에서 엄마를 잃어버린 상황', emotion:'두려움·걱정', hint:'무서운 마음을 2문장으로 표현해 보세요.', example:'엄마, 어디 있어요? 무서워서 울고 싶어요.', qi:2, cat:'여행·나들이' },
+      { type:'emotion', situation:'새 학기 첫날 새 친구를 만난 상황', emotion:'긴장·설렘', hint:'새 친구를 만나는 마음을 2문장으로 써 보세요.', example:'안녕! 나랑 친구가 되어 줄래? 잘 부탁해!', qi:0, cat:'학교·교실' },
+      { type:'emotion', situation:'선생님께 그림을 칭찬받은 상황', emotion:'기쁨·감사', hint:'칭찬받은 기쁨을 2문장으로 표현해 보세요.', example:'칭찬받으니까 기분이 너무 좋아요. 감사해요!', qi:1, cat:'학교·교실' },
+      { type:'emotion', situation:'운동회 달리기에서 아쉽게 진 상황', emotion:'아쉬움·다짐', hint:'아쉬운 마음과 다짐을 2문장으로 표현해 보세요.', example:'아쉬워요. 하지만 다음에는 꼭 이길 거예요.', qi:2, cat:'학교·교실' }
+    ],
+    1: [ // 그림 보고 쓰기 (12개 — DB v1.0, 낱말태그 포함)
+      { type:'picture', emoji:'🛝👧🌟', caption:'놀이터 그네 타는 아이들', wordTags:['그네','아이들','신나다'], hint:'제공 낱말(그네·아이들·신나다)을 사용하여 2문장을 써 보세요.', qi:2, cat:'학교·교실' },
+      { type:'picture', emoji:'🌸🦋💨', caption:'봄 벚꽃이 흩날리는 거리', wordTags:['벚꽃','떨어지다','예쁘다'], hint:'제공 낱말(벚꽃·떨어지다·예쁘다)을 사용하여 2문장을 써 보세요.', qi:0, cat:'봄·자연' },
+      { type:'picture', emoji:'👨‍👩‍👧‍👦🍱😊', caption:'가족이 모여 도시락을 먹는 소풍 장면', wordTags:['가족','맛있다','모이다'], hint:'제공 낱말(가족·맛있다·모이다)을 사용하여 2문장을 써 보세요.', qi:1, cat:'가족·집' },
+      { type:'picture', emoji:'🏊‍♀️💦🌞', caption:'여름 수영장에서 노는 아이들', wordTags:['수영장','시원하다','물'], hint:'제공 낱말(수영장·시원하다·물)을 사용하여 2문장을 써 보세요.', qi:1, cat:'여름·계절' },
+      { type:'picture', emoji:'🍱🧒📏', caption:'학교 급식줄에 서 있는 아이들', wordTags:['급식','줄','맛있다'], hint:'제공 낱말(급식·줄·맛있다)을 사용하여 2문장을 써 보세요.', qi:0, cat:'학교·교실' },
+      { type:'picture', emoji:'⚽🏃‍♂️🤝', caption:'운동장에서 공놀이하는 친구들', wordTags:['공','친구','뛰다'], hint:'제공 낱말(공·친구·뛰다)을 사용하여 2문장을 써 보세요.', qi:0, cat:'학교·교실' },
+      { type:'picture', emoji:'🍂🍁💨', caption:'가을 공원에서 단풍잎이 날리는 모습', wordTags:['단풍잎','바람','걷다'], hint:'제공 낱말(단풍잎·바람·걷다)을 사용하여 2문장을 써 보세요.', qi:2, cat:'가을·감정' },
+      { type:'picture', emoji:'⛄❄️🧤', caption:'겨울 눈밭에서 눈사람 만드는 장면', wordTags:['눈사람','만들다','차갑다'], hint:'제공 낱말(눈사람·만들다·차갑다)을 사용하여 2문장을 써 보세요.', qi:3, cat:'겨울·통합' },
+      { type:'picture', emoji:'🐘🌿👀', caption:'동물원에서 코끼리를 구경하는 장면', wordTags:['코끼리','크다','구경하다'], hint:'제공 낱말(코끼리·크다·구경하다)을 사용하여 2문장을 써 보세요.', qi:1, cat:'동물' },
+      { type:'picture', emoji:'👵🤗🏡', caption:'할머니께 달려가 안기는 장면', wordTags:['할머니','반갑다','안기다'], hint:'제공 낱말(할머니·반갑다·안기다)을 사용하여 2문장을 써 보세요.', qi:2, cat:'가족·집' },
+      { type:'picture', emoji:'🍧🍓😋', caption:'여름에 빙수를 먹는 장면', wordTags:['빙수','달다','먹다'], hint:'제공 낱말(빙수·달다·먹다)을 사용하여 2문장을 써 보세요.', qi:1, cat:'음식·요리' },
+      { type:'picture', emoji:'📚🤫📖', caption:'도서관에서 책을 읽는 아이들', wordTags:['책','조용하다','읽다'], hint:'제공 낱말(책·조용하다·읽다)을 사용하여 2문장을 써 보세요.', qi:3, cat:'학교·교실' }
+    ],
+    2: [ // 문장 고쳐 쓰기 (12개 — DB v1.0)
+      { type:'correction', wrong:'할머니가 밥을 먹어요.', issue:'높임말 오류: 할머니는 높여 써야 해요.', hint:'높임말을 바르게 고쳐 쓰세요.', example:'할머니께서 밥을 드셔요.', qi:0, cat:'가족·집' },
+      { type:'correction', wrong:'나는 학교 가요.', issue:'조사 오류: 빠진 조사가 있어요.', hint:'조사를 넣어 바르게 고쳐 쓰세요.', example:'나는 학교에 가요.', qi:0, cat:'학교·교실' },
+      { type:'correction', wrong:'토끼 빠르게 뛰어요.', issue:'조사 누락: 주어에 조사가 빠졌어요.', hint:'주어에 조사를 넣어 고쳐 쓰세요.', example:'토끼가 빠르게 뛰어요.', qi:0, cat:'동물' },
+      { type:'correction', wrong:'꽃이 피었아요.', issue:'맞춤법 오류: 어미를 확인해 보세요.', hint:'맞춤법을 바르게 고쳐 쓰세요.', example:'꽃이 피었어요.', qi:1, cat:'봄·자연' },
+      { type:'correction', wrong:'언니가 피아노를 가르켜요.', issue:'맞춤법 오류: 가르치다의 바른 표현을 찾아보세요.', hint:'바른 맞춤법으로 고쳐 쓰세요.', example:'언니가 피아노를 가르쳐요.', qi:0, cat:'학교·교실' },
+      { type:'correction', wrong:'선생님이 우리에게 이야기를 했어요.', issue:'높임말 오류: 선생님은 높여야 해요.', hint:'높임말로 바르게 고쳐 쓰세요.', example:'선생님께서 우리에게 이야기를 하셨어요.', qi:1, cat:'학교·교실' },
+      { type:'correction', wrong:'나는 내일 운동장에서 뛰었어요.', issue:'시제 오류: 내일에 맞는 시제를 써야 해요.', hint:'알맞은 시제로 고쳐 쓰세요.', example:'나는 내일 운동장에서 뛸 거예요.', qi:1, cat:'학교·교실' },
+      { type:'correction', wrong:'아기하고 나은 공원에서 놀았어요.', issue:'조사 오류: 어울리는 조사를 찾아보세요.', hint:'조사를 바르게 고쳐 쓰세요.', example:'아기와 나는 공원에서 놀았어요.', qi:0, cat:'가족·집' },
+      { type:'correction', wrong:'할아버지가 밥 드세요.', issue:'높임말+조사 오류: 높임말과 조사 둘 다 확인하세요.', hint:'높임말과 조사를 모두 바르게 고쳐 쓰세요.', example:'할아버지께서 밥을 드세요.', qi:1, cat:'가족·집' },
+      { type:'correction', wrong:'봄에 예쁜 꽃이 피었아요.', issue:'맞춤법 오류: 어미를 확인해 보세요.', hint:'맞춤법을 고쳐 쓰세요.', example:'봄에 예쁜 꽃이 피었어요.', qi:0, cat:'봄·자연' },
+      { type:'correction', wrong:'저는 어제 밥이 맛있게 먹었어요.', issue:'조사 오류: 밥에 어울리는 조사를 찾아보세요.', hint:'조사를 바르게 고쳐 쓰세요.', example:'저는 어제 밥을 맛있게 먹었어요.', qi:1, cat:'음식·요리' },
+      { type:'correction', wrong:'바람이 너무 세게 불은 날이에요.', issue:'어미 오류: 동사의 현재 형태를 확인해 보세요.', hint:'알맞은 어미로 고쳐 쓰세요.', example:'바람이 너무 세게 부는 날이에요.', qi:2, cat:'여름·계절' }
+    ]
+  },
+  3: {
+    0: [ // 그림보고 쓰기 (9개 — DB v1.0, 낱말태그 5개)
+      { type:'picture3', emoji:'🏃‍♀️🏆📣', caption:'운동회 달리기 응원하는 장면', wordTags:['달리기','친구들','열심히','응원','달리다'], hint:'제공 낱말을 활용하여 3문장을 써 보세요.', qi:0, cat:'학교·교실' },
+      { type:'picture3', emoji:'🌸🦋🌿', caption:'봄 꽃밭에 나비가 날아드는 장면', wordTags:['꽃','나비','향기','피다','아름답다'], hint:'제공 낱말을 활용하여 3문장을 써 보세요.', qi:0, cat:'봄·자연' },
+      { type:'picture3', emoji:'🌊🏖️😊', caption:'여름 바다에서 놀고 있는 장면', wordTags:['파도','모래사장','수영','시원하다','즐겁다'], hint:'제공 낱말을 활용하여 3문장을 써 보세요.', qi:1, cat:'여름·계절' },
+      { type:'picture3', emoji:'🧺🌿👨‍👩‍👧', caption:'가족이 잔디밭에 모여 소풍 온 장면', wordTags:['도시락','잔디밭','가족','웃다','맛있다'], hint:'제공 낱말을 활용하여 3문장을 써 보세요.', qi:1, cat:'가족·집' },
+      { type:'picture3', emoji:'🦒🌿👀', caption:'동물원에서 기린을 구경하는 장면', wordTags:['기린','높다','목','먹이','구경하다'], hint:'제공 낱말을 활용하여 3문장을 써 보세요.', qi:1, cat:'동물' },
+      { type:'picture3', emoji:'🍂🌲💨', caption:'가을 공원에서 단풍잎이 날리는 장면', wordTags:['단풍잎','붉다','떨어지다','바람','쌓이다'], hint:'제공 낱말을 활용하여 3문장을 써 보세요.', qi:2, cat:'가을·감정' },
+      { type:'picture3', emoji:'📚📖🤫', caption:'도서관에서 책 읽는 아이들', wordTags:['책','조용하다','읽다','찾다','가득하다'], hint:'제공 낱말을 활용하여 3문장을 써 보세요.', qi:2, cat:'학교·교실' },
+      { type:'picture3', emoji:'⛄❄️🧊', caption:'눈 내리는 겨울 마당에서 노는 장면', wordTags:['눈사람','눈','차갑다','만들다','신나다'], hint:'제공 낱말을 활용하여 3문장을 써 보세요.', qi:3, cat:'겨울·통합' },
+      { type:'picture3', emoji:'👵🏡🍽️', caption:'명절에 할머니 댁에 온 가족이 모인 장면', wordTags:['할머니','음식','차리다','반갑다','모이다'], hint:'제공 낱말을 활용하여 3문장을 써 보세요.', qi:3, cat:'가족·집' }
+    ],
+    1: [ // 상상해서 쓰기 (9개 — DB v1.0)
+      { type:'imagine', prompt:'만약 내가 하루 동안 새가 된다면?', starter:'만약 내가 새가 된다면,', hint:'상상한 내용을 3문장으로 써 보세요.', example:'만약 내가 새가 된다면 하늘을 자유롭게 날 수 있어요.', qi:0, cat:'봄·자연' },
+      { type:'imagine', prompt:'만약 학교에 방학이 1년 내내 계속된다면?', starter:'만약 방학이 1년 내내 계속된다면,', hint:'상상하며 3문장으로 써 보세요.', example:'만약 방학이 1년 내내 계속된다면 정말 신날 것 같아요.', qi:0, cat:'학교·교실' },
+      { type:'imagine', prompt:'만약 내가 마법사라면 어떤 마법을 쓰고 싶나요?', starter:'만약 내가 마법사라면,', hint:'상상한 내용을 3문장으로 써 보세요.', example:'만약 내가 마법사라면 날씨를 바꾸는 마법을 쓰고 싶어요.', qi:1, cat:'감정·경험' },
+      { type:'imagine', prompt:'만약 동물과 이야기할 수 있다면 어떨까요?', starter:'만약 동물과 이야기할 수 있다면,', hint:'상상하며 3문장으로 써 보세요.', example:'만약 동물과 이야기할 수 있다면 강아지에게 말을 걸어 보고 싶어요.', qi:1, cat:'동물' },
+      { type:'imagine', prompt:'만약 투명인간이 된다면 무엇을 하고 싶나요?', starter:'만약 투명인간이 된다면,', hint:'상상한 내용을 3문장으로 써 보세요.', example:'만약 투명인간이 된다면 아무도 모르게 여기저기 다닐 수 있어요.', qi:1, cat:'학교·교실' },
+      { type:'imagine', prompt:'만약 시간을 되돌릴 수 있다면 어느 순간으로 돌아가고 싶나요?', starter:'만약 시간을 되돌릴 수 있다면,', hint:'상상하며 3문장으로 써 보세요.', example:'만약 시간을 되돌릴 수 있다면 할머니와 함께했던 날로 돌아가고 싶어요.', qi:2, cat:'감정·경험' },
+      { type:'imagine', prompt:'만약 내가 하루 동안 선생님이 된다면 어떻게 수업할까요?', starter:'만약 내가 선생님이 된다면,', hint:'상상한 내용을 3문장으로 써 보세요.', example:'만약 내가 선생님이 된다면 재미있는 게임으로 수업을 시작할 거예요.', qi:2, cat:'학교·교실' },
+      { type:'imagine', prompt:'만약 하늘을 마음대로 날 수 있다면 어디에 가고 싶나요?', starter:'만약 하늘을 날 수 있다면,', hint:'상상하며 3문장으로 써 보세요.', example:'만약 하늘을 날 수 있다면 제일 먼저 구름 위로 올라가 보고 싶어요.', qi:3, cat:'여행·나들이' },
+      { type:'imagine', prompt:'만약 바닷속에서 살 수 있다면 어떤 생활을 할까요?', starter:'만약 바닷속에서 산다면,', hint:'상상한 내용을 3문장으로 써 보세요.', example:'만약 바닷속에서 산다면 알록달록한 물고기들과 친구가 될 수 있어요.', qi:3, cat:'동물' }
+    ],
+    2: [ // 소개하기 (9개 — DB v1.0)
+      { type:'intro', subject:'나의 가장 친한 친구', points:'이름·특징·소개하는 이유', hint:'친구를 3문장으로 소개해 보세요.', example:'제 친한 친구의 이름은 민지예요.', qi:0, cat:'학교·교실' },
+      { type:'intro', subject:'내가 가장 소중하게 여기는 물건', points:'물건 이름·생김새·소중한 이유', hint:'소중한 물건을 3문장으로 소개해 보세요.', example:'제가 가장 소중하게 여기는 물건은 파란색 가방이에요.', qi:0, cat:'학교·교실' },
+      { type:'intro', subject:'우리 학교', points:'특징 2가지·좋아하는 이유', hint:'우리 학교를 3문장으로 소개해 보세요.', example:'우리 학교는 운동장이 넓고 나무가 많아요.', qi:0, cat:'학교·교실' },
+      { type:'intro', subject:'내가 좋아하는 계절', points:'계절 이름·특징 2가지·좋아하는 이유', hint:'좋아하는 계절을 3문장으로 소개해 보세요.', example:'제가 좋아하는 계절은 봄이에요.', qi:1, cat:'봄·자연' },
+      { type:'intro', subject:'내가 좋아하는 동물', points:'동물 이름·생김새·좋아하는 이유', hint:'좋아하는 동물을 3문장으로 소개해 보세요.', example:'제가 좋아하는 동물은 강아지예요.', qi:1, cat:'동물' },
+      { type:'intro', subject:'내가 자주 가는 장소', points:'장소 이름·특징·자주 가는 이유', hint:'자주 가는 곳을 3문장으로 소개해 보세요.', example:'제가 자주 가는 곳은 우리 동네 공원이에요.', qi:1, cat:'여행·나들이' },
+      { type:'intro', subject:'내가 제일 좋아하는 음식', points:'음식 이름·맛·좋아하는 이유', hint:'좋아하는 음식을 3문장으로 소개해 보세요.', example:'제가 제일 좋아하는 음식은 떡볶이예요.', qi:2, cat:'음식·요리' },
+      { type:'intro', subject:'우리 가족 중 한 분', points:'관계·특징·좋아하는 이유', hint:'가족 중 한 분을 3문장으로 소개해 보세요.', example:'제 가족 중 소개하고 싶은 분은 아빠예요.', qi:2, cat:'가족·집' },
+      { type:'intro', subject:'내가 재미있게 읽은 책이나 이야기', points:'제목·내용 요약·추천 이유', hint:'읽은 책을 3문장으로 소개해 보세요.', example:'제가 재미있게 읽은 책은 아낌없이 주는 나무예요.', qi:3, cat:'학교·교실' }
+    ],
+    3: [ // 연결어 넣기 (9개 — DB v1.0)
+      { type:'connector', sentences:['나는 수업이 끝났어요.','운동장으로 달려 나갔어요.','친구들과 신나게 놀았어요.'], connectors:['그리고','그래서','왜냐하면'], hint:'연결어(그래서·그리고 등)를 넣어 3문장을 자연스럽게 이어 써 보세요.', answer:'그래서 / 그리고', qi:0, cat:'학교·교실' },
+      { type:'connector', sentences:['봄이 왔어요.','꽃이 활짝 피었어요.','날씨가 따뜻해서 소풍을 가고 싶어요.'], connectors:['그리고','그래서','왜냐하면'], hint:'연결어를 넣어 3문장을 이어 써 보세요.', answer:'그리고 / 그래서', qi:0, cat:'봄·자연' },
+      { type:'connector', sentences:['오늘 엄마가 케이크를 만들어 주셨어요.','생일 파티가 시작됐어요.','케이크가 달콤해서 정말 맛있었어요.'], connectors:['그래서','하지만','그리고'], hint:'연결어를 넣어 3문장을 이어 써 보세요.', answer:'그래서 / 그리고', qi:1, cat:'가족·집' },
+      { type:'connector', sentences:['강아지는 귀여워요.','털이 부드러워요.','짖을 때는 조금 시끄러워요.'], connectors:['또한','하지만','왜냐하면'], hint:'연결어(또한·하지만)를 넣어 3문장을 이어 써 보세요.', answer:'또한 / 하지만', qi:1, cat:'동물' },
+      { type:'connector', sentences:['나는 채소를 싫어했어요.','엄마가 맛있게 요리해 주셔서 조금 먹어 봤어요.','채소가 생각보다 맛있었어요.'], connectors:['하지만','그래서','또한'], hint:'연결어를 넣어 3문장을 이어 써 보세요.', answer:'하지만 / 그래서', qi:1, cat:'음식·요리' },
+      { type:'connector', sentences:['오늘 체육 시간에 달리기를 했어요.','다리가 아팠어요.','끝까지 포기하지 않고 달렸어요.'], connectors:['그래서','그러나','왜냐하면'], hint:'연결어(그래서·그러나)를 넣어 3문장을 이어 써 보세요.', answer:'그래서 / 그러나', qi:2, cat:'학교·교실' },
+      { type:'connector', sentences:['가을에는 날씨가 선선해요.','나뭇잎이 예쁘게 물들어요.','가을 소풍은 정말 즐거운 추억이 돼요.'], connectors:['그리고','그러므로','하지만'], hint:'연결어를 넣어 3문장을 이어 써 보세요.', answer:'그리고 / 그러므로', qi:2, cat:'가을·감정' },
+      { type:'connector', sentences:['제주도는 바다가 아름다워요.','맛있는 음식도 많아요.','가족과 함께 제주도에 가고 싶어요.','비행기를 타야 해서 조금 멀어요.'], connectors:['또한','그래서','그러나','그리고'], hint:'연결어를 넣어 4문장을 이어 써 보세요.', answer:'또한 / 그래서 / 그러나', qi:3, cat:'여행·나들이' },
+      { type:'connector', sentences:['어제 친구와 싸웠어요.','기분이 나빴어요.','먼저 사과하기로 했어요.','우리는 다시 친한 친구가 됐어요.'], connectors:['그래서','하지만','그리고','왜냐하면'], hint:'연결어를 넣어 4문장을 이어 써 보세요.', answer:'그래서 / 하지만 / 그리고', qi:3, cat:'감정·경험' }
+    ]
+  },
+  4: {
+    0: [ // 관찰 글쓰기
+      { type:'observe', subject:'화분에 심은 씨앗', points:'색깔, 모양, 변화, 느낌', hint:'씨앗이나 식물을 관찰한 내용을 3~4문장으로 써 보세요.' },
+      { type:'observe', subject:'비 온 뒤 하늘', points:'색깔, 모양, 느낌, 냄새', hint:'비 온 뒤 하늘을 관찰해 3~4문장으로 써 보세요.' },
+      { type:'observe', subject:'개미의 움직임', points:'방향, 빠르기, 크기, 하는 일', hint:'개미를 관찰해 3~4문장으로 써 보세요.' }
+    ],
+    1: [ // 이야기 이어쓰기
+      { type:'story_continue', starter:'어느 날 아침, 교실 문을 열었더니 낯선 상자 하나가 놓여 있었다.', hint:'이 이야기가 어떻게 이어질지 3~4문장으로 써 보세요.' },
+      { type:'story_continue', starter:'강아지가 공원에서 갑자기 사라졌다. 나는 당황해서 주변을 두리번거렸다.', hint:'이야기를 이어서 3~4문장으로 써 보세요.' },
+      { type:'story_continue', starter:'호기심에 낡은 다락방 문을 열었더니 반짝이는 빛이 새어 나왔다.', hint:'이야기를 이어서 3~4문장으로 써 보세요.' }
+    ],
+    2: [ // 의견 쓰기
+      { type:'opinion', topic:'학교 급식에 채소가 많아야 한다', hint:'자신의 의견과 이유를 3~4문장으로 써 보세요.', example:'먼저 의견을 쓰고, 이유를 2가지 이상 써 보세요.' },
+      { type:'opinion', topic:'스마트폰 사용 시간을 정해야 한다', hint:'찬성 또는 반대 의견을 3~4문장으로 써 보세요.', example:'의견 + 이유 2가지로 써 보세요.' },
+      { type:'opinion', topic:'일주일에 책을 한 권씩 읽어야 한다', hint:'자신의 의견과 이유를 3~4문장으로 써 보세요.', example:'의견 → 이유 1 → 이유 2 → 마무리' }
+    ],
+    3: [ // 순서 글쓰기
+      { type:'sequence', topic:'라면 끓이는 방법', steps:['물을 끓인다','면과 수프를 넣는다','3분 익힌다','그릇에 담는다'], hint:'순서를 나타내는 말(먼저/다음/그 다음/마지막으로)을 넣어 3~4문장으로 써 보세요.' },
+      { type:'sequence', topic:'손 씻는 방법', steps:['물로 적신다','비누칠한다','20초 문지른다','헹군다'], hint:'순서 말(먼저/다음/마지막으로)을 넣어 3~4문장으로 써 보세요.' },
+      { type:'sequence', topic:'운동장에서 학교까지 오는 길', steps:['운동장 나온다','복도 걷는다','계단 오른다','교실 입장'], hint:'순서대로 3~4문장으로 설명해 보세요.' }
+    ],
+    4: [ // 일기 쓰기
+      { type:'diary', date:'오늘', event:'처음으로 요리를 해봤어요', hint:'있었던 일, 느낀 점을 3~4문장의 일기로 써 보세요.' },
+      { type:'diary', date:'오늘', event:'체육 시간에 달리기 시합을 했어요', hint:'시합 내용과 느낌을 일기로 써 보세요.' },
+      { type:'diary', date:'오늘', event:'친구와 다퉜다가 화해했어요', hint:'있었던 일과 마음 변화를 일기로 써 보세요.' }
+    ]
+  },
+  5: {
+    0: [ // 편지 쓰기
+      { type:'letter', to:'부모님', occasion:'어버이날 감사 편지', hint:'감사한 마음을 담은 편지를 200자 이내 한 문단으로 써 보세요.', parts:'받는 이에게 / 고마운 내용 2가지 / 마무리 인사' },
+      { type:'letter', to:'미래의 나에게', occasion:'10년 후 자신에게 쓰는 편지', hint:'지금의 바람이나 다짐을 담아 한 문단으로 써 보세요.', parts:'인사 / 현재 나의 모습 / 미래에 대한 바람' },
+      { type:'letter', to:'학교 선생님', occasion:'졸업 감사 편지', hint:'감사한 마음을 담아 200자 이내로 써 보세요.', parts:'인사 / 감사한 일 / 마무리' }
+    ],
+    1: [ // 주장하는 글쓰기
+      { type:'argument', topic:'학교에서 스마트폰을 허용해야 한다', stance:'찬성 또는 반대 중 하나', hint:'주장과 근거 2가지를 200자 이내 한 문단으로 써 보세요.', structure:'주장 → 근거1 → 근거2 → 마무리' },
+      { type:'argument', topic:'초등학생도 유튜브 채널을 운영할 수 있어야 한다', stance:'찬성 또는 반대', hint:'주장과 이유를 200자 이내로 써 보세요.', structure:'주장 → 이유 2가지 → 결론' },
+      { type:'argument', topic:'교과서 대신 태블릿을 써야 한다', stance:'찬성 또는 반대', hint:'근거를 들어 200자 이내로 주장해 보세요.', structure:'주장 + 이유 2가지' }
+    ],
+    2: [ // AI글 고쳐 쓰기
+      { type:'ai_fix', aiText:'봄은 좋은 계절입니다. 꽃이 피어납니다. 날씨가 좋습니다. 사람들이 나옵니다. 기분이 좋습니다.', issues:'문장이 너무 짧고 단조로워요. 표현이 반복적이에요.', hint:'더 자연스럽고 풍부하게 200자 이내 한 문단으로 고쳐 써 보세요.' },
+      { type:'ai_fix', aiText:'나는 독서를 좋아합니다. 책이 좋습니다. 도서관에 갑니다. 책을 빌립니다. 집에서 읽습니다.', issues:'같은 구조 문장이 반복돼요. 연결이 자연스럽지 않아요.', hint:'표현을 다양하게 하고 연결이 자연스럽게 고쳐 써 보세요.' },
+      { type:'ai_fix', aiText:'환경 보호는 중요합니다. 쓰레기를 버리면 안 됩니다. 재활용을 해야 합니다. 그래야 좋습니다. 모두 해야 합니다.', issues:'마무리가 어색하고 이유 설명이 부족해요.', hint:'이유를 구체적으로 넣어 자연스럽게 고쳐 써 보세요.' }
+    ],
+    3: [ // 장르 변환 글쓰기
+      { type:'genre_change', original:'오늘 비가 왔다. 우산을 챙겨 나갔다. 빗속을 걸었다. 기분이 이상했다.', from:'일기', to:'시', hint:'일기 내용을 시로 바꿔 한 문단으로 표현해 보세요. 시적 표현과 반복을 활용하세요.' },
+      { type:'genre_change', original:'뉴턴은 사과나무 밑에서 떨어지는 사과를 보고 만유인력을 발견했다.', from:'설명문', to:'이야기', hint:'설명문을 재미있는 이야기체로 바꿔 써 보세요.' },
+      { type:'genre_change', original:'봄에는 개나리와 벚꽃이 피고, 날씨가 따뜻해진다.', from:'정보글', to:'편지', hint:'정보글 내용을 친구에게 쓰는 편지처럼 바꿔 보세요.' }
+    ],
+    4: [ // 안내·소개 글쓰기
+      { type:'guide', topic:'우리 학교 도서관 이용법', audience:'신입생', hint:'신입생에게 도서관 이용법을 200자 이내로 안내해 보세요.', structure:'장소 소개 → 이용 규칙 2가지 → 마무리 권유' },
+      { type:'guide', topic:'학교 급식을 맛있게 먹는 방법', audience:'1학년 동생', hint:'동생에게 급식 먹는 방법을 쉽게 안내해 보세요.', structure:'인사 → 방법 2가지 → 마무리' },
+      { type:'guide', topic:'학교 체육관 사용 규칙', audience:'새로 전학 온 친구', hint:'체육관 이용 안내를 200자 이내로 써 보세요.', structure:'소개 → 규칙 2~3가지 → 마무리' }
+    ]
+  },
+  6: {
+    0: [ // 관찰 기록 글쓰기
+      { type:'obs_record', subject:'교실 창문 너머 보이는 풍경 변화 (아침 vs 오후)', hint:'시간에 따른 변화를 비교하며 250자 이내로 기록해 보세요.', structure:'관찰 대상 → 특징 → 변화 → 느낌' },
+      { type:'obs_record', subject:'화단에서 자라는 식물 2주간 관찰', hint:'변화 과정을 시간 순서대로 250자 이내로 기록해 보세요.', structure:'초기 상태 → 변화 → 현재 상태 → 결론' },
+      { type:'obs_record', subject:'학교 운동장에서 보이는 계절의 변화', hint:'구체적인 증거를 들어 관찰 기록을 써 보세요.', structure:'관찰 내용 → 특이점 → 결론' }
+    ],
+    1: [ // 보고하는 글쓰기
+      { type:'report', topic:'우리 반 독서 현황 조사 결과', data:'전체 20명 중 일주일에 책 1권 이상 읽는 학생: 8명 (40%)', hint:'조사 결과를 보고하는 글을 250자 이내로 써 보세요.', structure:'주제 → 결과 → 분석 → 제언' },
+      { type:'report', topic:'학교 근처 교통 안전 실태 조사', data:'등굣길 횡단보도 신호 위반 관찰: 5분 동안 3건 발생', hint:'보고하는 글을 250자 이내로 써 보세요.', structure:'조사 배경 → 결과 → 문제점 → 제안' },
+      { type:'report', topic:'우리 반 스마트폰 사용 시간 조사', data:'하루 평균 3시간 이상 사용: 12명(60%), 1시간 미만: 3명(15%)', hint:'조사 결과를 분석해 보고 글을 250자 이내로 써 보세요.', structure:'목적 → 결과 → 분석 → 의견' }
+    ],
+    2: [ // AI글 비평·고쳐쓰기
+      { type:'ai_critique', aiText:'지구 온난화는 나쁜 문제입니다. 기온이 올라갑니다. 빙하가 녹습니다. 동물이 힘들어합니다. 우리가 해결해야 합니다.', hint:'이 글의 문제점을 지적하고, 더 설득력 있고 풍부하게 고쳐 써 보세요.', critique_points:'논거 부족, 단조로운 문장 구조, 구체성 결여' },
+      { type:'ai_critique', aiText:'독서는 좋은 습관입니다. 책을 읽으면 좋습니다. 지식이 늘어납니다. 상상력도 커집니다. 많이 읽어야 합니다.', hint:'비판적으로 평가하고 개선점을 반영해 고쳐 써 보세요.', critique_points:'근거 반복, 결론 단순, 구체적 예시 없음' },
+      { type:'ai_critique', aiText:'환경을 보호해야 합니다. 쓰레기를 줄여야 합니다. 재활용도 해야 합니다. 우리 모두 노력합시다. 지구를 지킵시다.', hint:'이 글의 장단점을 평가하고 더 나은 글로 고쳐 보세요.', critique_points:'주장은 있으나 근거 없음, 마무리 약함' }
+    ],
+    3: [ // 독자 맞춤 글쓰기
+      { type:'audience', topic:'스마트폰 과사용의 문제', audience:'초등 저학년 동생', hint:'독자 수준에 맞게 쉬운 말로 250자 이내 한 문단을 써 보세요.' },
+      { type:'audience', topic:'독서의 중요성', audience:'반 친구들', hint:'또래 친구들에게 공감이 가는 글을 써 보세요.' },
+      { type:'audience', topic:'환경 보호 실천 방법', audience:'어른 (부모님)', hint:'어른에게 제안하는 글을 250자 이내로 써 보세요.' }
+    ],
+    4: [ // 매체 변환 글쓰기
+      { type:'media_change', original:'오늘 학교에서 과학 실험을 했다. 물과 기름을 섞으면 분리되는 것을 관찰했다. 신기했다.', from:'일기', to:'유튜브 쇼츠 영상 대본', hint:'일기 내용을 짧은 영상 대본으로 바꿔 보세요. 시청자에게 말하는 형식으로 쓰세요.' },
+      { type:'media_change', original:'봄에는 개나리, 벚꽃, 진달래 등 다양한 꽃이 핀다. 날씨가 따뜻해지고 낮이 길어진다.', from:'백과사전 설명', to:'인스타그램 캡션', hint:'SNS에 어울리는 감성 있는 글로 바꿔 보세요.' },
+      { type:'media_change', original:'우리 학교 도서관에는 3000권이 넘는 책이 있다. 매일 점심시간에 이용할 수 있다.', from:'학교 안내문', to:'친구에게 문자 추천', hint:'친근하고 재미있는 문자 형식으로 바꿔 보세요.' }
+    ]
+  }
+};
+
+
+// ===========================================
+// 캔버스 설정 (레벨별)
+// ===========================================
+const CANVAS_CONFIG = {
+  1: { rows: 2, cols: 12, height: 200 },
+  2: { rows: 3, cols: 12, height: 280 },
+  3: { rows: 4, cols: 10, height: 360 },
+  4: { rows: 5, cols: 10, height: 420 },
+  5: { rows: 6, cols: 10, height: 500 },
+  6: { rows: 7, cols: 10, height: 580 }
 };
 
 // ===========================================
@@ -2331,7 +2794,8 @@ const PROBLEM_BANK = {
 // ===========================================
 const state = {
   currentStep: 1,
-  grade: 1,
+  level: 1,
+  taskTypeIdx: 0,
   problemIdx: 0,
   imageData: null,
   imageMediaType: 'image/png',
@@ -2344,7 +2808,12 @@ const state = {
 };
 
 function currentProblem() {
-  return PROBLEM_BANK[state.grade][state.problemIdx];
+  const pool = (PROBLEM_BANK[state.level] || {})[state.taskTypeIdx] || [];
+  return pool[state.problemIdx] || pool[0] || { type:'dictation', text:'받아쓰기 문장' };
+}
+
+function currentTaskName() {
+  return (C[state.level] && C[state.level].t[state.taskTypeIdx]) || '글쓰기';
 }
 
 // ===========================================
@@ -2362,112 +2831,1295 @@ function goToStep(n) {
   });
 
   state.currentStep = n;
-
   if (n !== 2 && state.cameraStream) stopCamera();
 
   if (n === 2) {
     renderTaskSummary();
-    // preview removed
     document.getElementById('submitBtn').disabled = true;
     state.imageData = null;
+    // 레벨이 바뀌었을 수 있으므로 현재 활성 탭에 맞게 재초기화
+    requestAnimationFrame(() => {
+      const activeTabMode = (document.querySelector('#inputTabs button.active') || {}).dataset?.mode;
+      if (activeTabMode === 'canvas') initCanvas();
+    });
   }
-
   window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 // ===========================================
-// STEP 1: 학년·과제 렌더링
+// STEP 1: 레벨 탭 렌더링
 // ===========================================
-function renderProblemPreview() {
-  const box = document.getElementById('problemPreview');
-  const p = currentProblem();
-  const grade = state.grade;
-
-  let content = '';
-  let labelIcon, labelText;
-
-  if (grade === 1) {
-    labelIcon = 'i-volume'; labelText = '소리를 듣고 받아쓰기';
-    content = `
-      <div class="pp-audio">
-        <button class="audio-play-btn" onclick="speakSentence()" id="audioBtn">
-          <span class="icon icon-24" style="color:white;"><svg><use href="#i-play"/></svg></span>
-        </button>
-        <div class="audio-info">
-          <div class="label">아래 버튼을 눌러 문장을 들어 보세요</div>
-          <div class="title hidden-sentence">🔒 문장은 숨겨져 있어요 · 듣고 받아쓰세요</div>
-          <div class="hint">선생님 목소리를 잘 듣고 종이에 써 보세요</div>
-        </div>
-      </div>
+function renderLevelTabs() {
+  const box = document.getElementById('gradeTabs');
+  const descs = {
+    1: '글자·낱말·꾸며주는 말',
+    2: '감정·그림·문장 고쳐쓰기',
+    3: '그림·상상·소개·연결어',
+    4: '관찰·이야기·의견·순서·일기',
+    5: '편지·주장·AI고쳐·장르·안내',
+    6: '관찰기록·보고·AI비평·독자·매체'
+  };
+  box.innerHTML = '';
+  for (let lv = 1; lv <= 6; lv++) {
+    const levelData = C[lv];
+    const task = getTodayTask(lv);
+    const btn = document.createElement('button');
+    btn.className = 'grade-tab' + (lv === state.level ? ' selected' : '');
+    btn.dataset.level = lv;
+    btn.innerHTML = `
+      <div class="grade-num">${lv}<span style="font-size:12px;">레벨</span></div>
+      <div class="grade-type">${escapeHtml(levelData ? levelData.g : '')}</div>
+      <div class="grade-desc">${escapeHtml(descs[lv] || '')}</div>
     `;
-  } else if (grade === 2) {
-    labelIcon = 'i-type'; labelText = '주제 낱말로 한 문장 만들기';
-    content = `
-      <div class="pp-words">
-        ${p.words.map(w => `<span class="word-chip">${escapeHtml(w)}</span>`).join('')}
-      </div>
-      <div class="pp-caption" style="margin-top:14px;">${escapeHtml(p.hint)}</div>
-    `;
-  } else if (grade === 3) {
-    labelIcon = 'i-image'; labelText = '그림을 보고 한 문장 쓰기';
-    content = `
-      <div class="pp-image">
-        <div>
-          <div class="pp-emoji-scene">${p.emoji}</div>
-          <div class="pp-caption">${escapeHtml(p.caption)}</div>
-        </div>
-      </div>
-      <div class="pp-caption" style="margin-top:14px;">이 장면을 한 문장으로 설명해 보세요</div>
-    `;
-  } else if (grade === 4) {
-    labelIcon = 'i-package'; labelText = '물건의 특징 설명하기';
-    content = `
-      <div class="pp-object">
-        <div class="obj-emoji">${p.emoji}</div>
-        <div class="obj-name">${escapeHtml(p.name)}</div>
-        <div class="obj-hints">힌트: ${escapeHtml(p.hints)}</div>
-      </div>
-      <div class="pp-caption" style="margin-top:14px;">이 물건을 두세 문장으로 설명해 보세요</div>
-    `;
+    box.appendChild(btn);
   }
-
-  // 문제 전환 버튼
-  const probs = PROBLEM_BANK[grade];
-  const switcher = probs.length > 1 ? `
-    <div class="problem-switcher">
-      <span class="sw-label">다른 문제 :</span>
-      ${probs.map((_, i) => `<button data-idx="${i}" class="${i === state.problemIdx ? 'active' : ''}">문제 ${i+1}</button>`).join('')}
-    </div>
-  ` : '';
-
-  box.innerHTML = `
-    <div class="pp-label">
-      <span class="icon icon-16"><svg><use href="#${labelIcon}"/></svg></span>
-      ${labelText}
-    </div>
-    ${content}
-    ${switcher}
-  `;
-
-  // 문제 전환 이벤트
-  box.querySelectorAll('.problem-switcher button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      state.problemIdx = parseInt(btn.dataset.idx);
-      renderProblemPreview();
-    });
-  });
 }
 
-// 학년 탭
 document.getElementById('gradeTabs').addEventListener('click', (e) => {
   const btn = e.target.closest('.grade-tab');
   if (!btn) return;
   document.querySelectorAll('.grade-tab').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
-  state.grade = parseInt(btn.dataset.grade);
+
+  state.level = parseInt(btn.dataset.level);
   state.problemIdx = 0;
+
+  // 오늘의 과제 자동 결정
+  const todayTask = getTodayTask(state.level);
+  state.taskTypeIdx = todayTask.taskTypeIdx;
+  state.problemIdx = todayTask.problemIdx || 0;
+
+  // 오늘의 과제 패널 표시
+  const panel = document.getElementById('todayTaskPanel');
+  const nameEl = document.getElementById('todayTaskName');
+  const topicEl = document.getElementById('todayTaskTopic');
+  panel.classList.remove('hidden');
+  nameEl.textContent = todayTask.taskName;
+  topicEl.textContent = todayTask.topic ? `주제: ${todayTask.topic}` : '';
+
   renderProblemPreview();
 });
+
+// ===========================================
+// 문제 프리뷰 렌더 (레벨×과제유형)
+// ===========================================
+function renderProblemPreview() {
+  const box = document.getElementById('problemPreview');
+  const p = currentProblem();
+  if (!p) { box.innerHTML = ''; return; }
+
+  const taskName = currentTaskName();
+  let content = '';
+
+  switch (p.type) {
+    case 'dictation':
+      content = `
+        <div class="pp-audio">
+          <button class="audio-play-btn" onclick="speakSentence()" id="audioBtn">
+            <span class="icon icon-24" style="color:white;"><svg><use href="#i-play"/></svg></span>
+          </button>
+          <div class="audio-info">
+            <div class="label">버튼을 눌러 문장을 들어 보세요</div>
+            <div class="title hidden-sentence">🔒 문장은 숨겨져 있어요 · 듣고 받아쓰세요</div>
+            <div class="hint">선생님 목소리를 잘 듣고 써 보세요</div>
+          </div>
+        </div>`;
+      break;
+
+    case 'word_expand':
+      content = `
+        <div class="pp-words"><span class="word-chip">${escapeHtml(p.keyword)}</span></div>
+        <div class="pp-caption" style="margin-top:14px;">${escapeHtml(p.hint)}</div>
+        <div class="pp-caption" style="margin-top:6px; font-size:12px; color:var(--gray-3);">${escapeHtml(p.example || '')}</div>`;
+      break;
+
+    case 'descriptive':
+      content = `
+        <div class="pp-image"><div><div class="pp-emoji-scene" style="font-size:48px;">✍️</div>
+        <div class="pp-caption" style="font-size:16px; font-weight:700; margin-top:8px;">${escapeHtml(p.scene)}</div></div></div>
+        <div class="pp-caption" style="margin-top:12px;">${escapeHtml(p.hint)}</div>
+        <div class="pp-caption" style="margin-top:6px; font-size:12px; color:var(--gray-3);">${escapeHtml(p.example || '')}</div>`;
+      break;
+
+    case 'emotion':
+      content = `
+        <div class="pp-image"><div>
+          <div class="pp-emoji-scene" style="font-size:48px;">💬</div>
+          <div class="pp-caption" style="font-size:14px; font-weight:700; margin-top:8px;">${escapeHtml(p.situation)}</div>
+          <div class="pp-caption" style="margin-top:4px; color:var(--primary);">감정 키워드: <b>${escapeHtml(p.emotion)}</b></div>
+        </div></div>
+        <div class="pp-caption" style="margin-top:12px;">${escapeHtml(p.hint)}</div>
+        <div class="pp-caption" style="margin-top:6px; font-size:12px; color:var(--gray-3);">${escapeHtml(p.example || '')}</div>`;
+      break;
+
+    case 'picture':
+    case 'picture3':
+      const wTagsHtml = p.wordTags && p.wordTags.length
+        ? `<div style="margin-top:10px;"><div style="font-size:11px;font-weight:600;color:var(--gray-2);margin-bottom:6px;">사용할 낱말</div><div class="pp-words">${p.wordTags.map(t=>`<span class="word-chip" style="font-size:14px;padding:8px 16px;">${escapeHtml(t)}</span>`).join('')}</div></div>`
+        : '';
+      content = `
+        <div class="pp-image"><div>
+          <div class="pp-emoji-scene">${escapeHtml(p.emoji)}</div>
+          <div class="pp-caption">${escapeHtml(p.caption)}</div>
+        </div></div>
+        ${wTagsHtml}
+        <div class="pp-caption" style="margin-top:12px;">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'correction':
+      content = `
+        <div class="pp-image" style="flex-direction:column; gap:10px; text-align:left; padding:18px;">
+          <div style="font-size:11px; font-weight:600; color:var(--point);">고쳐야 할 문장</div>
+          <div style="font-size:16px; font-weight:700; color:var(--text); padding:12px; background:var(--point-soft); border-radius:var(--r-sm);">${escapeHtml(p.wrong)}</div>
+          <div style="font-size:12px; color:var(--gray-2);">${escapeHtml(p.issue || '')}</div>
+        </div>
+        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'imagine':
+      content = `
+        <div class="pp-image"><div>
+          <div class="pp-emoji-scene" style="font-size:48px;">💭</div>
+          <div class="pp-caption" style="font-size:14px; font-weight:700; margin-top:8px;">${escapeHtml(p.prompt)}</div>
+          <div class="pp-caption" style="margin-top:4px; color:var(--primary);">시작 문장: <b>"${escapeHtml(p.starter)}"</b></div>
+        </div></div>
+        <div class="pp-caption" style="margin-top:12px;">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'intro':
+      content = `
+        <div class="pp-image" style="flex-direction:column; gap:8px;">
+          <div style="font-size:20px; font-weight:700; color:var(--primary);">${escapeHtml(p.subject)}</div>
+          <div style="font-size:12px; color:var(--gray-2);">포함할 내용: ${escapeHtml(p.points)}</div>
+        </div>
+        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'connector':
+      const chips = (p.connectors || []).map(c =>
+        `<span class="word-chip" style="font-size:14px; padding:8px 14px;">${escapeHtml(c)}</span>`).join('');
+      const sents = (p.sentences || []).map((s,i) =>
+        `<div style="padding:6px 10px; background:var(--white); border-radius:6px; font-size:13px; font-weight:500;">${i+1}. ${escapeHtml(s)}</div>`).join('');
+      content = `
+        <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:12px;">${sents}</div>
+        <div style="margin-bottom:8px; font-size:11px; color:var(--gray-2); font-weight:600;">사용할 연결어:</div>
+        <div class="pp-words" style="margin-bottom:8px;">${chips}</div>
+        <div class="pp-caption">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'observe':
+      content = `
+        <div class="pp-image" style="flex-direction:column; gap:8px;">
+          <div style="font-size:18px; font-weight:700; color:var(--primary);">관찰 대상: ${escapeHtml(p.subject)}</div>
+          <div style="font-size:12px; color:var(--gray-2);">관찰 포인트: ${escapeHtml(p.points)}</div>
+        </div>
+        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'story_continue':
+      content = `
+        <div class="pp-image" style="padding:18px; flex-direction:column; text-align:left; gap:8px;">
+          <div style="font-size:11px; color:var(--gray-2); font-weight:600;">이야기의 시작</div>
+          <div style="font-size:15px; font-weight:600; color:var(--text); line-height:1.6;">"${escapeHtml(p.starter)}"</div>
+        </div>
+        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'opinion':
+      content = `
+        <div class="pp-image" style="flex-direction:column; gap:8px;">
+          <div style="font-size:16px; font-weight:700; color:var(--primary);">${escapeHtml(p.topic)}</div>
+          <div style="font-size:12px; color:var(--gray-2);">${escapeHtml(p.example || '')}</div>
+        </div>
+        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'sequence':
+      const stepsList = (p.steps || []).map((s,i) =>
+        `<span style="padding:4px 10px; background:var(--primary); color:white; border-radius:999px; font-size:12px; font-weight:600;">${i+1}. ${escapeHtml(s)}</span>`).join(' → ');
+      content = `
+        <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:12px;">${stepsList}</div>
+        <div class="pp-caption">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'diary':
+      content = `
+        <div class="pp-image" style="flex-direction:column; gap:8px;">
+          <div style="font-size:18px; font-weight:700; color:var(--primary);">${escapeHtml(p.event)}</div>
+          <div style="font-size:12px; color:var(--gray-2);">일기 형식 / ${escapeHtml(p.hint)}</div>
+        </div>`;
+      break;
+
+    case 'letter':
+      content = `
+        <div class="pp-image" style="flex-direction:column; gap:8px;">
+          <div style="font-size:16px; font-weight:700; color:var(--primary);">받는 이: ${escapeHtml(p.to)}</div>
+          <div style="font-size:13px; color:var(--text);">주제: ${escapeHtml(p.occasion)}</div>
+          <div style="font-size:12px; color:var(--gray-2);">구성: ${escapeHtml(p.parts || '')}</div>
+        </div>
+        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'argument':
+      content = `
+        <div class="pp-image" style="flex-direction:column; gap:8px;">
+          <div style="font-size:15px; font-weight:700; color:var(--primary);">${escapeHtml(p.topic)}</div>
+          <div style="font-size:12px; color:var(--gray-2);">입장: ${escapeHtml(p.stance || '')} | 구성: ${escapeHtml(p.structure || '')}</div>
+        </div>
+        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'ai_fix':
+    case 'ai_critique':
+      content = `
+        <div class="pp-image" style="flex-direction:column; gap:8px; text-align:left; padding:16px;">
+          <div style="font-size:11px; font-weight:600; color:var(--gray-2);">AI가 쓴 글 (고쳐보세요)</div>
+          <div style="font-size:13px; font-weight:500; color:var(--text); background:var(--bg-gray-soft); padding:10px; border-radius:var(--r-sm); line-height:1.65;">${escapeHtml(p.aiText)}</div>
+          <div style="font-size:12px; color:var(--point);">문제점: ${escapeHtml(p.issues || p.critique_points || '')}</div>
+        </div>
+        <div class="pp-caption" style="margin-top:8px;">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'genre_change':
+      content = `
+        <div class="pp-image" style="flex-direction:column; gap:8px; text-align:left; padding:16px;">
+          <div style="font-size:11px; font-weight:600; color:var(--gray-2);">원문 (${escapeHtml(p.from)})</div>
+          <div style="font-size:13px; font-weight:500; color:var(--text); background:var(--bg-gray-soft); padding:10px; border-radius:var(--r-sm); line-height:1.65;">${escapeHtml(p.original)}</div>
+          <div style="font-size:12px; color:var(--primary);">→ ${escapeHtml(p.to)}으로 바꿔 보세요</div>
+        </div>
+        <div class="pp-caption" style="margin-top:8px;">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'guide':
+      content = `
+        <div class="pp-image" style="flex-direction:column; gap:8px;">
+          <div style="font-size:15px; font-weight:700; color:var(--primary);">${escapeHtml(p.topic)}</div>
+          <div style="font-size:12px; color:var(--gray-2);">독자: ${escapeHtml(p.audience)} | 구성: ${escapeHtml(p.structure || '')}</div>
+        </div>
+        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'obs_record':
+      content = `
+        <div class="pp-image" style="flex-direction:column; gap:8px;">
+          <div style="font-size:15px; font-weight:700; color:var(--primary);">${escapeHtml(p.subject)}</div>
+          <div style="font-size:12px; color:var(--gray-2);">구성: ${escapeHtml(p.structure || '')}</div>
+        </div>
+        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'report':
+      content = `
+        <div class="pp-image" style="flex-direction:column; gap:8px; text-align:left; padding:16px;">
+          <div style="font-size:15px; font-weight:700; color:var(--primary);">${escapeHtml(p.topic)}</div>
+          <div style="font-size:12px; color:var(--gray-2); background:var(--bg-gray-soft); padding:8px; border-radius:6px;">${escapeHtml(p.data || '')}</div>
+          <div style="font-size:12px; color:var(--gray-2);">구성: ${escapeHtml(p.structure || '')}</div>
+        </div>
+        <div class="pp-caption" style="margin-top:8px;">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'audience':
+      content = `
+        <div class="pp-image" style="flex-direction:column; gap:8px;">
+          <div style="font-size:15px; font-weight:700; color:var(--primary);">${escapeHtml(p.topic)}</div>
+          <div style="font-size:13px; color:var(--text);">독자: <b>${escapeHtml(p.audience)}</b></div>
+        </div>
+        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    case 'media_change':
+      content = `
+        <div class="pp-image" style="flex-direction:column; gap:8px; text-align:left; padding:16px;">
+          <div style="font-size:11px; font-weight:600; color:var(--gray-2);">원문 (${escapeHtml(p.from)})</div>
+          <div style="font-size:13px; font-weight:500; color:var(--text); background:var(--bg-gray-soft); padding:10px; border-radius:var(--r-sm); line-height:1.65;">${escapeHtml(p.original)}</div>
+          <div style="font-size:12px; color:var(--primary);">→ ${escapeHtml(p.to)}으로 바꿔 보세요</div>
+        </div>
+        <div class="pp-caption" style="margin-top:8px;">${escapeHtml(p.hint)}</div>`;
+      break;
+
+    default:
+      content = `<div class="pp-caption">${escapeHtml(p.hint || '')}</div>`;
+  }
+
+  // 문제 번호 표시 (선택 불가 — 순차 진행)
+  const pool = (PROBLEM_BANK[state.level] || {})[state.taskTypeIdx] || [];
+  const totalProblems = pool.length;
+  const problemNumLabel = totalProblems > 1
+    ? `<div class="problem-num-badge">${state.problemIdx + 1} / ${totalProblems}</div>`
+    : '';
+
+  box.innerHTML = `
+    <div class="pp-label" style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="display:flex;align-items:center;gap:6px;">
+        <span class="icon icon-16"><svg><use href="#i-pencil"/></svg></span>
+        ${escapeHtml(currentTaskName())}
+      </span>
+      ${problemNumLabel}
+    </div>
+    ${content}
+  `;
+}
+
+
+// ===========================================
+// STEP 2 요약 영역
+// ===========================================
+function renderTaskSummary() {
+  const box = document.getElementById('taskSummary');
+  const p = currentProblem();
+  const taskName = currentTaskName();
+  const lv = state.level;
+
+  let content = '';
+  if (p.type === 'dictation') {
+    content = `
+      <span class="label">받아쓰기</span>
+      <div class="content"><span>선생님 목소리를 듣고 쓰세요</span></div>
+      <button class="replay-btn" onclick="speakSentence()">
+        <span class="icon icon-16"><svg><use href="#i-volume"/></svg></span>다시 듣기
+      </button>`;
+  } else if (p.type === 'word_expand') {
+    content = `
+      <span class="label">${escapeHtml(taskName)}</span>
+      <div class="content"><span class="mini-word">${escapeHtml(p.keyword)}</span><span style="color:var(--gray-2);font-size:13px;"> 낱말로 문장 만들기</span></div>`;
+  } else if (p.type === 'picture' || p.type === 'picture3') {
+    content = `
+      <span class="label">${escapeHtml(taskName)}</span>
+      <div class="content"><span class="mini-emoji">${p.emoji}</span><span>${escapeHtml(p.caption)}</span></div>`;
+  } else if (p.type === 'emotion') {
+    content = `
+      <span class="label">감정 표현하기</span>
+      <div class="content"><span>${escapeHtml(p.situation)}</span></div>`;
+  } else if (p.type === 'correction') {
+    content = `
+      <span class="label">문장 고쳐 쓰기</span>
+      <div class="content" style="font-size:13px;">${escapeHtml(p.wrong)}</div>`;
+  } else if (p.type === 'imagine') {
+    content = `
+      <span class="label">상상해서 쓰기</span>
+      <div class="content"><span>${escapeHtml(p.prompt)}</span></div>`;
+  } else if (p.type === 'story_continue') {
+    content = `
+      <span class="label">이야기 이어쓰기</span>
+      <div class="content" style="font-size:13px;">"${escapeHtml(p.starter.substring(0,30))}…"</div>`;
+  } else if (p.type === 'ai_fix' || p.type === 'ai_critique') {
+    content = `
+      <span class="label">${escapeHtml(taskName)}</span>
+      <div class="content" style="font-size:13px;">AI 글을 읽고 고쳐 써 보세요</div>`;
+  } else {
+    content = `
+      <span class="label">${escapeHtml(taskName)}</span>
+      <div class="content"><span>레벨 ${lv} · ${escapeHtml(p.hint ? p.hint.substring(0,30)+'…' : '')}</span></div>`;
+  }
+  box.innerHTML = content;
+}
+
+// ===========================================
+// 분석 step2 라벨 업데이트
+// ===========================================
+function updateAnalyzeStep2Label() {
+  const el = document.getElementById('analyzeStep2Label');
+  if (!el) return;
+  const taskName = currentTaskName();
+  el.textContent = `${taskName} 기준으로 비교하고 있어요`;
+}
+
+// ===========================================
+// STEP 2: Canvas (레벨별 그리드)
+// ===========================================
+function setInputTab(mode) {
+  document.querySelectorAll('#inputTabs button').forEach(b => b.classList.remove('active'));
+  const tabBtn = document.querySelector(`#inputTabs button[data-mode="${mode}"]`);
+  if (tabBtn) tabBtn.classList.add('active');
+  document.querySelectorAll('.input-panel').forEach(p => p.classList.remove('active'));
+  const panel = document.querySelector(`.input-panel[data-mode="${mode}"]`);
+  if (panel) panel.classList.add('active');
+  state.inputMode = mode;
+  if (mode === 'canvas') requestAnimationFrame(() => initCanvas());
+  if (mode !== 'camera' && state.cameraStream) stopCamera();
+}
+
+function initCanvas() {
+  const canvas = document.getElementById('writeCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  // 캔버스가 숨겨져 있으면 부모 컨테이너 너비로 fallback
+  const logicalWidth = rect.width || canvas.parentElement?.getBoundingClientRect().width || 340;
+
+  const cfg = CANVAS_CONFIG[state.level] || CANVAS_CONFIG[1];
+  const canvasHeight = cfg.height;
+
+  canvas.width = logicalWidth * dpr;
+  canvas.height = canvasHeight * dpr;
+  canvas.style.height = canvasHeight + 'px';
+  ctx.scale(dpr, dpr);
+  state.canvasContext = ctx;
+  state.canvasWidth = logicalWidth;
+  state.canvasHeight = canvasHeight;
+
+  drawGrid();
+  bindCanvasEvents(canvas, ctx);
+}
+
+function drawGrid() {
+  const ctx = state.canvasContext;
+  const w = state.canvasWidth;
+  const h = state.canvasHeight;
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, w, h);
+
+  const cfg = CANVAS_CONFIG[state.level] || CANVAS_CONFIG[1];
+  const cols = cfg.cols;
+  const rows = cfg.rows;
+  const cellW = w / cols;
+  const cellH = h / rows;
+
+  ctx.strokeStyle = '#D9D9D9';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= cols; i++) {
+    ctx.beginPath(); ctx.moveTo(i * cellW, 0); ctx.lineTo(i * cellW, h); ctx.stroke();
+  }
+  for (let i = 0; i <= rows; i++) {
+    ctx.beginPath(); ctx.moveTo(0, i * cellH); ctx.lineTo(w, i * cellH); ctx.stroke();
+  }
+  ctx.fillStyle = '#EEEEEE';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      ctx.beginPath();
+      ctx.arc(c * cellW + cellW/2, r * cellH + cellH/2, 1, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+}
+
+
+// ===========================================
+// buildPrompt (레벨 × 과제유형)
+// ===========================================
+function buildPrompt() {
+  const p = currentProblem();
+  const lv = state.level;
+  const levelData = C[lv] || {};
+  const taskName = currentTaskName();
+  const scaleDesc = levelData.s || '1문장';
+
+  const baseSystem = `당신은 대한민국 초등학교 글쓰기 지도를 전문으로 하는 국어 교사입니다.
+학생이 종이(원고지 또는 캔버스)에 손으로 쓴 글씨 이미지를 분석해 평가하고 JSON으로만 반환합니다.
+반드시 지정된 JSON 스키마만 출력하세요. 설명이나 마크다운 코드블록 없이 순수 JSON만.
+
+★ OCR 핵심 원칙 ★
+recognized_text는 학생이 실제로 쓴 글자 그대로를 담아야 합니다.
+- 자동 교정 금지: 오류가 있어도 원본 그대로 옮기세요.
+- 창의적 해석 금지: 불분명한 글자는 시각적으로 가장 비슷한 글자로.
+- char_analysis 배열의 char를 이어붙이면 recognized_text와 정확히 일치해야 합니다.
+- good: 바르게 씀 / warn: 약간 삐뚤거나 받침 문제 / bad: 알아보기 힘듦 / space: 띄어쓰기
+- 맞춤법 오류는 spelling_errors에만, recognized_text에는 원본 그대로.
+- 손글씨가 전혀 없으면 confidence 10 이하.
+- teacher_comment는 20자 이내 격려 존댓말.
+
+spelling_errors 각 항목:
+  wrong / right: 틀린 표기와 바른 표기
+  reason: 왜 이게 맞는지 학년 눈높이 설명 (80자 이내, 친근한 존댓말)
+  memory_tip: 기억법 (50자 이내)`;
+
+  // ─ Level 1 ─────────────────────────────────────────────────
+  if (lv === 1 && p.type === 'dictation') {
+    const sys = `${baseSystem}
+
+[레벨1 받아쓰기] 정답: "${p.text}"
+
+★ 채점 기준 (합계 100점) ★
+- legibility_score(40점): 글씨 모양의 정확성
+  40: 모든 글자 또렷하고 올바른 비율 | 30: 대부분 읽히나 일부 흐리거나 삐뚤음
+  20: 여러 글자가 불명확하여 추측 필요 | 10: 대부분 알아보기 어려움
+- spelling_score(40점): 정답과 음절별 일치 여부
+  40: 완벽 일치 | 30: 오류 1곳 | 20: 오류 2곳 | 10: 오류 3곳 이상
+- spacing_score(20점): 띄어쓰기 정확성
+  20: 완벽 | 10: 오류 1~2곳 | 0: 오류 3곳 이상
+
+total_score = legibility_score + spelling_score + spacing_score
+
+출력:{"task_type":"dictation","recognized_text":"","confidence":0,"total_score":0,"legibility_score":0,"spelling_score":0,"spacing_score":0,"teacher_comment":"","char_analysis":[],"legibility_tip":"","spelling_errors":[],"spelling_tip":""}`;
+    const usr = `정답: "${p.text}"\n손글씨를 읽고 정답과 비교해 분석해 주세요. recognized_text에는 학생이 실제로 쓴 글자를 그대로 담으세요.`;
+    return { system: sys, user: usr };
+  }
+
+  if (lv === 1 && p.type === 'word_expand') {
+    const sys = `${baseSystem}
+
+[레벨1 낱말 확장 글쓰기]
+주제 낱말: "${p.keyword}"
+힌트: ${p.hint}
+모범 예시: ${p.example || '없음'}
+
+★ 채점 기준 (합계 100점) ★
+- legibility_score(20점): 글씨 가독성
+  20: 모든 글자 또렷 | 15: 대체로 읽힘 | 10: 일부 불명확 | 5: 많이 불명확
+- task_score(40점): 주제 낱말 사용 & 문장 완성도
+  [낱말 사용 20점] 20: "${p.keyword}" 자연스럽게 포함 | 10: 포함했으나 어색 | 0: 미포함
+  [문장 완성도 20점] 20: 주어+서술어 갖춘 완전한 문장 | 15: 거의 완전 | 8: 불완전 | 0: 단어 나열
+- language_score(40점): 맞춤법·띄어쓰기·문장 자연스러움
+  [맞춤법·띄어쓰기 20점] 20: 오류 없음 | 15: 오류 1곳 | 10: 오류 2곳 | 5: 오류 3곳 이상
+  [문장 자연스러움 20점] 20: 매우 자연스러움 | 15: 대체로 자연스러움 | 8: 약간 어색
+
+total_score = legibility_score + task_score + language_score
+
+rubric 4항목: "주제 낱말 포함" / "완전한 문장 구성" / "자연스러운 표현" / "맞춤법·띄어쓰기"
+각 항목 status: pass(잘함) / warn(보통) / fail(미흡)
+각 항목 desc: 20자 이내 구체적 피드백 (한국어, 반말 금지)
+
+출력:{"task_type":"open_l1","recognized_text":"","confidence":0,"total_score":0,"legibility_score":0,"task_score":0,"language_score":0,"teacher_comment":"","char_analysis":[],"legibility_tip":"","rubric":[{"title":"주제 낱말 포함","status":"pass","desc":""},{"title":"완전한 문장 구성","status":"pass","desc":""},{"title":"자연스러운 표현","status":"pass","desc":""},{"title":"맞춤법·띄어쓰기","status":"pass","desc":""}],"spelling_errors":[],"language_tip":""}`;
+    const usr = `주제 낱말: "${p.keyword}"\n힌트: ${p.hint}\n손글씨를 읽고 분석해 주세요.`;
+    return { system: sys, user: usr };
+  }
+
+  if (lv === 1 && p.type === 'descriptive') {
+    const sys = `${baseSystem}
+
+[레벨1 꾸며주는 말 쓰기]
+장면: "${p.scene}"
+힌트(선택지 포함): ${p.hint}
+모범 예시: ${p.example || '없음'}
+
+★ 채점 기준 (합계 100점) ★
+- legibility_score(20점): 글씨 가독성
+  20: 또렷 | 15: 대체로 읽힘 | 10: 일부 불명확 | 5: 많이 불명확
+- task_score(40점): 꾸며주는 말 선택 & 사용
+  [올바른 선택 20점] 20: 힌트에서 제시된 적절한 어휘 선택 | 10: 다른 적절한 꾸며주는 말 | 0: 꾸며주는 말 없음
+  [어울리는 사용 20점] 20: 장면과 완벽히 어울림 | 15: 대체로 어울림 | 8: 어색 | 0: 전혀 어울리지 않음
+- language_score(40점): 맞춤법·띄어쓰기·문장 자연스러움
+  [맞춤법·띄어쓰기 20점] 20: 오류 없음 | 15: 오류 1 | 10: 오류 2 | 5: 오류 3 이상
+  [문장 자연스러움 20점] 20: 매우 자연 | 15: 대체로 | 8: 어색
+
+total_score = legibility_score + task_score + language_score
+
+rubric 4항목: "꾸며주는 말 사용" / "장면에 어울리는 표현" / "완전한 문장 구성" / "맞춤법·띄어쓰기"
+각 desc: 구체적 피드백 (20자 이내)
+
+출력:{"task_type":"open_l1","recognized_text":"","confidence":0,"total_score":0,"legibility_score":0,"task_score":0,"language_score":0,"teacher_comment":"","char_analysis":[],"legibility_tip":"","rubric":[{"title":"꾸며주는 말 사용","status":"pass","desc":""},{"title":"장면에 어울리는 표현","status":"pass","desc":""},{"title":"완전한 문장 구성","status":"pass","desc":""},{"title":"맞춤법·띄어쓰기","status":"pass","desc":""}],"spelling_errors":[],"language_tip":""}`;
+    const usr = `장면: "${p.scene}"\n힌트: ${p.hint}\n손글씨를 읽고 분석해 주세요.`;
+    return { system: sys, user: usr };
+  }
+
+  // ─ Level 2 ─────────────────────────────────────────────────
+  if (lv === 2 && p.type === 'emotion') {
+    const sys = `${baseSystem}
+
+[레벨2 감정 표현하기]
+상황: "${p.situation}"
+감정 키워드: "${p.emotion}"
+힌트: ${p.hint}
+모범 예시: ${p.example || '없음'}
+
+★ 채점 기준 (합계 100점) ★
+- legibility_score(15점): 글씨 가독성
+  15: 또렷 | 10: 대체로 읽힘 | 5: 일부 불명확 | 0: 많이 불명확
+- task_score(50점): 감정 표현 과제 수행
+  [감정 어휘 사용 20점] 20: 감정 키워드(${p.emotion}) 관련 어휘 명확히 사용 | 10: 간접적 표현 | 0: 감정 표현 없음
+  [상황-감정 연결 15점] 15: 제시된 상황과 감정이 긴밀히 연결 | 8: 부분적 연결 | 0: 연결 없음
+  [2문장 구성 15점] 15: 완전한 2문장 이상 | 8: 1문장만 완성 | 0: 문장 미완성
+- language_score(35점): 언어 표현
+  [맞춤법·띄어쓰기 20점] 20: 오류 없음 | 15: 오류 1 | 10: 오류 2 | 5: 오류 3 이상
+  [문장 자연스러움 15점] 15: 매우 자연스러움 | 10: 대체로 | 5: 약간 어색
+
+total_score = legibility_score + task_score + language_score
+
+rubric 4항목: "감정 어휘 사용" / "상황과 감정 연결" / "2문장 완성" / "맞춤법·띄어쓰기"
+status: pass(잘함)/warn(보통)/fail(미흡), desc: 구체적 피드백 20자 이내
+
+출력:{"task_type":"emotion","recognized_text":"","confidence":0,"total_score":0,"legibility_score":0,"task_score":0,"language_score":0,"teacher_comment":"","char_analysis":[],"legibility_tip":"","rubric":[{"title":"감정 어휘 사용","status":"pass","desc":""},{"title":"상황과 감정 연결","status":"pass","desc":""},{"title":"2문장 완성","status":"pass","desc":""},{"title":"맞춤법·띄어쓰기","status":"pass","desc":""}],"spelling_errors":[],"language_tip":""}`;
+    const usr = `상황: "${p.situation}" / 감정: "${p.emotion}"\n힌트: ${p.hint}\n손글씨를 읽고 분석해 주세요.`;
+    return { system: sys, user: usr };
+  }
+  if (lv === 2 && (p.type === 'picture' || p.type === 'picture3')) {
+    const tags = p.wordTags || [];
+    const tagStr = tags.length ? tags.join(', ') : '없음';
+    const sys = `${baseSystem}
+
+[레벨2 그림 보고 2문장 쓰기]
+그림 장면: "${p.caption}"
+반드시 사용할 낱말 (${tags.length}개): [${tagStr}]
+힌트: ${p.hint}
+
+★ 채점 기준 (합계 100점) ★
+- legibility_score(15점): 글씨 가독성
+  15: 또렷 | 10: 읽힘 | 5: 일부 불명확 | 0: 많이 불명확
+- task_score(55점): 그림 묘사 과제 수행
+  [그림 장면 반영 20점] 20: 핵심 장면(${p.caption}) 잘 반영 | 12: 부분 반영 | 4: 관련 없음
+  [제공 낱말 활용 20점] 제공 낱말 ${tags.length}개 기준:
+    ${tags.length >= 3 ? '20: 3개 모두 | 13: 2개 | 6: 1개 | 0: 미사용' : '20: 모두 사용 | 10: 일부 | 0: 미사용'}
+  [2문장 이상 구성 15점] 15: 완전한 2문장 이상 | 8: 1문장 | 0: 미완성
+- language_score(30점): 언어 표현
+  [맞춤법·띄어쓰기 18점] 18: 오류 없음 | 13: 오류 1 | 8: 오류 2 | 3: 오류 3 이상
+  [문장 자연스러움 12점] 12: 자연 | 8: 대체로 | 4: 어색
+
+total_score = legibility_score + task_score + language_score
+
+rubric 4항목: "그림 내용 반영" / "제공 낱말 ${tags.length}개 활용" / "2문장 완성" / "맞춤법·띄어쓰기"
+status: pass/warn/fail, desc: 피드백 20자 이내
+
+출력:{"task_type":"picture","recognized_text":"","confidence":0,"total_score":0,"legibility_score":0,"task_score":0,"language_score":0,"teacher_comment":"","char_analysis":[],"legibility_tip":"","rubric":[{"title":"그림 내용 반영","status":"pass","desc":""},{"title":"제공 낱말 활용","status":"pass","desc":""},{"title":"2문장 완성","status":"pass","desc":""},{"title":"맞춤법·띄어쓰기","status":"pass","desc":""}],"spelling_errors":[],"language_tip":""}`;
+    const usr = `그림 장면: "${p.caption}"\n반드시 사용할 낱말: [${tagStr}]\n손글씨를 읽고 분석해 주세요.`;
+    return { system: sys, user: usr };
+  }
+  if (lv === 2 && p.type === 'correction') {
+    const sys = `${baseSystem}
+
+[레벨2 문장 고쳐 쓰기]
+틀린 문장: "${p.wrong}"
+오류 유형: ${p.issue}
+힌트: ${p.hint}
+모범 정답: ${p.example || '없음'}
+
+★ 채점 기준 (합계 100점) ★
+- legibility_score(15점): 글씨 가독성
+  15: 또렷 | 10: 읽힘 | 5: 불명확 | 0: 많이 불명확
+- task_score(55점): 오류 수정 과제 수행
+  [오류 유형 정확 수정 30점] 30: 오류 유형(${p.issue}) 완전히 수정 | 18: 부분 수정(인식은 했으나 표현 불정확) | 5: 수정 안 됨
+  [문장 문법적 완성도 25점] 25: 문법적으로 완전하고 자연스러움 | 18: 대체로 자연스러움 | 8: 약간 어색 | 2: 많이 어색
+- language_score(30점): 언어 표현
+  [맞춤법·띄어쓰기 18점] 18: 오류 없음 | 12: 오류 1 | 7: 오류 2 | 2: 오류 3 이상
+  [문장 자연스러움 12점] 12: 자연 | 8: 대체로 | 4: 어색
+
+total_score = legibility_score + task_score + language_score
+
+rubric 3항목: "오류 유형 정확히 수정" / "문법적으로 완전한 문장" / "맞춤법·띄어쓰기"
+status: pass/warn/fail, desc: 피드백 20자 이내
+오류 수정이 정확한 경우 rubric[0].desc에는 어떻게 고쳤는지 구체적으로, 틀렸을 경우 무엇이 잘못됐는지 명시
+
+출력:{"task_type":"correction","recognized_text":"","confidence":0,"total_score":0,"legibility_score":0,"task_score":0,"language_score":0,"teacher_comment":"","char_analysis":[],"legibility_tip":"","rubric":[{"title":"오류 유형 수정","status":"pass","desc":""},{"title":"문법적 완성도","status":"pass","desc":""},{"title":"맞춤법·띄어쓰기","status":"pass","desc":""}],"spelling_errors":[],"language_tip":""}`;
+    const usr = `틀린 문장: "${p.wrong}"\n오류 유형: ${p.issue}\n힌트: ${p.hint}\n학생이 고쳐 쓴 글을 읽고 분석해 주세요.`;
+    return { system: sys, user: usr };
+  }
+
+  // ─ Level 3 ─────────────────────────────────────────────────
+  if (lv === 3 && p.type === 'picture3') {
+    const tags3 = p.wordTags || [];
+    const sys = `${baseSystem}
+
+[레벨3 그림 보고 3문장 쓰기]
+그림 장면: "${p.caption}"
+반드시 활용할 낱말 5개: [${tags3.join(', ')}]
+힌트: ${p.hint}
+
+★ 채점 기준 (합계 100점) ★
+- legibility_score(15점): 글씨 가독성
+  15: 또렷 | 10: 읽힘 | 5: 불명확 | 0: 많이 불명확
+- task_score(50점): 그림 묘사 과제 수행
+  [그림 장면 생생히 반영 15점] 15: 핵심 장면 구체적으로 표현 | 10: 대략 반영 | 4: 미흡
+  [제공 낱말 활용 20점] 20: 5개 모두 사용 | 16: 4개 | 12: 3개 | 6: 2개 | 0: 1개 이하
+  [3문장 이상 완성 15점] 15: 3문장 이상 | 10: 2문장 | 4: 1문장 | 0: 미완성
+- expression_score(35점): 표현력
+  [꾸며주는 말(형용사·부사) 15점] 15: 2개 이상 적절히 사용 | 8: 1개 사용 | 0: 미사용
+  [맞춤법·띄어쓰기 20점] 20: 오류 없음 | 15: 오류 1 | 10: 오류 2 | 5: 오류 3 이상
+
+total_score = legibility_score + task_score + expression_score
+
+rubric 5항목: "그림 장면 반영" / "제공 낱말 5개 활용" / "3문장 이상 완성" / "꾸며주는 말 포함" / "맞춤법·띄어쓰기"
+status: pass/warn/fail, desc: 구체적 피드백 20자 이내 (낱말 활용 desc에는 몇 개 사용했는지 명시)
+
+출력:{"task_type":"picture3","recognized_text":"","confidence":0,"total_score":0,"legibility_score":0,"task_score":0,"expression_score":0,"teacher_comment":"","char_analysis":[],"legibility_tip":"","rubric":[{"title":"그림 장면 반영","status":"pass","desc":""},{"title":"제공 낱말 5개 활용","status":"pass","desc":""},{"title":"3문장 이상 완성","status":"pass","desc":""},{"title":"꾸며주는 말 포함","status":"pass","desc":""},{"title":"맞춤법·띄어쓰기","status":"pass","desc":""}],"spelling_errors":[],"language_tip":""}`;
+    const usr = `그림 장면: "${p.caption}"\n반드시 활용할 낱말: [${tags3.join(', ')}]\n손글씨를 읽고 분석해 주세요.`;
+    return { system: sys, user: usr };
+  }
+  if (lv === 3 && p.type === 'imagine') {
+    const sys = `${baseSystem}
+
+[레벨3 상상해서 쓰기]
+주제: "${p.prompt}"
+시작 문장: "${p.starter}"
+힌트: ${p.hint}
+모범 예시: ${p.example || '없음'}
+
+★ 채점 기준 (합계 100점) ★
+- legibility_score(15점): 글씨 가독성
+  15: 또렷 | 10: 읽힘 | 5: 불명확 | 0: 많이 불명확
+- task_score(45점): 상상 글쓰기 과제 수행
+  [시작 문장 활용 15점] 15: "${p.starter}" 활용해 자연스럽게 시작 | 8: 변형 사용 | 0: 미사용
+  [상상력·창의성 15점] 15: 독창적이고 구체적인 상상 전개 | 10: 일반적 수준 | 4: 단순 반복
+  [3문장 이상 완성 15점] 15: 3문장 이상 | 10: 2문장 | 4: 1문장 | 0: 미완성
+- expression_score(40점): 표현력
+  [꾸며주는 말·연결어 사용 20점] 20: 형용사/부사/연결어 풍부하게 사용 | 14: 일부 사용 | 6: 거의 없음
+  [맞춤법·띄어쓰기 20점] 20: 오류 없음 | 15: 오류 1 | 10: 오류 2 | 5: 오류 3 이상
+
+total_score = legibility_score + task_score + expression_score
+
+rubric 5항목: "시작 문장 활용" / "창의적 상상 전개" / "3문장 이상 완성" / "꾸며주는 말·연결어" / "맞춤법·띄어쓰기"
+status: pass/warn/fail, desc: 피드백 20자 이내
+
+출력:{"task_type":"imagine","recognized_text":"","confidence":0,"total_score":0,"legibility_score":0,"task_score":0,"expression_score":0,"teacher_comment":"","char_analysis":[],"legibility_tip":"","rubric":[{"title":"시작 문장 활용","status":"pass","desc":""},{"title":"창의적 상상 전개","status":"pass","desc":""},{"title":"3문장 이상 완성","status":"pass","desc":""},{"title":"꾸며주는 말·연결어","status":"pass","desc":""},{"title":"맞춤법·띄어쓰기","status":"pass","desc":""}],"spelling_errors":[],"language_tip":""}`;
+    const usr = `주제: "${p.prompt}" / 시작 문장: "${p.starter}"\n힌트: ${p.hint}\n손글씨를 읽고 분석해 주세요.`;
+    return { system: sys, user: usr };
+  }
+  if (lv === 3 && p.type === 'intro') {
+    const sys = `${baseSystem}
+
+[레벨3 소개하기]
+소개 대상: "${p.subject}"
+포함할 내용: ${p.points}
+힌트: ${p.hint}
+모범 예시: ${p.example || '없음'}
+
+★ 채점 기준 (합계 100점) ★
+- legibility_score(15점): 글씨 가독성
+  15: 또렷 | 10: 읽힘 | 5: 불명확 | 0: 많이 불명확
+- task_score(50점): 소개 과제 수행
+  [소개 대상 명시 15점] 15: 첫 문장에 대상("${p.subject}") 명확히 등장 | 8: 중간에 등장 | 0: 미등장
+  [필수 내용 포함 20점] 포함할 내용 "${p.points}" 기준:
+    20: 모두 포함 | 14: 2가지 포함 | 7: 1가지만 | 0: 미포함
+  [3문장 이상 완성 15점] 15: 3문장 이상 | 10: 2문장 | 4: 1문장
+- expression_score(35점): 표현력
+  [자연스러운 문장 흐름 20점] 20: 소개 → 특징 → 이유의 흐름이 명확 | 14: 대체로 | 6: 불명확
+  [맞춤법·띄어쓰기 15점] 15: 오류 없음 | 10: 오류 1 | 6: 오류 2 | 2: 오류 3 이상
+
+total_score = legibility_score + task_score + expression_score
+
+rubric 5항목: "소개 대상 명시" / "필수 내용(${p.points}) 포함" / "3문장 이상 완성" / "자연스러운 흐름" / "맞춤법·띄어쓰기"
+status: pass/warn/fail, desc: 피드백 20자 이내 (필수내용 항목은 어떤 항목이 빠졌는지 구체적으로)
+
+출력:{"task_type":"intro","recognized_text":"","confidence":0,"total_score":0,"legibility_score":0,"task_score":0,"expression_score":0,"teacher_comment":"","char_analysis":[],"legibility_tip":"","rubric":[{"title":"소개 대상 명시","status":"pass","desc":""},{"title":"필수 내용 포함","status":"pass","desc":""},{"title":"3문장 이상 완성","status":"pass","desc":""},{"title":"자연스러운 흐름","status":"pass","desc":""},{"title":"맞춤법·띄어쓰기","status":"pass","desc":""}],"spelling_errors":[],"language_tip":""}`;
+    const usr = `소개 대상: "${p.subject}" / 포함할 내용: "${p.points}"\n힌트: ${p.hint}\n분석해 주세요.`;
+    return { system: sys, user: usr };
+  }
+  if (lv === 3 && p.type === 'connector') {
+    const connList = (p.connectors || []).join(', ');
+    const sys = `${baseSystem}
+
+[레벨3 연결어 넣기]
+이어 써야 할 문장들: ${JSON.stringify(p.sentences)}
+제공 연결어 목록: [${connList}]
+힌트: ${p.hint}
+
+★ 채점 기준 (합계 100점) ★
+- legibility_score(15점): 글씨 가독성
+  15: 또렷 | 10: 읽힘 | 5: 불명확 | 0: 많이 불명확
+- task_score(55점): 연결어 사용 과제 수행
+  [제공 연결어 사용 25점] 25: 제공 연결어 중 적절한 것을 모든 접속 부분에 사용 | 18: 대부분 사용 | 10: 일부 사용 | 0: 미사용
+  [앞뒤 문장 관계에 맞는 연결어 선택 15점] 15: 앞뒤 문장의 관계(인과/순접/역접 등)에 완벽히 맞음 | 10: 대체로 | 4: 어색한 연결어 선택
+  [문장 통일성 15점] 15: ${p.sentences.length}개 문장이 하나의 자연스러운 글로 완성 | 10: 대체로 | 4: 각 문장이 따로 노는 느낌
+- expression_score(30점): 표현력
+  [맞춤법·띄어쓰기 20점] 20: 오류 없음 | 15: 오류 1 | 10: 오류 2 | 5: 오류 3 이상
+  [전체 글의 자연스러움 10점] 10: 읽기 자연 | 6: 대체로 | 2: 어색
+
+total_score = legibility_score + task_score + expression_score
+
+rubric 4항목: "제공 연결어 사용" / "앞뒤 관계에 맞는 연결어" / "문장 통일성" / "맞춤법·띄어쓰기"
+status: pass/warn/fail
+desc: 구체적 피드백 (연결어 항목에는 어떤 연결어를 어디에 썼는지, 잘못된 경우 어떤 연결어가 더 적절한지 명시)
+
+출력:{"task_type":"connector","recognized_text":"","confidence":0,"total_score":0,"legibility_score":0,"task_score":0,"expression_score":0,"teacher_comment":"","char_analysis":[],"legibility_tip":"","rubric":[{"title":"제공 연결어 사용","status":"pass","desc":""},{"title":"앞뒤 관계에 맞는 연결어","status":"pass","desc":""},{"title":"문장 통일성","status":"pass","desc":""},{"title":"맞춤법·띄어쓰기","status":"pass","desc":""}],"spelling_errors":[],"language_tip":""}`;
+    const usr = `문장들: ${p.sentences.join(' / ')}\n제공 연결어: [${connList}]\n연결어를 넣어 이어 쓴 글을 읽고 분석해 주세요.`;
+    return { system: sys, user: usr };
+  }
+
+  // ─ Level 4 ─────────────────────────────────────────────────
+  if (lv === 4) {
+    let rubric4 = [];
+    let taskContext = '';
+    if (p.type === 'observe') {
+      taskContext = `관찰 대상: "${p.subject}"`;
+      rubric4 = [
+        {title:'관찰 내용 구체성',status:'pass',desc:''},
+        {title:'3~4문장 이상',status:'pass',desc:''},
+        {title:'표현의 정확성',status:'pass',desc:''},
+        {title:'맞춤법·띄어쓰기',status:'pass',desc:''}
+      ];
+    } else if (p.type === 'story_continue') {
+      taskContext = `이야기 시작: "${p.starter}"`;
+      rubric4 = [
+        {title:'이야기 자연스런 연결',status:'pass',desc:''},
+        {title:'3~4문장 이상',status:'pass',desc:''},
+        {title:'상상력·창의성',status:'pass',desc:''},
+        {title:'맞춤법·띄어쓰기',status:'pass',desc:''}
+      ];
+    } else if (p.type === 'opinion') {
+      taskContext = `주제: "${p.topic}"`;
+      rubric4 = [
+        {title:'명확한 의견 제시',status:'pass',desc:''},
+        {title:'이유 2가지 이상',status:'pass',desc:''},
+        {title:'논리적 구성',status:'pass',desc:''},
+        {title:'맞춤법·띄어쓰기',status:'pass',desc:''}
+      ];
+    } else if (p.type === 'sequence') {
+      taskContext = `주제: "${p.topic}"`;
+      rubric4 = [
+        {title:'순서 말 사용',status:'pass',desc:''},
+        {title:'순서 논리적',status:'pass',desc:''},
+        {title:'3~4문장 이상',status:'pass',desc:''},
+        {title:'맞춤법·띄어쓰기',status:'pass',desc:''}
+      ];
+    } else if (p.type === 'diary') {
+      taskContext = `사건: "${p.event}"`;
+      rubric4 = [
+        {title:'사건 구체적 서술',status:'pass',desc:''},
+        {title:'감정·느낌 표현',status:'pass',desc:''},
+        {title:'일기 형식',status:'pass',desc:''},
+        {title:'맞춤법·띄어쓰기',status:'pass',desc:''}
+      ];
+    }
+    const sys = `${baseSystem}
+[레벨4 ${taskName}] ${taskContext}
+출력:{"task_type":"open_l4","recognized_text":"","confidence":0,"total_score":0,"legibility_score":0,"task_score":0,"logic_score":0,"teacher_comment":"","char_analysis":[],"legibility_tip":"","rubric":${JSON.stringify(rubric4)},"spelling_errors":[],"language_tip":""}`;
+    const usr = `${taskContext}\n힌트: ${p.hint || ''}\n손글씨를 읽고 분석해 주세요.`;
+    return { system: sys, user: usr };
+  }
+
+  // ─ Level 5 ─────────────────────────────────────────────────
+  if (lv === 5) {
+    let taskCtx5 = p.hint || '';
+    if (p.type === 'letter') taskCtx5 = `받는 이: ${p.to} / ${p.occasion}`;
+    else if (p.type === 'argument') taskCtx5 = `주제: ${p.topic} / ${p.stance}`;
+    else if (p.type === 'ai_fix') taskCtx5 = `AI 글: "${p.aiText}" / 문제점: ${p.issues}`;
+    else if (p.type === 'genre_change') taskCtx5 = `원문(${p.from}): "${p.original}" → ${p.to}으로 변환`;
+    else if (p.type === 'guide') taskCtx5 = `주제: ${p.topic} / 독자: ${p.audience}`;
+
+    const sys = `${baseSystem}
+[레벨5 ${taskName}] ${taskCtx5}
+분량: 최대 200자 1문단. 평가: 목적·독자 의식, 내용 충실, 문단 구성, 표현력, 맞춤법.
+출력:{"task_type":"open_l5","recognized_text":"","confidence":0,"total_score":0,"legibility_score":0,"task_score":0,"expression_score":0,"teacher_comment":"","char_analysis":[],"legibility_tip":"","rubric":[{"title":"목적·독자 의식","status":"pass","desc":""},{"title":"내용 충실도","status":"pass","desc":""},{"title":"문단 구성","status":"pass","desc":""},{"title":"표현력","status":"pass","desc":""},{"title":"맞춤법·띄어쓰기","status":"pass","desc":""}],"spelling_errors":[],"language_tip":""}`;
+    const usr = `${taskCtx5}\n힌트: ${p.hint || ''}\n손글씨를 읽고 분석해 주세요.`;
+    return { system: sys, user: usr };
+  }
+
+  // ─ Level 6 ─────────────────────────────────────────────────
+  if (lv === 6) {
+    let taskCtx6 = p.hint || '';
+    if (p.type === 'obs_record') taskCtx6 = `관찰 대상: ${p.subject}`;
+    else if (p.type === 'report') taskCtx6 = `주제: ${p.topic} / 데이터: ${p.data}`;
+    else if (p.type === 'ai_critique') taskCtx6 = `AI 글: "${p.aiText}" / 비평 포인트: ${p.critique_points}`;
+    else if (p.type === 'audience') taskCtx6 = `주제: ${p.topic} / 독자: ${p.audience}`;
+    else if (p.type === 'media_change') taskCtx6 = `원문(${p.from}): "${p.original}" → ${p.to}으로 변환`;
+
+    const sys = `${baseSystem}
+[레벨6 ${taskName}] ${taskCtx6}
+분량: 최대 250자 1문단. 평가: 목적·독자 의식, 내용 깊이, 논리 구성, 표현의 정교함, 맞춤법.
+출력:{"task_type":"open_l6","recognized_text":"","confidence":0,"total_score":0,"legibility_score":0,"task_score":0,"logic_score":0,"teacher_comment":"","char_analysis":[],"legibility_tip":"","rubric":[{"title":"목적·독자 의식","status":"pass","desc":""},{"title":"내용 깊이","status":"pass","desc":""},{"title":"논리 구성","status":"pass","desc":""},{"title":"표현의 정교함","status":"pass","desc":""},{"title":"맞춤법·띄어쓰기","status":"pass","desc":""}],"spelling_errors":[],"language_tip":""}`;
+    const usr = `${taskCtx6}\n힌트: ${p.hint || ''}\n손글씨를 읽고 분석해 주세요.`;
+    return { system: sys, user: usr };
+  }
+
+  // fallback
+  return { system: baseSystem, user: '손글씨를 읽고 분석해 주세요.' };
+}
+
+
+// ===========================================
+// reevaluateWithCorrectedText (전 레벨)
+// ===========================================
+async function reevaluateWithCorrectedText(correctedText) {
+  const p = currentProblem();
+  const lv = state.level;
+  const taskName = currentTaskName();
+
+  const baseEval = `당신은 초등학교 글쓰기 지도 교사입니다. 학생이 쓴 글을 텍스트로 받아 평가합니다.
+반드시 JSON만 출력합니다.
+spelling_errors 각 항목: wrong/right/reason(80자이내)/memory_tip(50자이내)`;
+
+  let system = '', user = '';
+
+  if (lv === 1 && p.type === 'dictation') {
+    system = `${baseEval}
+출력:{"total_score":0,"spelling_score":0,"spacing_score":0,"teacher_comment":"","spelling_errors":[],"spelling_tip":""}`;
+    user = `정답: "${p.text}"\n학생: "${correctedText}"`;
+  } else if (lv === 1) {
+    system = `${baseEval}
+[레벨1 ${taskName}]
+출력:{"total_score":0,"task_score":0,"language_score":0,"teacher_comment":"","rubric":[],"spelling_errors":[],"language_tip":""}`;
+    user = `과제: ${p.hint || ''}\n학생이 쓴 문장: "${correctedText}"`;
+  } else if (lv === 2) {
+    system = `${baseEval}
+[레벨2 ${taskName}]
+출력:{"total_score":0,"task_score":0,"language_score":0,"teacher_comment":"","rubric":[],"spelling_errors":[],"language_tip":""}`;
+    user = `과제: ${p.type==='correction' ? `원문:"${p.wrong}"` : p.hint||''}\n학생이 쓴 글: "${correctedText}"`;
+  } else if (lv === 3) {
+    system = `${baseEval}
+[레벨3 ${taskName}]
+출력:{"total_score":0,"task_score":0,"expression_score":0,"teacher_comment":"","rubric":[],"spelling_errors":[],"language_tip":""}`;
+    user = `과제: ${p.hint||''}\n학생이 쓴 글: "${correctedText}"`;
+  } else if (lv === 4) {
+    system = `${baseEval}
+[레벨4 ${taskName}]
+출력:{"total_score":0,"task_score":0,"logic_score":0,"teacher_comment":"","rubric":[],"spelling_errors":[],"language_tip":""}`;
+    user = `과제: ${p.hint||''}\n학생이 쓴 글: "${correctedText}"`;
+  } else if (lv === 5) {
+    system = `${baseEval}
+[레벨5 ${taskName}] 최대 200자 1문단
+출력:{"total_score":0,"task_score":0,"expression_score":0,"teacher_comment":"","rubric":[],"spelling_errors":[],"language_tip":""}`;
+    user = `과제: ${p.hint||''}\n학생이 쓴 글: "${correctedText}"`;
+  } else {
+    system = `${baseEval}
+[레벨6 ${taskName}] 최대 250자 1문단
+출력:{"total_score":0,"task_score":0,"logic_score":0,"teacher_comment":"","rubric":[],"spelling_errors":[],"language_tip":""}`;
+    user = `과제: ${p.hint||''}\n학생이 쓴 글: "${correctedText}"`;
+  }
+
+  const proxyUrl = resolveProxyUrl();
+  const response = await fetch(proxyUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-access-password': '' },
+    body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1500, system, messages:[{role:'user',content:user}] })
+  });
+  if (!response.ok) throw new Error(`재평가 실패 (${response.status})`);
+  const data = await response.json();
+  const text = data.content.filter(c=>c.type==='text').map(c=>c.text).join('\n');
+  const cleaned = text.replace(/```json\s*|\s*```/g,'').trim();
+  try { return JSON.parse(cleaned); }
+  catch(e) { const m=cleaned.match(/\{[\s\S]*\}/); if(m) return JSON.parse(m[0]); throw new Error('재평가 응답 해석 실패'); }
+}
+
+// ===========================================
+// 격려 메시지 (레벨 1~6)
+// ===========================================
+const ENCOURAGEMENT_MESSAGES = {
+  excellent: {
+    1:{title:'와! 정말정말 잘했어요!',sub:'엄청 멋진 글이에요!',emoji:'🎉',chip:'🌟 최고예요!'},
+    2:{title:'정말정말 잘 썼어요!',sub:'완벽한 문장이에요!',emoji:'🎊',chip:'🌟 최고예요!'},
+    3:{title:'정말 잘 표현했어요!',sub:'글잼 친구도 깜짝 놀랐어요!',emoji:'✨',chip:'🌟 최고예요!'},
+    4:{title:'논리적이고 명확해요!',sub:'설명이 아주 자연스러워요!',emoji:'🏆',chip:'🌟 최고예요!'},
+    5:{title:'완성도가 높은 글이에요!',sub:'목적과 독자를 완벽히 고려했어요!',emoji:'🥇',chip:'🌟 최고예요!'},
+    6:{title:'전문 작가 같은 글이에요!',sub:'논리와 표현 모두 뛰어나요!',emoji:'💎',chip:'🌟 최고예요!'}
+  },
+  great: {
+    1:{title:'잘하고 있어요!',sub:'조금만 더 연습하면 완벽해요!',emoji:'⭐',chip:'👍 잘했어요'},
+    2:{title:'잘 썼어요!',sub:'거의 다 맞았어요. 조금만 더!',emoji:'⭐',chip:'👍 잘했어요'},
+    3:{title:'잘 표현했어요!',sub:'조금 더 자세히 쓰면 더 좋아요!',emoji:'⭐',chip:'👍 잘했어요'},
+    4:{title:'잘 설명했어요!',sub:'논리가 잘 잡혀 있어요!',emoji:'⭐',chip:'👍 잘했어요'},
+    5:{title:'잘 구성했어요!',sub:'표현을 조금 더 다듬어 봐요!',emoji:'⭐',chip:'👍 잘했어요'},
+    6:{title:'체계적으로 잘 썼어요!',sub:'독자 의식이 잘 드러나요!',emoji:'⭐',chip:'👍 잘했어요'}
+  },
+  good: {
+    1:{title:'잘 도전했어요!',sub:'같이 차근차근 봐볼까요?',emoji:'💪',chip:'🌱 성장 중'},
+    2:{title:'열심히 썼어요!',sub:'한 번 더 다듬으면 좋아요!',emoji:'💪',chip:'🌱 성장 중'},
+    3:{title:'도전해서 멋져요!',sub:'몇 가지 부분만 같이 살펴봐요!',emoji:'💪',chip:'🌱 성장 중'},
+    4:{title:'시도가 좋았어요!',sub:'더 명확하게 표현해 볼까요?',emoji:'💪',chip:'🌱 성장 중'},
+    5:{title:'방향은 맞았어요!',sub:'내용을 더 구체적으로 써봐요!',emoji:'💪',chip:'🌱 성장 중'},
+    6:{title:'좋은 시도였어요!',sub:'근거와 표현을 더 발전시켜봐요!',emoji:'💪',chip:'🌱 성장 중'}
+  },
+  keepGoing: {
+    1:{title:'괜찮아요, 도전이 대단해요!',sub:'어떤 부분이 어려웠는지 봐봐요!',emoji:'🤗',chip:'🌈 함께해요'},
+    2:{title:'잘 도전했어요!',sub:'어려운 부분은 같이 봐봐요!',emoji:'🤗',chip:'🌈 함께해요'},
+    3:{title:'도전이 멋져요!',sub:'피드백 보고 다시 써봐요!',emoji:'🤗',chip:'🌈 함께해요'},
+    4:{title:'시작이 반이에요!',sub:'하나씩 짚어가면 더 나아져요!',emoji:'🤗',chip:'🌈 함께해요'},
+    5:{title:'글쓰기 연습 중이에요!',sub:'핵심 내용을 다시 정리해봐요!',emoji:'🤗',chip:'🌈 함께해요'},
+    6:{title:'연습이 실력이 돼요!',sub:'구체적인 근거를 더해봐요!',emoji:'🤗',chip:'🌈 함께해요'}
+  }
+};
+
+function getScoreTier(score) {
+  if (score >= 90) return 'excellent';
+  if (score >= 70) return 'great';
+  if (score >= 50) return 'good';
+  return 'keepGoing';
+}
+
+function getTierClass(tier) {
+  return {excellent:'tier-excellent',great:'tier-great',good:'tier-good',keepGoing:'tier-keep-going'}[tier]||'tier-great';
+}
+
+function applyEncouragement(score, level) {
+  const tier = getScoreTier(score);
+  const key = Math.min(Math.max(parseInt(level)||1, 1), 6);
+  const msg = ENCOURAGEMENT_MESSAGES[tier][key] || ENCOURAGEMENT_MESSAGES[tier][1];
+  const hero = document.getElementById('fbHero');
+  hero.classList.remove('tier-excellent','tier-great','tier-good','tier-keep-going');
+  hero.classList.add(getTierClass(tier));
+  document.getElementById('encouragementTitle').textContent = msg.title;
+  document.getElementById('encouragementSub').textContent = msg.sub;
+  document.getElementById('fbCelebration').textContent = msg.emoji;
+  document.getElementById('scoreChip').textContent = msg.chip;
+  const confettiBox = document.getElementById('fbConfetti');
+  confettiBox.innerHTML = '';
+  if (tier === 'excellent') {
+    const emojis=['🎉','🎊','✨','⭐','🌟','💫'];
+    for(let i=0;i<15;i++){
+      const piece=document.createElement('span');
+      piece.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+      piece.style.left=(Math.random()*100)+'%';
+      piece.style.animationDelay=(Math.random()*2)+'s';
+      piece.style.animationDuration=(2+Math.random()*2)+'s';
+      confettiBox.appendChild(piece);
+    }
+  }
+}
+
+
+// ===========================================
+// renderResult (전 레벨)
+// ===========================================
+function renderResult(r) {
+  r = reconcileCharAnalysis(r);
+  document.getElementById('submittedImg').src = state.imageData;
+  const lv = state.level;
+  const p = currentProblem();
+
+  // OCR 영역 분기
+  const ocrGrade1 = document.getElementById('ocrOutputGrade1');
+  const ocrOpen = document.getElementById('ocrOutputOpen');
+  if (lv === 1 && p.type === 'dictation') {
+    ocrGrade1.classList.remove('hidden');
+    ocrOpen.classList.add('hidden');
+    document.getElementById('targetRef').textContent = p.text;
+    document.getElementById('ocrDisplay').innerHTML = renderDiffHtml(p.text, r.recognized_text || '');
+  } else {
+    ocrGrade1.classList.add('hidden');
+    ocrOpen.classList.remove('hidden');
+    document.getElementById('writtenSentenceText').textContent = r.recognized_text || '(읽을 수 있는 글자가 없어요)';
+  }
+
+  // 신뢰도
+  const conf = Math.max(0, Math.min(100, r.confidence || 0));
+  document.getElementById('confBar').style.width = conf + '%';
+  document.getElementById('confText').textContent = conf + '%';
+
+  // 총점
+  document.getElementById('totalScore').innerHTML = (r.total_score ?? 0) + '<small>/100</small>';
+  document.getElementById('teacherComment').textContent = r.teacher_comment || '';
+
+  applyEncouragement(r.total_score ?? 0, state.level);
+  updateRetryCards(r);
+
+  if (state.isRetry && state.previousScore !== null) {
+    showScoreComparison(state.previousScore, r.total_score ?? 0);
+    state.isRetry = false;
+  }
+
+  // 범주 점수 (레벨별)
+  const catBox = document.getElementById('catBarsFb');
+  let cats = [];
+  if (lv === 1 && p.type === 'dictation') {
+    cats = [
+      {name:'글씨 가독성', val:r.legibility_score??0},
+      {name:'맞춤법', val:r.spelling_score??0},
+      {name:'띄어쓰기', val:r.spacing_score??0}
+    ];
+  } else if (lv <= 3) {
+    cats = [
+      {name:'글씨 가독성', val:r.legibility_score??0},
+      {name:'과제 수행', val:r.task_score??0},
+      {name:'표현력', val:r.expression_score??r.language_score??0}
+    ];
+  } else if (lv === 4) {
+    cats = [
+      {name:'글씨 가독성', val:r.legibility_score??0},
+      {name:'과제 수행', val:r.task_score??0},
+      {name:'논리·흐름', val:r.logic_score??0}
+    ];
+  } else if (lv === 5) {
+    cats = [
+      {name:'글씨 가독성', val:r.legibility_score??0},
+      {name:'내용 충실도', val:r.task_score??0},
+      {name:'표현력', val:r.expression_score??0}
+    ];
+  } else {
+    cats = [
+      {name:'글씨 가독성', val:r.legibility_score??0},
+      {name:'내용 깊이', val:r.task_score??0},
+      {name:'논리 구성', val:r.logic_score??0}
+    ];
+  }
+  catBox.innerHTML = cats.map((c,i) => `
+    <div class="cat-block">
+      <div class="name">${escapeHtml(c.name)}</div>
+      <div class="val">${c.val}</div>
+      <div class="mini-bar"><div class="mini-bar-fill" data-barfill="${i}" style="width:0%"></div></div>
+    </div>`).join('');
+  requestAnimationFrame(() => {
+    cats.forEach((c,i) => {
+      const el = catBox.querySelector(`[data-barfill="${i}"]`);
+      if (el) el.style.width = c.val + '%';
+    });
+  });
+
+  // 글씨 가독성
+  document.getElementById('legScoreMini').innerHTML = (r.legibility_score??0) + '<small>점</small>';
+  const spellErrorRanges = computeSpellErrorRanges(r.recognized_text||'', r.spelling_errors||[]);
+  const grid = document.getElementById('charGrid');
+  grid.innerHTML = '';
+  (r.char_analysis||[]).forEach((c,idx) => {
+    const cell = document.createElement('div');
+    cell.className = 'char-cell ' + (c.status||'good');
+    if (c.status === 'space') {
+      cell.innerHTML = '';
+    } else {
+      cell.textContent = c.char||'';
+      const tagMap = {good:'★', warn:'!', bad:'✕'};
+      if (c.status !== 'good') {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'tag';
+        tagEl.textContent = tagMap[c.status]||'';
+        cell.appendChild(tagEl);
+      }
+      if (c.note) cell.title = c.note;
+      if (spellErrorRanges.has(idx)) {
+        cell.classList.add('spell-error');
+        const correction = spellErrorRanges.get(idx);
+        if (correction) cell.dataset.correction = correction;
+      }
+    }
+    grid.appendChild(cell);
+  });
+  document.getElementById('legTipText').innerHTML = (r.legibility_tip||'—').replace(/"([^"]+)"/g,'<b>"$1"</b>');
+
+  // 맞춤법/루브릭 카드
+  const fbSpelling = document.getElementById('fbSpelling');
+  const fbRubric = document.getElementById('fbRubric');
+  const fbSpellingOpen = document.getElementById('fbSpellingOpen');
+
+  if (lv === 1 && p.type === 'dictation') {
+    fbSpelling.classList.remove('hidden');
+    fbRubric.classList.add('hidden');
+    fbSpellingOpen.classList.add('hidden');
+    document.getElementById('spellScoreMini').innerHTML = (r.spelling_score??0)+'<small>점</small>';
+    const errBox = document.getElementById('spellErrors');
+    errBox.innerHTML = '';
+    const errs = r.spelling_errors||[];
+    if (errs.length === 0) {
+      errBox.innerHTML=`<div class="perfect-box"><span class="icon icon-20"><svg><use href="#i-circle-check"/></svg></span>완벽해요! 맞춤법과 띄어쓰기가 모두 정확해요.</div>`;
+    } else {
+      errs.forEach(e => errBox.appendChild(buildSpellErrorCard(e)));
+    }
+    document.getElementById('spellTipText').innerHTML = '<b>오늘의 한 줄 배움:</b> ' + escapeHtml(r.spelling_tip||'');
+  } else {
+    fbSpelling.classList.add('hidden');
+    fbRubric.classList.remove('hidden');
+
+    const taskName = currentTaskName();
+    const rubricTitleMap = {
+      1: '글쓰기 평가', 2: '글쓰기 평가', 3: '글쓰기 평가',
+      4: '글쓰기 평가', 5: '문단 글쓰기 평가', 6: '문단 글쓰기 평가'
+    };
+    document.getElementById('rubricSectionTitle').textContent = rubricTitleMap[lv] || '글쓰기 평가';
+    document.getElementById('rubricScoreMini').innerHTML = (r.task_score??0)+'<small>점</small>';
+    const rubricList = document.getElementById('rubricList');
+    rubricList.innerHTML = '';
+    (r.rubric||[]).forEach(item => {
+      const statusIcon = {pass:'#i-check',warn:'#i-alert',fail:'#i-alert'}[item.status]||'#i-check';
+      const el = document.createElement('div');
+      el.className = `rubric-item ${item.status||'pass'}`;
+      el.innerHTML = `
+        <div class="rubric-check"><span class="icon icon-16"><svg><use href="${statusIcon}"/></svg></span></div>
+        <div class="rubric-body">
+          <div class="rubric-title">${escapeHtml(item.title||'')}</div>
+          <div class="rubric-desc">${escapeHtml(item.desc||'')}</div>
+        </div>`;
+      rubricList.appendChild(el);
+    });
+    document.getElementById('rubricTipText').innerHTML =
+      '<b>선생님 한마디:</b> ' + escapeHtml(r.language_tip||r.spelling_tip||'잘 했어요!');
+
+    const errs = r.spelling_errors||[];
+    if (errs.length > 0) {
+      fbSpellingOpen.classList.remove('hidden');
+      const scoreVal = r.language_score??r.expression_score??r.logic_score??0;
+      document.getElementById('spellScoreMiniOpen').innerHTML = scoreVal+'<small>점</small>';
+      const errBox = document.getElementById('spellErrorsOpen');
+      errBox.innerHTML = '';
+      errs.forEach(e => errBox.appendChild(buildSpellErrorCard(e)));
+      document.getElementById('spellTipTextOpen').innerHTML = '<b>참고:</b>' + escapeHtml(r.language_tip||'');
+    } else {
+      fbSpellingOpen.classList.add('hidden');
+    }
+  }
+}
+
+// ===========================================
+// 재시도 카드 (점수 70 미만 강조)
+// ===========================================
+function updateRetryCards(result) {
+  const wrongBtn = document.getElementById('retryWrongBtn');
+  const sameBtn = document.getElementById('retrySameBtn');
+  const newBtn = document.getElementById('retryNewBtn');
+  const warnBanner = document.getElementById('retryWarnBanner');
+  const recommendBadge = document.getElementById('retryRecommendBadge');
+  if (!wrongBtn) return;
+
+  const score = result?.total_score ?? 100;
+  const errs = result?.spelling_errors || [];
+  const lowScore = score < 70;
+
+  // 맞춤법 틀린 글자
+  if (errs.length > 0) {
+    wrongBtn.disabled = false;
+    document.getElementById('retryWrongDesc').innerHTML = `맞춤법 ${errs.length}개를<br>연습해 보세요`;
+  } else {
+    wrongBtn.disabled = true;
+    document.getElementById('retryWrongDesc').innerHTML = `맞춤법 오류가<br>없어요!`;
+  }
+
+  // 70점 미만: 재도전 강조
+  if (lowScore) {
+    warnBanner && warnBanner.classList.remove('hidden');
+    sameBtn && sameBtn.classList.add('recommended');
+    recommendBadge && recommendBadge.classList.remove('hidden');
+    newBtn && (newBtn.style.opacity = '0.5');
+  } else {
+    warnBanner && warnBanner.classList.add('hidden');
+    sameBtn && sameBtn.classList.remove('recommended');
+    recommendBadge && recommendBadge.classList.add('hidden');
+    newBtn && (newBtn.style.opacity = '');
+  }
+}
+
+// ===========================================
+// 재시도 옵션
+// ===========================================
+function retryWrongOnly() {
+  const result = state.analysisResult;
+  if (!result || !result.spelling_errors || result.spelling_errors.length === 0) {
+    alert('맞춤법 오류가 없어요! 다른 옵션을 선택해 주세요.');
+    return;
+  }
+  const wrongWords = result.spelling_errors.map(e=>({wrong:e.wrong,right:e.right})).filter(w=>w.wrong&&w.right);
+  if (wrongWords.length === 0) { alert('연습할 글자가 없어요.'); return; }
+  state.practiceMode = true;
+  state.practiceWords = wrongWords;
+  state.practiceIndex = 0;
+  goToStep(2);
+  setInputTab('canvas');
+  showPracticeBanner();
+}
+
+function retrySameProblem() {
+  state.previousScore = state.analysisResult?.total_score ?? 0;
+  state.isRetry = true;
+  state.imageData = null;
+  state.imageMediaType = 'image/png';
+  state.analysisResult = null;
+  goToStep(2);
+}
+
+function retryNewProblem() {
+  const lv = state.level;
+  const taskTypeIdx = state.taskTypeIdx;
+  const pool = (PROBLEM_BANK[lv] || {})[taskTypeIdx] || [];
+  if (pool.length === 0) { goToStep(1); return; }
+
+  // 순차 진행: 다음 문제로 (마지막이면 처음으로 순환)
+  const nextIdx = (state.problemIdx + 1) % pool.length;
+  const isWrapping = nextIdx === 0 && pool.length > 1;
+
+  if (isWrapping) {
+    const confirmed = confirm('마지막 문제예요!\n처음 문제(1번)부터 다시 시작할까요?');
+    if (!confirmed) return;
+  }
+
+  state.problemIdx = nextIdx;
+  state.imageData = null;
+  state.analysisResult = null;
+  state.isRetry = false;
+  state.previousScore = null;
+  renderProblemPreview();
+  goToStep(1);
+}
+
+
+
+// 초기 렌더
+
+
+// ── Preserved utility functions (unchanged from original) ──
 
 // TTS (1학년) - 개선 버전
 // 음성 목록 로딩 대기
@@ -2511,7 +4163,7 @@ function findKoreanVoice(voices) {
 }
 
 async function speakSentence() {
-  if (state.grade !== 1) return;
+  if (state.level !== 1 || !currentProblem() || currentProblem().type !== 'dictation') return;
   const p = currentProblem();
   const btn = document.getElementById('audioBtn');
   if (!btn) return;
@@ -2586,68 +4238,15 @@ function showTtsError(msg) {
 }
 
 // STEP 2 요약 영역
-function renderTaskSummary() {
-  const box = document.getElementById('taskSummary');
-  const p = currentProblem();
-  const g = state.grade;
-
-  let content = '';
-  if (g === 1) {
-    content = `
-      <span class="label">받아쓰기</span>
-      <div class="content">
-        <span>선생님 목소리를 듣고 쓰세요</span>
-      </div>
-      <button class="replay-btn" onclick="speakSentence()">
-        <span class="icon icon-16"><svg><use href="#i-volume"/></svg></span>
-        다시 듣기
-      </button>
-    `;
-  } else if (g === 2) {
-    content = `
-      <span class="label">주제 낱말</span>
-      <div class="content">
-        ${p.words.map(w => `<span class="mini-word">${escapeHtml(w)}</span>`).join('')}
-        <span style="color:var(--gray-2); font-weight:500; font-size:13px;">→ 한 문장으로 만들기</span>
-      </div>
-    `;
-  } else if (g === 3) {
-    content = `
-      <span class="label">그림 보고 쓰기</span>
-      <div class="content">
-        <span class="mini-emoji">${p.emoji}</span>
-        <span>${escapeHtml(p.caption)}</span>
-      </div>
-    `;
-  } else if (g === 4) {
-    content = `
-      <span class="label">물건 설명</span>
-      <div class="content">
-        <span class="mini-emoji">${p.emoji}</span>
-        <span><b>${escapeHtml(p.name)}</b>의 특징을 설명해 보세요</span>
-      </div>
-    `;
-  }
-
-  box.innerHTML = content;
-}
 
 // ===========================================
 // STEP 2: input modes (변경 없음)
 // ===========================================
 document.getElementById('inputTabs').addEventListener('click', (e) => {
   const btn = e.target.closest('button');
-  if (!btn) return;
-  document.querySelectorAll('#inputTabs button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-
+  if (!btn || !btn.dataset.mode) return;
   const mode = btn.dataset.mode;
-  state.inputMode = mode;
-  document.querySelectorAll('.input-panel').forEach(p => p.classList.remove('active'));
-  document.querySelector(`.input-panel[data-mode="${mode}"]`).classList.add('active');
-
-  if (mode === 'canvas') initCanvas();
-  if (mode !== 'camera' && state.cameraStream) stopCamera();
+  setInputTab(mode);
 
   // preview removed
   document.getElementById('submitBtn').disabled = true;
@@ -2794,68 +4393,7 @@ function stopCamera() {
   stopCameraBtn.style.display = 'none';
 }
 
-function initCanvas() {
-  const canvas = document.getElementById('writeCanvas');
-  const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
 
-  // 학년별 캔버스 높이: 1~2학년 2줄(280px), 3~4학년 4줄(440px)
-  const isLongForm = state.grade >= 3;
-  const canvasHeight = isLongForm ? 440 : 280;
-
-  canvas.width = rect.width * dpr;
-  canvas.height = canvasHeight * dpr;
-  canvas.style.height = canvasHeight + 'px';
-  ctx.scale(dpr, dpr);
-  state.canvasContext = ctx;
-  state.canvasWidth = rect.width;
-  state.canvasHeight = canvasHeight;
-
-  drawGrid();
-  bindCanvasEvents(canvas, ctx);
-}
-
-function drawGrid() {
-  const ctx = state.canvasContext;
-  const w = state.canvasWidth;
-  const h = state.canvasHeight;
-
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, w, h);
-
-  // 학년별 그리드: 1~2학년 2줄×12칸(24자), 3~4학년 4줄×10칸(40자)
-  const isLongForm = state.grade >= 3;
-  const cols = isLongForm ? 10 : 12;
-  const rows = isLongForm ? 4 : 2;
-  const cellW = w / cols;
-  const cellH = h / rows;
-
-  ctx.strokeStyle = '#D9D9D9';
-  ctx.lineWidth = 1;
-
-  for (let i = 0; i <= cols; i++) {
-    ctx.beginPath();
-    ctx.moveTo(i * cellW, 0);
-    ctx.lineTo(i * cellW, h);
-    ctx.stroke();
-  }
-  for (let i = 0; i <= rows; i++) {
-    ctx.beginPath();
-    ctx.moveTo(0, i * cellH);
-    ctx.lineTo(w, i * cellH);
-    ctx.stroke();
-  }
-
-  ctx.fillStyle = '#EEEEEE';
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      ctx.beginPath();
-      ctx.arc(c * cellW + cellW/2, r * cellH + cellH/2, 1, 0, Math.PI*2);
-      ctx.fill();
-    }
-  }
-}
 
 function bindCanvasEvents(canvas, ctx) {
   const getPos = (e) => {
@@ -2956,12 +4494,8 @@ async function runAnalysis() {
     return;
   }
 
-  // 학년별 step2 라벨 업데이트
-  const step2Label = document.getElementById('analyzeStep2Label');
-  if (state.grade === 1) step2Label.textContent = '정답 문장과 비교하고 있어요';
-  else if (state.grade === 2) step2Label.textContent = '낱말이 잘 쓰였는지 확인하고 있어요';
-  else if (state.grade === 3) step2Label.textContent = '그림 내용을 잘 표현했는지 보고 있어요';
-  else if (state.grade === 4) step2Label.textContent = '물건의 특징을 잘 설명했는지 보고 있어요';
+  // 레벨별 step2 라벨 업데이트
+  updateAnalyzeStep2Label();
 
   goToStep(3);
   resetAnalyzeSteps();
@@ -3211,383 +4745,6 @@ function setAnalyzeStep(key, status) {
   }
 }
 
-// ===========================================
-// 학년별 프롬프트 빌더
-// ===========================================
-function buildPrompt() {
-  const p = currentProblem();
-  const g = state.grade;
-
-  // 공통 시스템 베이스
-  const baseSystem = `당신은 대한민국 초등학교 저학년(1~4학년) 글쓰기 지도를 전문적으로 하는 국어 교사입니다.
-학생이 종이(원고지 또는 캔버스)에 연필로 직접 쓴 손글씨 이미지를 분석해, 한글 글씨 가독성과 과제 수행 정도를 평가하고 따뜻하고 구체적인 피드백을 JSON으로만 반환합니다.
-반드시 지정된 JSON 스키마만 출력하세요. 설명이나 마크다운 코드블록 없이 순수 JSON만 출력합니다.
-
-★ 가장 중요한 원칙 — OCR 정확성 ★
-recognized_text는 반드시 "학생이 실제로 쓴 글자 그대로"를 담아야 합니다. 다음은 절대 금지:
-
-1. 자동 교정 금지: 학생이 "판다"라고 썼으면 "핀다"로 고치지 마세요. "녀써"를 "녔다"로 추측하지 마세요. 학생의 오류는 그대로 유지해야 맞춤법 교정이 의미 있어집니다.
-2. 의미적 보정 금지: 문맥상 "예쁜"이 자연스러워도 "여러"라고 썼으면 "여러"입니다. 학생이 쓴 글자 하나하나를 그대로 읽으세요.
-3. 창의적 해석 금지: 글자가 불분명할 때 "이 문장이라면 이런 단어일 것"이라는 추측으로 채우지 마세요. 시각적으로 가장 비슷한 글자를 선택하세요.
-4. 자모 단위 충실성: 받침, 모음의 형태를 있는 그대로 반영하세요. "든"을 "들"로, "으"를 "어"로 바꾸지 마세요.
-
-판독이 어려운 경우의 원칙:
-- 매우 불확실한 글자: 시각적으로 가장 비슷한 글자를 선택하고 char_analysis에서 status를 "bad"로 표시
-- 완전히 읽을 수 없는 글자: "□" 또는 "?"로 표시하고 note에 "판독 불가" 기록
-- confidence는 실제 확신 정도를 반영 (불확실하면 낮게)
-
-recognized_text와 char_analysis는 "있는 그대로 OCR 결과"이고, spelling_errors와 피드백은 "교정이 필요한 부분"입니다. 이 두 역할을 절대 섞지 마세요.
-
-★★ char_analysis 일치 규칙 (매우 중요) ★★
-char_analysis 배열의 char 값들을 공백 포함 순서대로 이어 붙이면, recognized_text와 정확히 일치해야 합니다.
-예시: 학생이 "강종강종"이라고 썼으면
-  recognized_text: "토끼가 강종강종 뛰어요"
-  char_analysis: [토,끼,가,(space),강,종,강,종,(space),뛰,어,요]
-  ❌ 절대 금지: char_analysis에 "깡","충","깡","충" 넣기 (AI가 정답을 추측해서 넣는 것)
-  
-recognized_text와 char_analysis가 서로 다른 글자를 담으면 안 됩니다. 
-"학생이 실제로 쓴 글자"는 두 곳 모두에서 동일해야 하고, "교정 정보"는 오직 spelling_errors에만 들어갑니다.
-
-공통 규칙:
-- char_analysis는 "학생이 쓴 글자"를 순서대로 표현합니다 (공백은 status: "space"). 학생이 쓰지 않은 글자까지 상상해서 채우지 않습니다.
-- good: 바르게 잘 씀 / warn: 약간 삐뚤거나 받침이 모음 밖으로 나옴 / bad: 알아보기 힘듦 / space: 띄어쓰기
-- 손글씨가 전혀 보이지 않거나 빈 종이면 confidence 10 이하, teacher_comment는 "아직 글씨가 안 보여요".
-- 점수는 객관적 평가. 손글씨가 읽힐 정도면 legibility 70점 이상.
-- teacher_comment는 20자 이내 격려 존댓말.
-
-★ spelling_errors 작성 가이드 (매우 중요) ★
-각 맞춤법 오류는 다음 4가지를 모두 포함해 학생이 "왜 틀렸는지" 진짜 이해할 수 있게 설명하세요:
-
-1. wrong / right: 틀린 표기와 바른 표기
-2. reason (왜 이게 맞을까?): 어원, 뜻, 문법 규칙 등을 학년 눈높이로 설명
-   - 1~2학년: 단순한 비유, 그림 묘사 우선
-   - 3~4학년: 어원, 한자어 뜻, 문법 규칙 활용 가능
-   - 모두 친근한 존댓말, 80자 이내, "~예요/~이에요" 톤
-3. memory_tip (기억하는 방법): 외우기 쉬운 연상법 (50자 이내)
-   - 예: "도서 = 책 → 도서관 = 책을 보는 곳!"
-   - 예: "ㅆ은 받침이 두 개! 강하게 발음할 때 써요"
-
-학년별 톤:
-- 1학년: "와! 이런 글자가 있어요" / 큰 발견의 느낌, 짧고 간단
-- 2학년: "이렇게 알아두면 좋아요" / 친근한 안내
-- 3학년: "이 글자는 ~라는 뜻이에요" / 의미 설명 강화
-- 4학년: "한자어로는 ~이에요" / 어원·논리 강조`;
-
-  if (g === 1) {
-    // 받아쓰기: 정답 비교
-    const system = `${baseSystem}
-
-[이번 과제 유형: 1학년 받아쓰기]
-학생은 선생님이 읽어 준 문장을 듣고 그대로 받아 썼습니다. 정답과 학생이 쓴 글을 비교해 맞춤법/띄어쓰기 오류를 짚어 주세요.
-
-⚠️ 받아쓰기 특별 주의사항:
-받아쓰기는 "학생이 실제로 쓴 글자"를 정확히 파악하는 것이 가장 중요합니다. 
-정답을 알고 있다고 해서 학생의 오류를 recognized_text에서 자동으로 고치면 안 됩니다.
-예: 정답이 "날아다녔다"이고 학생이 "날아다녀써"라고 썼으면, recognized_text는 반드시 "날아다녀써"여야 합니다.
-그래야 spelling_errors에서 "녀써 → 녔다"로 정확한 교정 피드백을 줄 수 있습니다.
-
-출력 스키마:
-{
-  "task_type": "dictation",
-  "recognized_text": "학생이 쓴 글을 그대로 읽어낸 텍스트",
-  "confidence": 0-100,
-  "total_score": 0-100,
-  "legibility_score": 0-100,
-  "spelling_score": 0-100,
-  "spacing_score": 0-100,
-  "teacher_comment": "20자 이내 격려 존댓말",
-  "char_analysis": [{"char":"글자","status":"good|warn|bad|space","note":""}],
-  "legibility_tip": "글씨 개선 팁 1~2문장 존댓말",
-  "spelling_errors": [{
-    "wrong":"틀린 글자",
-    "right":"바른 글자",
-    "reason":"왜 이게 맞는지 설명 (1학년 눈높이, 어원/뜻 풀이 우선, 80자 이내, 친근한 존댓말)",
-    "memory_tip":"기억하는 방법 (연상법, 비유, 그림 묘사 등, 50자 이내, 친근한 존댓말)"
-  }],
-  "spelling_tip": "오늘의 한 줄 배움 (전체 학습 포인트, 30자 이내)"
-}`;
-    const user = `정답 문장: "${p.text}"
-
-첨부된 이미지에서 학생이 쓴 손글씨를 읽고, 정답과 비교해 위 스키마대로 분석해 주세요.
-
-💡 recognized_text에는 "학생이 실제로 쓴 글자 그대로"를 담으세요. 정답을 참고해서 자동 교정하지 마세요. 학생의 오류가 spelling_errors에 정확히 포착되어야 교육적 가치가 있습니다.`;
-    return { system, user };
-  }
-
-  if (g === 2) {
-    // 낱말로 한 문장 만들기
-    const system = `${baseSystem}
-
-[이번 과제 유형: 2학년 낱말로 한 문장 만들기]
-학생은 제시된 주제 낱말들을 모두 사용해서 한 문장을 만들어야 합니다. 정답은 없고, 평가 항목은:
-1) 제시된 낱말을 모두 사용했는가
-2) 문장이 완결되었는가 (주어-서술어 구조, 마침표)
-3) 맞춤법·띄어쓰기가 맞는가
-4) 글씨를 바르게 썼는가
-
-출력 스키마:
-{
-  "task_type": "word_to_sentence",
-  "recognized_text": "학생이 쓴 문장을 그대로 읽어낸 텍스트",
-  "confidence": 0-100,
-  "total_score": 0-100,
-  "legibility_score": 0-100,
-  "task_score": 0-100,
-  "language_score": 0-100,
-  "teacher_comment": "20자 이내 격려 존댓말",
-  "char_analysis": [{"char":"글자","status":"good|warn|bad|space","note":""}],
-  "legibility_tip": "글씨 개선 팁 1~2문장",
-  "rubric": [
-    {"title":"주제 낱말 사용","status":"pass|warn|fail","desc":"어떤 낱말을 썼고 어떤 낱말이 빠졌는지"},
-    {"title":"문장 완결성","status":"pass|warn|fail","desc":"문장으로 제대로 끝났는지"},
-    {"title":"맞춤법·띄어쓰기","status":"pass|warn|fail","desc":"오류가 있는지"}
-  ],
-  "spelling_errors": [{"wrong":"틀린 글자","right":"바른 글자","reason":"왜 이게 맞는지 학년 눈높이 설명 (80자 이내, 어원·뜻·문법 규칙 활용, 친근한 존댓말)","memory_tip":"기억법 (50자 이내, 친근한 존댓말)"}],
-  "language_tip": "문장 표현 개선 팁 1~2문장"
-}`;
-    const user = `주제 낱말: ${p.words.join(', ')}
-과제: 위 낱말들을 모두 사용해서 한 문장을 만드는 것이 과제입니다.
-
-첨부된 이미지에서 학생이 쓴 문장을 읽고 위 스키마대로 분석해 주세요. 
-
-💡 recognized_text에는 학생이 실제로 쓴 글자를 그대로 담아주세요. "여쁜"을 "예쁜"으로, "판다"를 "핀다"로 자동 교정하지 마세요. 의미가 어색해도 시각적으로 보이는 글자를 그대로 옮기세요.`;
-    return { system, user };
-  }
-
-  if (g === 3) {
-    const system = `${baseSystem}
-
-[이번 과제 유형: 3학년 그림 보고 한 문장 쓰기]
-학생은 제시된 장면(그림)을 보고 한 문장으로 설명해야 합니다. 평가 항목:
-1) 그림 내용(주요 대상·행동)을 반영했는가
-2) 문장이 완결되었는가
-3) 표현이 풍부한가 (꾸며 주는 말 사용 등)
-4) 맞춤법·띄어쓰기가 맞는가
-5) 글씨를 바르게 썼는가
-
-출력 스키마:
-{
-  "task_type": "picture_to_sentence",
-  "recognized_text": "학생이 쓴 문장",
-  "confidence": 0-100,
-  "total_score": 0-100,
-  "legibility_score": 0-100,
-  "task_score": 0-100,
-  "expression_score": 0-100,
-  "teacher_comment": "20자 이내 격려 존댓말",
-  "char_analysis": [{"char":"글자","status":"good|warn|bad|space","note":""}],
-  "legibility_tip": "글씨 개선 팁",
-  "rubric": [
-    {"title":"그림 내용 반영","status":"pass|warn|fail","desc":"주요 대상과 행동이 문장에 담겼는지"},
-    {"title":"문장 완결성","status":"pass|warn|fail","desc":""},
-    {"title":"표현의 풍부함","status":"pass|warn|fail","desc":"꾸며 주는 말 등이 있는지"},
-    {"title":"맞춤법·띄어쓰기","status":"pass|warn|fail","desc":""}
-  ],
-  "spelling_errors": [{"wrong":"틀린 글자","right":"바른 글자","reason":"왜 이게 맞는지 학년 눈높이 설명 (80자 이내, 어원·뜻·문법 규칙 활용, 친근한 존댓말)","memory_tip":"기억법 (50자 이내, 친근한 존댓말)"}],
-  "language_tip": "문장 표현 개선 팁"
-}`;
-    const user = `그림(장면): ${p.caption} (이모지: ${p.emoji})
-과제: 이 장면을 한 문장으로 설명하는 것이 과제입니다.
-
-첨부된 이미지에서 학생이 쓴 문장을 읽고 분석해 주세요.
-
-💡 recognized_text에는 학생이 실제로 쓴 글자를 그대로 담으세요. 띄어쓰기 오류("뛰어놀고있어요"처럼 붙여 쓴 경우 등)나 맞춤법 오류도 원본 그대로 반영하세요. 자동 교정 금지.`;
-    return { system, user };
-  }
-
-  if (g === 4) {
-    const system = `${baseSystem}
-
-[이번 과제 유형: 4학년 물건 설명하기]
-학생은 제시된 물건의 특징을 두세 문장으로 설명해야 합니다. 평가 항목:
-1) 물건의 특징을 정확히 설명했는가 (생김새/쓰임새 등)
-2) 두 문장 이상 썼는가
-3) 문장 간 흐름이 자연스러운가
-4) 맞춤법·띄어쓰기가 맞는가
-5) 글씨를 바르게 썼는가
-
-출력 스키마:
-{
-  "task_type": "object_description",
-  "recognized_text": "학생이 쓴 글 (여러 문장)",
-  "confidence": 0-100,
-  "total_score": 0-100,
-  "legibility_score": 0-100,
-  "task_score": 0-100,
-  "logic_score": 0-100,
-  "teacher_comment": "20자 이내 격려 존댓말",
-  "char_analysis": [{"char":"글자","status":"good|warn|bad|space","note":""}],
-  "legibility_tip": "글씨 개선 팁",
-  "rubric": [
-    {"title":"특징 설명의 정확성","status":"pass|warn|fail","desc":"물건의 어떤 특징을 잘 짚었는지"},
-    {"title":"충분한 분량","status":"pass|warn|fail","desc":"두 문장 이상 썼는지"},
-    {"title":"설명의 흐름","status":"pass|warn|fail","desc":"문장 연결이 자연스러운지"},
-    {"title":"맞춤법·띄어쓰기","status":"pass|warn|fail","desc":""}
-  ],
-  "spelling_errors": [{"wrong":"틀린 글자","right":"바른 글자","reason":"왜 이게 맞는지 학년 눈높이 설명 (80자 이내, 어원·뜻·문법 규칙 활용, 친근한 존댓말)","memory_tip":"기억법 (50자 이내, 친근한 존댓말)"}],
-  "language_tip": "설명글 작성 개선 팁"
-}`;
-    const user = `설명할 물건: ${p.name} (이모지: ${p.emoji})
-참고 힌트: ${p.hints}
-과제: 이 물건의 특징을 두세 문장으로 설명하는 것이 과제입니다.
-
-첨부된 이미지에서 학생이 쓴 글을 읽고 분석해 주세요.
-
-💡 recognized_text에는 학생이 실제로 쓴 글자를 그대로 담으세요. 맞춤법이나 논리 오류가 있어도 원본 그대로 반영해야 정확한 피드백이 가능합니다. 자동 교정 금지.`;
-    return { system, user };
-  }
-}
-
-// ===========================================
-// 수정된 텍스트 기반 재평가 (이미지 없이, 가벼움)
-// ===========================================
-async function reevaluateWithCorrectedText(correctedText) {
-  // 프로덕션 모드: 인증은 서버에서 처리
-
-  const p = currentProblem();
-  const g = state.grade;
-
-  let system = '';
-  let user = '';
-
-  const baseSystemEval = `당신은 대한민국 초등학교 저학년 글쓰기 지도 교사입니다.
-학생이 쓴 글을 텍스트로 받아서, 맞춤법·띄어쓰기·과제 수행 정도를 평가합니다.
-반드시 JSON만 출력합니다. 설명이나 마크다운 코드블록 없이 순수 JSON만.
-teacher_comment는 20자 이내 격려 존댓말입니다.
-
-★ spelling_errors는 다음 4가지 필드 모두 포함:
-1. wrong / right: 틀린 표기와 바른 표기
-2. reason: "왜 이게 맞을까?" 학년 눈높이 설명 (80자 이내, 친근한 존댓말, 어원·뜻 활용)
-3. memory_tip: 기억법 (50자 이내, 친근한 존댓말, 연상법 활용)`;
-
-  if (g === 1) {
-    system = `${baseSystemEval}
-
-[1학년 받아쓰기 평가]
-학생이 쓴 글을 정답과 비교해 맞춤법/띄어쓰기 오류를 평가합니다.
-
-출력 스키마:
-{
-  "total_score": 0-100,
-  "spelling_score": 0-100,
-  "spacing_score": 0-100,
-  "teacher_comment": "20자 이내 격려",
-  "spelling_errors": [{"wrong":"틀린", "right":"바른", "reason":"이유"}],
-  "spelling_tip": "오늘의 한 줄 배움"
-}`;
-    user = `정답 문장: "${p.text}"
-학생이 쓴 문장: "${correctedText}"
-
-위 둘을 비교해 평가해 주세요.`;
-  } else if (g === 2) {
-    system = `${baseSystemEval}
-
-[2학년 낱말로 한 문장 만들기 평가]
-학생은 주제 낱말을 모두 사용해 한 문장을 만들어야 합니다.
-
-출력 스키마:
-{
-  "total_score": 0-100,
-  "task_score": 0-100,
-  "language_score": 0-100,
-  "teacher_comment": "20자 이내 격려",
-  "rubric": [
-    {"title":"주제 낱말 사용", "status":"pass|warn|fail", "desc":"어떤 낱말을 썼고 어떤 낱말이 빠졌는지"},
-    {"title":"문장 완결성", "status":"pass|warn|fail", "desc":"주어-서술어 구조, 마침표"},
-    {"title":"맞춤법·띄어쓰기", "status":"pass|warn|fail", "desc":"오류 유무"}
-  ],
-  "spelling_errors": [{"wrong":"", "right":"", "reason":""}],
-  "language_tip": "문장 표현 개선 팁 1~2문장"
-}`;
-    user = `주제 낱말: ${p.words.join(', ')}
-학생이 쓴 문장: "${correctedText}"
-
-위 문장을 평가해 주세요.`;
-  } else if (g === 3) {
-    system = `${baseSystemEval}
-
-[3학년 그림 보고 한 문장 쓰기 평가]
-학생은 제시된 장면을 한 문장으로 설명해야 합니다.
-
-출력 스키마:
-{
-  "total_score": 0-100,
-  "task_score": 0-100,
-  "expression_score": 0-100,
-  "teacher_comment": "20자 이내 격려",
-  "rubric": [
-    {"title":"그림 내용 반영", "status":"pass|warn|fail", "desc":""},
-    {"title":"문장 완결성", "status":"pass|warn|fail", "desc":""},
-    {"title":"표현의 풍부함", "status":"pass|warn|fail", "desc":"꾸며 주는 말 등"},
-    {"title":"맞춤법·띄어쓰기", "status":"pass|warn|fail", "desc":""}
-  ],
-  "spelling_errors": [{"wrong":"", "right":"", "reason":""}],
-  "language_tip": "문장 표현 개선 팁"
-}`;
-    user = `장면: ${p.caption}
-학생이 쓴 문장: "${correctedText}"
-
-위 문장을 평가해 주세요.`;
-  } else {
-    system = `${baseSystemEval}
-
-[4학년 물건 설명하기 평가]
-학생은 물건의 특징을 두세 문장으로 설명해야 합니다.
-
-출력 스키마:
-{
-  "total_score": 0-100,
-  "task_score": 0-100,
-  "logic_score": 0-100,
-  "teacher_comment": "20자 이내 격려",
-  "rubric": [
-    {"title":"특징 설명의 정확성", "status":"pass|warn|fail", "desc":""},
-    {"title":"충분한 분량", "status":"pass|warn|fail", "desc":"두 문장 이상"},
-    {"title":"설명의 흐름", "status":"pass|warn|fail", "desc":"자연스러운 연결"},
-    {"title":"맞춤법·띄어쓰기", "status":"pass|warn|fail", "desc":""}
-  ],
-  "spelling_errors": [{"wrong":"", "right":"", "reason":""}],
-  "language_tip": "설명글 개선 팁"
-}`;
-    user = `설명할 물건: ${p.name}
-참고 힌트: ${p.hints}
-학생이 쓴 글: "${correctedText}"
-
-위 글을 평가해 주세요.`;
-  }
-
-  const proxyUrl = resolveProxyUrl();
-  const response = await fetch(proxyUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-access-password": ''
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1500,
-      system: system,
-      messages: [{ role: "user", content: user }]
-    })
-  });
-
-  if (!response.ok) {
-    const errText = await response.text().catch(() => '');
-    throw new Error(`재평가 실패 (${response.status}): ${errText.substring(0, 100)}`);
-  }
-
-  const data = await response.json();
-  const text = data.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
-  const cleaned = text.replace(/```json\s*|\s*```/g, '').trim();
-
-  try {
-    return JSON.parse(cleaned);
-  } catch (e) {
-    const m = cleaned.match(/\{[\s\S]*\}/);
-    if (m) return JSON.parse(m[0]);
-    throw new Error('재평가 응답을 해석할 수 없어요.');
-  }
-}
 
 async function callClaudeVision() {
   // 프로덕션 모드: 인증은 서버에서만 처리됨
@@ -3692,647 +4849,6 @@ async function callClaudeVision() {
   return parsed;
 }
 
-// ===========================================
-// 점수 구간별 격려 시스템 (학년별 톤 차별화)
-// ===========================================
-
-const ENCOURAGEMENT_MESSAGES = {
-  excellent: {
-    1: { title: '와! 정말정말 잘했어요!', sub: '엄청 멋진 글이에요!', emoji: '🎉', chip: '🌟 최고예요!' },
-    2: { title: '정말정말 잘 썼어요!', sub: '대단해요! 완벽한 문장이에요!', emoji: '🎊', chip: '🌟 최고예요!' },
-    3: { title: '정말 잘 표현했어요!', sub: '글잼 친구도 깜짝 놀랐어요!', emoji: '✨', chip: '🌟 최고예요!' },
-    4: { title: '논리적이고 명확한 글이에요!', sub: '설명이 아주 자연스러워요!', emoji: '🏆', chip: '🌟 최고예요!' }
-  },
-  great: {
-    1: { title: '잘하고 있어요!', sub: '조금만 더 연습하면 완벽해질 거예요!', emoji: '⭐', chip: '👍 잘했어요' },
-    2: { title: '잘 썼어요!', sub: '거의 다 맞았어요. 조금만 더!', emoji: '⭐', chip: '👍 잘했어요' },
-    3: { title: '잘 표현했어요!', sub: '조금 더 자세히 쓰면 더 좋아요!', emoji: '⭐', chip: '👍 잘했어요' },
-    4: { title: '잘 설명했어요!', sub: '논리가 잘 잡혀 있어요. 더 다듬어 볼까요?', emoji: '⭐', chip: '👍 잘했어요' }
-  },
-  good: {
-    1: { title: '잘 도전했어요!', sub: '같이 차근차근 봐볼까요?', emoji: '💪', chip: '🌱 성장 중' },
-    2: { title: '열심히 썼어요!', sub: '한 번만 더 다듬으면 좋아질 거예요!', emoji: '💪', chip: '🌱 성장 중' },
-    3: { title: '도전해서 멋져요!', sub: '몇 가지 부분만 같이 살펴봐요!', emoji: '💪', chip: '🌱 성장 중' },
-    4: { title: '시도가 좋았어요!', sub: '조금 더 명확하게 표현해 볼까요?', emoji: '💪', chip: '🌱 성장 중' }
-  },
-  keepGoing: {
-    1: { title: '괜찮아요, 도전한 게 대단해요!', sub: '같이 어떤 부분이 어려웠는지 봐볼까요?', emoji: '🤗', chip: '🌈 함께해요' },
-    2: { title: '잘 도전했어요!', sub: '어려운 부분은 같이 차근차근 봐봐요!', emoji: '🤗', chip: '🌈 함께해요' },
-    3: { title: '도전이 멋져요!', sub: '아래 피드백을 보고 다시 한 번 써봐요!', emoji: '🤗', chip: '🌈 함께해요' },
-    4: { title: '시작이 반이에요!', sub: '하나씩 짚어가면서 더 나아갈 수 있어요!', emoji: '🤗', chip: '🌈 함께해요' }
-  }
-};
-
-function getScoreTier(score) {
-  if (score >= 90) return 'excellent';
-  if (score >= 70) return 'great';
-  if (score >= 50) return 'good';
-  return 'keepGoing';
-}
-
-function getTierClass(tier) {
-  return {
-    excellent: 'tier-excellent',
-    great: 'tier-great',
-    good: 'tier-good',
-    keepGoing: 'tier-keep-going'
-  }[tier] || 'tier-great';
-}
-
-function applyEncouragement(score, grade) {
-  const tier = getScoreTier(score);
-  const gradeKey = grade || 1;
-  const msg = ENCOURAGEMENT_MESSAGES[tier][gradeKey] || ENCOURAGEMENT_MESSAGES[tier][1];
-
-  const hero = document.getElementById('fbHero');
-  hero.classList.remove('tier-excellent', 'tier-great', 'tier-good', 'tier-keep-going');
-  hero.classList.add(getTierClass(tier));
-
-  document.getElementById('encouragementTitle').textContent = msg.title;
-  document.getElementById('encouragementSub').textContent = msg.sub;
-  document.getElementById('fbCelebration').textContent = msg.emoji;
-  document.getElementById('scoreChip').textContent = msg.chip;
-
-  const confettiBox = document.getElementById('fbConfetti');
-  confettiBox.innerHTML = '';
-  if (tier === 'excellent') {
-    const emojis = ['🎉', '🎊', '✨', '⭐', '🌟', '💫'];
-    for (let i = 0; i < 15; i++) {
-      const piece = document.createElement('span');
-      piece.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-      piece.style.left = (Math.random() * 100) + '%';
-      piece.style.animationDelay = (Math.random() * 2) + 's';
-      piece.style.animationDuration = (2 + Math.random() * 2) + 's';
-      confettiBox.appendChild(piece);
-    }
-  }
-}
-
-// ===========================================
-// 결과 렌더링
-// ===========================================
-
-// 맞춤법 오류 글자 위치 계산
-function computeSpellErrorRanges(recognizedText, spellingErrors) {
-  const ranges = new Map();
-  if (!recognizedText || !Array.isArray(spellingErrors) || spellingErrors.length === 0) {
-    return ranges;
-  }
-
-  spellingErrors.forEach(err => {
-    const wrong = (err.wrong || '').trim();
-    const right = (err.right || '').trim();
-    if (!wrong) return;
-
-    let searchFrom = 0;
-    while (true) {
-      const idx = recognizedText.indexOf(wrong, searchFrom);
-      if (idx === -1) break;
-
-      for (let i = 0; i < wrong.length; i++) {
-        const charIdx = idx + i;
-        if (wrong[i] === ' ') continue;
-        ranges.set(charIdx, `${wrong} → ${right}`);
-      }
-      searchFrom = idx + wrong.length;
-    }
-  });
-
-  return ranges;
-}
-
-// char_analysis와 recognized_text 일치 검증·보정
-// AI가 잘못 반환한 경우 recognized_text 기준으로 char_analysis를 재생성
-function reconcileCharAnalysis(r) {
-  const text = (r.recognized_text || '').trim();
-  if (!text) return r;
-
-  const original = Array.isArray(r.char_analysis) ? r.char_analysis : [];
-
-  const originalText = original
-    .map(c => (c.status === 'space' ? ' ' : (c.char || '')))
-    .join('');
-
-  if (originalText === text) return r;
-
-  console.warn('[reconcile] char_analysis 불일치 감지. 자동 보정:', originalText, '→', text);
-
-  const originalByChar = new Map();
-  original.forEach(c => {
-    if (c.char && c.status !== 'space' && !originalByChar.has(c.char)) {
-      originalByChar.set(c.char, { status: c.status, note: c.note || '' });
-    }
-  });
-
-  const rebuilt = [...text].map(ch => {
-    if (ch === ' ') return { char: ' ', status: 'space', note: '' };
-    const matched = originalByChar.get(ch);
-    return {
-      char: ch,
-      status: matched ? matched.status : 'good',
-      note: matched ? matched.note : ''
-    };
-  });
-
-  return { ...r, char_analysis: rebuilt };
-}
-
-function renderResult(r) {
-  // ⭐ char_analysis 검증·보정
-  r = reconcileCharAnalysis(r);
-
-  document.getElementById('submittedImg').src = state.imageData;
-  const g = state.grade;
-
-  // ------- OCR 영역 분기 -------
-  const ocrGrade1 = document.getElementById('ocrOutputGrade1');
-  const ocrOpen = document.getElementById('ocrOutputOpen');
-
-  if (g === 1) {
-    ocrGrade1.classList.remove('hidden');
-    ocrOpen.classList.add('hidden');
-    document.getElementById('targetRef').textContent = currentProblem().text;
-    document.getElementById('ocrDisplay').innerHTML = renderDiffHtml(currentProblem().text, r.recognized_text || '');
-  } else {
-    ocrGrade1.classList.add('hidden');
-    ocrOpen.classList.remove('hidden');
-    document.getElementById('writtenSentenceText').textContent = r.recognized_text || '(읽을 수 있는 글자가 없어요)';
-  }
-
-  // ------- 신뢰도 -------
-  const conf = Math.max(0, Math.min(100, r.confidence || 0));
-  document.getElementById('confBar').style.width = conf + '%';
-  document.getElementById('confText').textContent = conf + '%';
-
-  // ------- 종합 점수 -------
-  document.getElementById('totalScore').innerHTML = (r.total_score ?? 0) + '<small>/100</small>';
-  document.getElementById('teacherComment').textContent = r.teacher_comment || '';
-
-  // ⭐ 점수 구간별 격려 시스템 적용
-  applyEncouragement(r.total_score ?? 0, state.grade);
-
-  // 재시도 카드 상태 업데이트
-  updateRetryCards(r);
-
-  // 이전 점수가 있으면 비교
-  if (state.isRetry && state.previousScore !== null) {
-    showScoreComparison(state.previousScore, r.total_score ?? 0);
-    state.isRetry = false;
-  }
-
-  // ------- 범주 점수 (학년별) -------
-  const catBox = document.getElementById('catBarsFb');
-  let cats = [];
-  if (g === 1) {
-    cats = [
-      { name: '글씨 가독성', val: r.legibility_score ?? 0 },
-      { name: '맞춤법', val: r.spelling_score ?? 0 },
-      { name: '띄어쓰기', val: r.spacing_score ?? 0 }
-    ];
-  } else if (g === 2) {
-    cats = [
-      { name: '글씨 가독성', val: r.legibility_score ?? 0 },
-      { name: '과제 수행', val: r.task_score ?? 0 },
-      { name: '문장·표현', val: r.language_score ?? 0 }
-    ];
-  } else if (g === 3) {
-    cats = [
-      { name: '글씨 가독성', val: r.legibility_score ?? 0 },
-      { name: '그림 표현', val: r.task_score ?? 0 },
-      { name: '표현력', val: r.expression_score ?? 0 }
-    ];
-  } else if (g === 4) {
-    cats = [
-      { name: '글씨 가독성', val: r.legibility_score ?? 0 },
-      { name: '설명 정확성', val: r.task_score ?? 0 },
-      { name: '논리·흐름', val: r.logic_score ?? 0 }
-    ];
-  }
-  catBox.innerHTML = cats.map((c, i) => `
-    <div class="cat-block">
-      <div class="name">${escapeHtml(c.name)}</div>
-      <div class="val">${c.val}</div>
-      <div class="mini-bar"><div class="mini-bar-fill" data-barfill="${i}" style="width:0%"></div></div>
-    </div>
-  `).join('');
-
-  requestAnimationFrame(() => {
-    cats.forEach((c, i) => {
-      const el = catBox.querySelector(`[data-barfill="${i}"]`);
-      if (el) el.style.width = c.val + '%';
-    });
-  });
-
-  // ------- 글씨 가독성 (공통) -------
-  document.getElementById('legScoreMini').innerHTML = (r.legibility_score ?? 0) + '<small>점</small>';
-
-  // 맞춤법 오류 글자 위치 계산
-  const spellErrorRanges = computeSpellErrorRanges(r.recognized_text || '', r.spelling_errors || []);
-
-  const grid = document.getElementById('charGrid');
-  grid.innerHTML = '';
-  (r.char_analysis || []).forEach((c, idx) => {
-    const cell = document.createElement('div');
-    cell.className = 'char-cell ' + (c.status || 'good');
-    if (c.status === 'space') {
-      cell.innerHTML = '';
-    } else {
-      cell.textContent = c.char || '';
-      const tagMap = { good: '★', warn: '!', bad: '✕' };
-      if (c.status !== 'good') {
-        const tagEl = document.createElement('span');
-        tagEl.className = 'tag';
-        tagEl.textContent = tagMap[c.status] || '';
-        cell.appendChild(tagEl);
-      }
-      if (c.note) cell.title = c.note;
-
-      // 맞춤법 오류 위치면 spell-error 클래스 추가
-      if (spellErrorRanges.has(idx)) {
-        cell.classList.add('spell-error');
-        const correction = spellErrorRanges.get(idx);
-        if (correction) cell.dataset.correction = correction;
-      }
-    }
-    grid.appendChild(cell);
-  });
-  document.getElementById('legTipText').innerHTML = (r.legibility_tip || '—').replace(/"([^"]+)"/g, '<b>"$1"</b>');
-
-  // ------- 1학년: 맞춤법 영역 -------
-  const fbSpelling = document.getElementById('fbSpelling');
-  const fbRubric = document.getElementById('fbRubric');
-  const fbSpellingOpen = document.getElementById('fbSpellingOpen');
-
-  if (g === 1) {
-    fbSpelling.classList.remove('hidden');
-    fbRubric.classList.add('hidden');
-    fbSpellingOpen.classList.add('hidden');
-
-    document.getElementById('spellScoreMini').innerHTML = (r.spelling_score ?? 0) + '<small>점</small>';
-
-    const errBox = document.getElementById('spellErrors');
-    errBox.innerHTML = '';
-    const errs = r.spelling_errors || [];
-    if (errs.length === 0) {
-      errBox.innerHTML = `
-        <div class="perfect-box">
-          <span class="icon icon-20"><svg><use href="#i-circle-check"/></svg></span>
-          완벽해요! 맞춤법과 띄어쓰기가 모두 정확해요.
-        </div>`;
-    } else {
-      errs.forEach(e => {
-        errBox.appendChild(buildSpellErrorCard(e));
-      });
-    }
-    document.getElementById('spellTipText').innerHTML = '<b>오늘의 한 줄 배움:</b> ' + escapeHtml(r.spelling_tip || '');
-  } else {
-    // 2~4학년
-    fbSpelling.classList.add('hidden');
-    fbRubric.classList.remove('hidden');
-
-    // 루브릭 섹션 타이틀
-    const rubricTitle = {
-      2: '낱말 문장 만들기 평가',
-      3: '그림 표현 평가',
-      4: '설명 글 평가'
-    }[g];
-    document.getElementById('rubricSectionTitle').textContent = rubricTitle;
-
-    const scoreKey = g === 2 ? 'task_score' : (g === 3 ? 'task_score' : 'task_score');
-    document.getElementById('rubricScoreMini').innerHTML = (r[scoreKey] ?? 0) + '<small>점</small>';
-
-    // 루브릭 렌더
-    const rubricList = document.getElementById('rubricList');
-    rubricList.innerHTML = '';
-    (r.rubric || []).forEach(item => {
-      const statusIcon = {
-        pass: '#i-check',
-        warn: '#i-alert',
-        fail: '#i-alert'
-      }[item.status] || '#i-check';
-      const el = document.createElement('div');
-      el.className = `rubric-item ${item.status || 'pass'}`;
-      el.innerHTML = `
-        <div class="rubric-check">
-          <span class="icon icon-16"><svg><use href="${statusIcon}"/></svg></span>
-        </div>
-        <div class="rubric-body">
-          <div class="rubric-title">${escapeHtml(item.title || '')}</div>
-          <div class="rubric-desc">${escapeHtml(item.desc || '')}</div>
-        </div>
-      `;
-      rubricList.appendChild(el);
-    });
-
-    document.getElementById('rubricTipText').innerHTML =
-      '<b>선생님 한마디:</b> ' + escapeHtml(r.language_tip || r.spelling_tip || '잘 했어요!');
-
-    // 맞춤법 오류가 있으면 추가 카드로
-    const errs = r.spelling_errors || [];
-    if (errs.length > 0) {
-      fbSpellingOpen.classList.remove('hidden');
-      const langScore = r.language_score ?? r.expression_score ?? r.logic_score ?? 0;
-      document.getElementById('spellScoreMiniOpen').innerHTML = langScore + '<small>점</small>';
-      const errBox = document.getElementById('spellErrorsOpen');
-      errBox.innerHTML = '';
-      errs.forEach(e => {
-        errBox.appendChild(buildSpellErrorCard(e));
-      });
-      document.getElementById('spellTipTextOpen').innerHTML = '<b>참고:</b>' + escapeHtml(r.language_tip || '');
-    } else {
-      fbSpellingOpen.classList.add('hidden');
-    }
-  }
-}
-
-// 맞춤법 오류 카드 빌더 (2섹션 구조: 비교/맞는 맞춤법/잘 기억하는 방법)
-function buildSpellErrorCard(e) {
-  const item = document.createElement('div');
-  item.className = 'spell-error';
-
-  const reason = (e.reason || '').trim();
-  const memoryTip = (e.memory_tip || '').trim();
-
-  let html = `
-    <div class="spell-error-header">
-      <div class="spell-compare">
-        <span class="wrong">${escapeHtml(e.wrong || '')}</span>
-        <span class="arrow">
-          <span class="icon icon-16"><svg><use href="#i-arrow-right"/></svg></span>
-        </span>
-        <span class="right">${escapeHtml(e.right || '')}</span>
-      </div>
-    </div>
-  `;
-
-  if (reason) {
-    html += `
-      <div class="spell-section">
-        <div class="spell-section-icon">📖</div>
-        <div class="spell-section-body">
-          <div class="spell-section-label">맞는 맞춤법은 무엇일까?</div>
-          <div class="spell-section-content">${escapeHtml(reason)}</div>
-        </div>
-      </div>
-    `;
-  }
-
-  if (memoryTip) {
-    html += `
-      <div class="spell-section tip">
-        <div class="spell-section-icon">💡</div>
-        <div class="spell-section-body">
-          <div class="spell-section-label">잘 기억하는 방법</div>
-          <div class="spell-section-content">${escapeHtml(memoryTip)}</div>
-        </div>
-      </div>
-    `;
-  }
-
-  item.innerHTML = html;
-  return item;
-}
-
-function renderDiffHtml(target, recognized) {
-  if (!recognized) return '<span style="color:var(--point)">읽을 수 있는 글자가 없어요</span>';
-
-  const a = [...target];
-  const b = [...recognized];
-  const m = a.length, n = b.length;
-  const dp = Array.from({length: m+1}, () => new Array(n+1).fill(0));
-
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      if (a[i-1] === b[j-1]) dp[i][j] = dp[i-1][j-1] + 1;
-      else dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
-    }
-  }
-
-  const ops = [];
-  let i = m, j = n;
-  while (i > 0 && j > 0) {
-    if (a[i-1] === b[j-1]) {
-      ops.unshift({type: 'same', ch: b[j-1]});
-      i--; j--;
-    } else if (dp[i-1][j] >= dp[i][j-1]) {
-      ops.unshift({type: 'remove', ch: a[i-1]});
-      i--;
-    } else {
-      ops.unshift({type: 'add', ch: b[j-1]});
-      j--;
-    }
-  }
-  while (i > 0) { ops.unshift({type: 'remove', ch: a[i-1]}); i--; }
-  while (j > 0) { ops.unshift({type: 'add', ch: b[j-1]}); j--; }
-
-  return ops.map(op => {
-    const ch = escapeHtml(op.ch);
-    if (op.type === 'same') return ch;
-    if (op.type === 'add') return `<span class="diff-remove">${ch}</span>`;
-    return `<span class="diff-add">${ch}</span>`;
-  }).join('');
-}
-
-// ===========================================
-// 재시도 옵션 (3가지 다른 방식)
-// ===========================================
-
-// 1. 틀린 부분만 다시 써보기
-// 맞춤법 오류가 있는 글자들을 모아서 캔버스에 한 글자씩 연습할 수 있게
-function retryWrongOnly() {
-  const result = state.analysisResult;
-  if (!result || !result.spelling_errors || result.spelling_errors.length === 0) {
-    alert('맞춤법 오류가 없어요! 다른 옵션을 선택해 주세요.');
-    return;
-  }
-
-  // 틀린 단어들 모으기
-  const wrongWords = result.spelling_errors
-    .map(e => ({ wrong: e.wrong, right: e.right }))
-    .filter(w => w.wrong && w.right);
-
-  if (wrongWords.length === 0) {
-    alert('연습할 글자가 없어요. 다른 옵션을 선택해 주세요.');
-    return;
-  }
-
-  // state에 연습 모드 정보 저장
-  state.practiceMode = true;
-  state.practiceWords = wrongWords;
-  state.practiceIndex = 0;
-
-  // 캔버스 모드로 step 2 진입
-  goToStep(2);
-  // 입력 탭을 캔버스로
-  setInputTab('canvas');
-  // 안내 메시지 표시
-  showPracticeBanner();
-}
-
-// 2. 이 과제 다시 도전
-// 같은 문제로 처음부터 다시
-function retrySameProblem() {
-  // 이전 점수 저장 (재도전 시 비교용)
-  state.previousScore = state.analysisResult?.total_score ?? 0;
-  state.isRetry = true;
-
-  // 입력 데이터만 초기화하고 같은 문제 유지
-  state.imageData = null;
-  state.imageMediaType = 'image/png';
-  state.analysisResult = null;
-
-  goToStep(2);
-}
-
-// 3. 다른 과제 풀어보기
-// 같은 학년의 다른 문제로 자동 이동
-function retryNewProblem() {
-  const grade = state.grade;
-  const problems = PROBLEM_BANK[grade];
-  if (!problems || problems.length <= 1) {
-    alert('이 학년의 다른 문제가 준비 중이에요. 처음 화면으로 돌아가요.');
-    goToStep(1);
-    return;
-  }
-
-  // 현재 문제와 다른 문제 랜덤 선택
-  let nextIdx;
-  do {
-    nextIdx = Math.floor(Math.random() * problems.length);
-  } while (nextIdx === state.problemIdx && problems.length > 1);
-
-  state.problemIdx = nextIdx;
-  state.imageData = null;
-  state.analysisResult = null;
-  state.isRetry = false;
-  state.previousScore = null;
-
-  // 학년 화면 다시 그리기
-  renderGradeContent();
-  goToStep(1);
-}
-
-// 연습 모드 배너 표시
-function showPracticeBanner() {
-  const card = document.querySelector('#step-2 .card');
-  if (!card) return;
-
-  // 기존 배너 제거
-  const existing = document.getElementById('practiceBanner');
-  if (existing) existing.remove();
-
-  const words = state.practiceWords || [];
-  const wordsList = words.map(w =>
-    `<span style="background:#FEE2E2; color:#DC2626; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; margin-right:6px;">${escapeHtml(w.wrong)} → ${escapeHtml(w.right)}</span>`
-  ).join('');
-
-  const banner = document.createElement('div');
-  banner.id = 'practiceBanner';
-  banner.style.cssText = 'background:linear-gradient(135deg,#FEE2E2 0%,#FECACA 100%); border:1.5px solid #DC2626; border-radius:var(--r-md); padding:14px 16px; margin-bottom:16px; display:flex; flex-direction:column; gap:8px;';
-  banner.innerHTML = `
-    <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:#991B1B; font-size:14px;">
-      <span style="font-size:18px;">✏️</span>
-      <span>틀린 글자 연습 모드</span>
-      <button onclick="exitPracticeMode()" style="margin-left:auto; background:white; border:1px solid #DC2626; color:#DC2626; padding:4px 10px; border-radius:6px; font-size:11px; cursor:pointer; font-family:inherit; font-weight:600;">연습 끝내기</button>
-    </div>
-    <div style="font-size:12px; color:#991B1B; line-height:1.5;">
-      아래 글자들을 종이에 또박또박 다시 써 보세요. 캔버스에 직접 써도 좋아요!
-    </div>
-    <div style="margin-top:4px;">${wordsList}</div>
-  `;
-  card.insertBefore(banner, card.children[1]);
-}
-
-function exitPracticeMode() {
-  state.practiceMode = false;
-  state.practiceWords = [];
-  state.practiceIndex = 0;
-  const banner = document.getElementById('practiceBanner');
-  if (banner) banner.remove();
-}
-
-// 입력 탭 전환 헬퍼
-function setInputTab(mode) {
-  const tabBtn = document.querySelector(`#inputTabs button[data-mode="${mode}"]`);
-  if (tabBtn) tabBtn.click();
-}
-
-// 재시도 카드 활성/비활성 결정
-function updateRetryCards(result) {
-  const wrongBtn = document.getElementById('retryWrongBtn');
-  if (!wrongBtn) return;
-
-  const errs = result?.spelling_errors || [];
-  if (errs.length > 0) {
-    wrongBtn.disabled = false;
-    document.getElementById('retryWrongDesc').innerHTML =
-      `맞춤법 ${errs.length}개를<br>연습해 보세요`;
-  } else {
-    wrongBtn.disabled = true;
-    document.getElementById('retryWrongDesc').innerHTML =
-      `맞춤법 오류가<br>없어요!`;
-  }
-}
-
-// 재시도 후 점수 비교 토스트
-function showScoreComparison(prev, current) {
-  const diff = current - prev;
-  let icon, color, bg, message;
-
-  if (diff > 0) {
-    icon = '🎉';
-    color = '#059669';
-    bg = 'linear-gradient(135deg, #D1FAE5, #A7F3D0)';
-    message = `이전 ${prev}점 → 지금 ${current}점 (▲ ${diff}점 향상!)`;
-  } else if (diff === 0) {
-    icon = '💪';
-    color = '#0E62E0';
-    bg = 'linear-gradient(135deg, #DBEAFE, #BFDBFE)';
-    message = `이전과 같은 ${current}점이에요! 한 번 더 도전해 봐요!`;
-  } else {
-    icon = '🌱';
-    color = '#7C3AED';
-    bg = 'linear-gradient(135deg, #EDE9FE, #DDD6FE)';
-    message = `이전 ${prev}점 → 지금 ${current}점. 천천히 같이 해봐요!`;
-  }
-
-  const toast = document.createElement('div');
-  toast.style.cssText = `
-    position: fixed;
-    top: 80px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-20px);
-    background: ${bg};
-    color: ${color};
-    padding: 12px 22px;
-    border-radius: 999px;
-    font-weight: 600;
-    font-size: 14px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-    z-index: 9999;
-    opacity: 0;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    max-width: 90vw;
-  `;
-  toast.innerHTML = `<span style="font-size:18px;">${icon}</span><span>${message}</span>`;
-  document.body.appendChild(toast);
-
-  // 등장
-  requestAnimationFrame(() => {
-    toast.style.opacity = '1';
-    toast.style.transform = 'translateX(-50%) translateY(0)';
-  });
-
-  // 5초 후 사라짐
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateX(-50%) translateY(-20px)';
-    setTimeout(() => toast.remove(), 400);
-  }, 5000);
-}
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({
@@ -4340,8 +4856,19 @@ function escapeHtml(s) {
   }[c]));
 }
 
-// 초기 렌더
-renderProblemPreview();
+
+renderLevelTabs();
+// 오늘의 과제 자동 로드 (기본 레벨 1)
+(function() {
+  const todayTask = getTodayTask(state.level);
+  state.taskTypeIdx = todayTask.taskTypeIdx;
+  state.problemIdx = todayTask.problemIdx || 0;
+  const panel = document.getElementById('todayTaskPanel');
+  document.getElementById('todayTaskName').textContent = todayTask.taskName;
+  document.getElementById('todayTaskTopic').textContent = todayTask.topic ? '주제: ' + todayTask.topic : '';
+  panel.classList.remove('hidden');
+  renderProblemPreview();
+})();
 </script>
 
 
