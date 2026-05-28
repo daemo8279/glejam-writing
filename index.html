@@ -4248,6 +4248,35 @@ function applyEncouragement(score, level) {
 
 
 // ===========================================
+// ===========================================
+// char_analysis 정규화 (API quality → status, 글자수 보정)
+// ===========================================
+function reconcileCharAnalysis(r) {
+  if (!r) return r;
+
+  // char_analysis 배열 보장
+  if (!Array.isArray(r.char_analysis)) r.char_analysis = [];
+
+  // quality → status 필드 정규화 (API 응답마다 필드명이 다를 수 있음)
+  r.char_analysis = r.char_analysis.map(c => ({
+    ...c,
+    status: c.status || c.quality || 'good',
+    char: c.char || ''
+  }));
+
+  // recognized_text와 char_analysis가 비어있으면 텍스트에서 자동 생성
+  const text = r.recognized_text || '';
+  if (r.char_analysis.length === 0 && text.length > 0) {
+    r.char_analysis = [...text].map(ch => ({
+      char: ch,
+      status: ch === ' ' ? 'space' : 'good'
+    }));
+  }
+
+  return r;
+}
+
+// ===========================================
 // renderResult (전 레벨)
 // ===========================================
 function renderResult(r) {
