@@ -1996,7 +1996,7 @@ html, body {
 
       <div class="input-panel" data-mode="camera">
         <div class="camera-stage">
-          <video id="cameraVideo" autoplay playsinline></video>
+          <video id="cameraVideo" autoplay playsinline muted></video>
           <div id="cameraPlaceholder" class="camera-placeholder">
             <div class="icon-wrap icon icon-24" style="width:48px; height:48px;"><svg><use href="#i-camera"/></svg></div>
             <div class="txt-main">카메라를 켜서 답안지를 촬영하세요</div>
@@ -4758,10 +4758,9 @@ startCameraBtn.addEventListener('click', async () => {
     return;
   }
 
-  // ④ 스트림 연결 + iOS Safari 자동재생 처리
+  // ④ 스트림 연결 (autoplay+muted 속성이 재생 처리 — 명시 play() 호출 시 Android race condition 유발)
   state.cameraStream = stream;
   videoEl.srcObject = stream;
-  try { await videoEl.play(); } catch (_) { /* autoplay 정책 무시 */ }
   videoEl.classList.add('active');
   cameraPlaceholder.style.display = 'none';
   startCameraBtn.style.display = 'none';
