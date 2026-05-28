@@ -4762,26 +4762,73 @@ startCameraBtn.addEventListener('click', async () => {
   state.cameraStream = stream;
   videoEl.srcObject = stream;
   videoEl.classList.add('active');
+  // placeholder 초기 아이콘으로 복원 (이전 촬영 썸네일 제거)
+  cameraPlaceholder.innerHTML = `
+    <div class="icon-wrap icon icon-24" style="width:48px;height:48px;"><svg><use href="#i-camera"/></svg></div>
+    <div>카메라를 켜서 글씨를 찍어 보세요</div>`;
   cameraPlaceholder.style.display = 'none';
   startCameraBtn.style.display = 'none';
+  captureBtn.disabled = false;
+  captureBtn.innerHTML = '<span class="icon icon-16"><svg><use href="#i-camera"/></svg></span> 촬영';
   captureBtn.style.display = 'inline-flex';
   stopCameraBtn.style.display = 'inline-flex';
 });
 
-captureBtn.addEventListener('click', () => {
-  // 원본 촬영
-  const rawCanvas = document.createElement('canvas');
-  rawCanvas.width = videoEl.videoWidth;
-  rawCanvas.height = videoEl.videoHeight;
-  const rawCtx = rawCanvas.getContext('2d');
-  rawCtx.drawImage(videoEl, 0, 0);
+captureBtn.addEventListener('click', async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
 
-  // 리사이즈 (최대 1600px) + 품질 조정 → API 페이로드 줄이기
-  const dataUrl = downscaleImageFromCanvas(rawCanvas, 1600, 0.85);
-  state.imageData = dataUrl;
-  state.imageMediaType = 'image/jpeg';
-  showPreview(dataUrl);
-  stopCamera();
+  captureBtn.disabled = true;
+  captureBtn.textContent = '처리 중…';
+
+  try {
+    // Android에서 srcObject 직후 videoWidth/Height = 0인 경우 대기
+    if (!videoEl.videoWidth || !videoEl.videoHeight) {
+      await new Promise((resolve, reject) => {
+        const deadline = Date.now() + 4000; // 최대 4초 대기
+        const tick = () => {
+          if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
+            resolve();
+          } else if (Date.now() > deadline) {
+            reject(new Error('비디오 준비 시간 초과'));
+          } else {
+            requestAnimationFrame(tick);
+          }
+        };
+        requestAnimationFrame(tick);
+      });
+    }
+
+    // 프레임 캡처
+    const rawCanvas = document.createElement('canvas');
+    rawCanvas.width  = videoEl.videoWidth;
+    rawCanvas.height = videoEl.videoHeight;
+    rawCanvas.getContext('2d').drawImage(videoEl, 0, 0);
+
+    // 리사이즈 (최대 1600px / JPEG 85%)
+    const dataUrl = downscaleImageFromCanvas(rawCanvas, 1600, 0.85);
+
+    if (!dataUrl || dataUrl.length < 200) throw new Error('이미지 데이터 없음');
+
+    state.imageData      = dataUrl;
+    state.imageMediaType = 'image/jpeg';
+    showPreview(dataUrl);
+
+    // 촬영 성공 → 카메라 스트림 종료 + 미리보기 표시
+    stopCamera();
+    cameraPlaceholder.innerHTML = `
+      <img src="${dataUrl}"
+        style="width:100%;max-height:280px;object-fit:contain;border-radius:var(--r-md);display:block;" />
+      <div style="font-size:13px;color:var(--success);font-weight:700;margin-top:10px;text-align:center;">
+        ✓ 촬영 완료 — 제출 버튼을 눌러 주세요
+      </div>`;
+    cameraPlaceholder.style.display = 'block';
+
+  } catch (err) {
+    showError('촬영에 실패했어요. 다시 시도해 주세요. (' + err.message + ')');
+    captureBtn.disabled = false;
+    captureBtn.innerHTML = '<span class="icon icon-16"><svg><use href="#i-camera"/></svg></span> 촬영';
+  }
 });
 
 // 이미지 리사이즈 유틸: max 변(가로/세로 큰 쪽)을 기준으로 축소하고 JPEG로 반환
