@@ -1855,6 +1855,38 @@ html, body {
   border-radius: 999px;
   margin-bottom: 4px;
 }
+
+/* ── 받아쓰기 diff 표시 ── */
+#ocrDisplay { font-size: 20px; font-weight: 700; letter-spacing: 0.05em; line-height: 1.8; word-break: break-all; }
+.diff-ok   { color: var(--text); }
+.diff-err  { color: var(--error); background: var(--error-soft); border-radius: 3px; padding: 0 2px; cursor: help; }
+.diff-miss { color: var(--gray-3); border-bottom: 2px dashed var(--error); padding: 0 2px; }
+.diff-space { display: inline-block; width: 0.5em; }
+
+/* ── char-cell 글자 가독성 그리드 ── */
+.char-grid { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.char-cell {
+  position: relative;
+  width: 36px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--r-sm);
+  font-size: 18px; font-weight: 700;
+  border: 2px solid transparent;
+}
+.char-cell.good  { background: var(--success-soft); border-color: var(--success); color: var(--text); }
+.char-cell.warn  { background: var(--warning-soft); border-color: var(--warning); color: var(--text); }
+.char-cell.bad   { background: var(--error-soft);   border-color: var(--error);   color: var(--error); }
+.char-cell.space { background: transparent; border-color: transparent; width: 12px; }
+.char-cell.spell-error { outline: 3px solid var(--error); outline-offset: 1px; }
+.char-cell .tag {
+  position: absolute; top: -4px; right: -4px;
+  font-size: 9px; font-weight: 800;
+  background: var(--warning); color: white;
+  border-radius: 999px; width: 14px; height: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+.char-cell.bad .tag { background: var(--error); }
+.char-cell.good .tag { background: var(--success); }
 </style>
 </head>
 <body>
@@ -4248,6 +4280,117 @@ function applyEncouragement(score, level) {
 
 
 // ===========================================
+// ===========================================
+// 누락된 헬퍼 함수들
+// ===========================================
+
+// 받아쓰기: 정답 vs 인식 텍스트 글자 단위 diff HTML
+function renderDiffHtml(target, recognized) {
+  const tChars = [...(target||'')];
+  const rChars = [...(recognized||'')];
+  const max = Math.max(tChars.length, rChars.length);
+  let html = '';
+  for (let i = 0; i < max; i++) {
+    const t = tChars[i] || '';
+    const r = rChars[i] || '';
+    if (t === ' ' && r === ' ') {
+      html += '<span class="diff-space"> </span>';
+    } else if (r === '') {
+      html += `<span class="diff-miss" title="빠진 글자: ${escapeHtml(t)}">_</span>`;
+    } else if (t === r) {
+      html += `<span class="diff-ok">${escapeHtml(r)}</span>`;
+    } else {
+      html += `<span class="diff-err" title="정답: ${escapeHtml(t)}">${escapeHtml(r)}</span>`;
+    }
+  }
+  return html || '<span class="diff-miss">(인식된 글자 없음)</span>';
+}
+
+// 맞춤법 오류 범위: recognized_text 상에서 오류 글자 인덱스 → 수정안 Map
+function computeSpellErrorRanges(text, spellingErrors) {
+  const result = new Map();
+  if (!Array.isArray(spellingErrors) || !text) return result;
+  const chars = [...text];
+  spellingErrors.forEach(err => {
+    if (!err.wrong) return;
+    const wrongChars = [...err.wrong];
+    // KMP 없이 단순 탐색 (문장이 짧으므로 충분)
+    for (let i = 0; i <= chars.length - wrongChars.length; i++) {
+      const match = wrongChars.every((c, j) => chars[i + j] === c);
+      if (match) {
+        for (let j = 0; j < wrongChars.length; j++) {
+          result.set(i + j, j === 0 ? (err.right || '') : null);
+        }
+        break;
+      }
+    }
+  });
+  return result;
+}
+
+// 맞춤법 오류 카드 DOM 생성
+function buildSpellErrorCard(e) {
+  const el = document.createElement('div');
+  el.className = 'spell-error-card';
+  el.style.cssText = `
+    display:flex; flex-direction:column; gap:4px;
+    background:var(--error-soft); border-radius:var(--r-sm);
+    padding:10px 14px; font-size:13px;`;
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="text-decoration:line-through;color:var(--error);font-weight:700;">
+        ${escapeHtml(e.wrong||'')}
+      </span>
+      <span style="color:var(--gray-3);">→</span>
+      <span style="color:var(--success);font-weight:700;">${escapeHtml(e.right||'')}</span>
+    </div>
+    ${e.explanation ? `<div style="color:var(--gray-2);font-size:12px;">${escapeHtml(e.explanation)}</div>` : ''}`;
+  return el;
+}
+
+// 이전 점수 vs 현재 점수 비교 표시
+function showScoreComparison(prevScore, newScore) {
+  let el = document.getElementById('scoreCompareBox');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'scoreCompareBox';
+    el.style.cssText = `
+      display:flex; align-items:center; gap:10px;
+      background:var(--bg-primary-soft); border-radius:var(--r-md);
+      padding:10px 16px; margin-bottom:12px; font-size:14px; font-weight:600;`;
+    const totalEl = document.getElementById('totalScore');
+    if (totalEl && totalEl.parentElement) {
+      totalEl.parentElement.insertBefore(el, totalEl);
+    }
+  }
+  const diff = newScore - prevScore;
+  const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '—';
+  const color = diff > 0 ? 'var(--success)' : diff < 0 ? 'var(--error)' : 'var(--gray-2)';
+  el.innerHTML = `
+    <span style="color:var(--gray-2);">이전: <b>${prevScore}점</b></span>
+    <span style="color:${color};font-size:18px;">${arrow}</span>
+    <span style="color:${color};">${diff > 0 ? '+' : ''}${diff}점 ${diff > 0 ? '올랐어요! 🎉' : diff < 0 ? '내려갔어요' : '변화 없어요'}</span>`;
+  el.style.display = 'flex';
+}
+
+// 틀린 글자 연습 모드 배너
+function showPracticeBanner() {
+  let el = document.getElementById('practiceBanner');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'practiceBanner';
+    el.style.cssText = `
+      background:var(--warning); color:var(--white); font-weight:700;
+      text-align:center; padding:8px 16px; font-size:13px;
+      border-radius:var(--r-md); margin-bottom:12px;`;
+    const inputPanel = document.querySelector('.input-panel.active');
+    if (inputPanel) inputPanel.prepend(el);
+    else document.querySelector('#step2')?.prepend(el);
+  }
+  el.textContent = '✏️ 틀린 글자 집중 연습 중 — 맞춤법에 집중해서 써 보세요!';
+  el.style.display = 'block';
+}
+
 // ===========================================
 // char_analysis 정규화 (API quality → status, 글자수 보정)
 // ===========================================
