@@ -2902,8 +2902,7 @@ function sheetRowToProblem(headers, row) {
       p.example = ex;
       break;
     case 'picture': {
-      // core: "emoji caption" 형식 또는 캡션만
-      const emojiMatch = core.match(/^([\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}👁️‍🗨️\S]*emoji\S*|[\u{1F300}-\u{1FAFF}\u{2702}-\u{27B0}]+)/u);
+      const imgUrl = get('이미지 URL');
       const spaceIdx = core.search(/\s/);
       if (spaceIdx > 0 && spaceIdx < 6) {
         p.emoji   = core.slice(0, spaceIdx);
@@ -2912,12 +2911,14 @@ function sheetRowToProblem(headers, row) {
         p.emoji   = '';
         p.caption = core;
       }
+      if (imgUrl) p.imageUrl = imgUrl;
       p.wordTags = sub ? sub.split(/[,·、]/).map(s => s.trim()).filter(Boolean) : [];
       const tagStr = p.wordTags.join('·');
       p.hint = tagStr ? `제공 낱말(${tagStr})을 사용하여 2문장을 써 보세요.` : '그림을 보고 2문장을 써 보세요.';
       break;
     }
     case 'picture3': {
+      const imgUrl3 = get('이미지 URL');
       const spaceIdx3 = core.search(/\s/);
       if (spaceIdx3 > 0 && spaceIdx3 < 6) {
         p.emoji   = core.slice(0, spaceIdx3);
@@ -2926,6 +2927,7 @@ function sheetRowToProblem(headers, row) {
         p.emoji   = '';
         p.caption = core;
       }
+      if (imgUrl3) p.imageUrl = imgUrl3;
       p.wordTags = sub ? sub.split(/[,·、]/).map(s => s.trim()).filter(Boolean) : [];
       p.hint = '제공 낱말을 활용하여 3문장을 써 보세요.';
       break;
@@ -3340,18 +3342,25 @@ function renderProblemPreview() {
       break;
 
     case 'picture':
-    case 'picture3':
+    case 'picture3': {
       const wTagsHtml = p.wordTags && p.wordTags.length
         ? `<div style="margin-top:10px;"><div style="font-size:11px;font-weight:600;color:var(--gray-2);margin-bottom:6px;">사용할 낱말</div><div class="pp-words">${p.wordTags.map(t=>`<span class="word-chip" style="font-size:14px;padding:8px 16px;">${escapeHtml(t)}</span>`).join('')}</div></div>`
         : '';
-      content = `
-        <div class="pp-image"><div>
-          <div class="pp-emoji-scene">${escapeHtml(p.emoji)}</div>
-          <div class="pp-caption">${escapeHtml(p.caption)}</div>
-        </div></div>
-        ${wTagsHtml}
+      const sceneHtml = p.imageUrl
+        ? `<div class="pp-image" style="padding:0;overflow:hidden;border-radius:var(--r-md);">
+             <img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.caption)}"
+               style="width:100%;max-height:220px;object-fit:cover;display:block;"
+               onerror="this.parentElement.innerHTML='<div style=\\'padding:24px;text-align:center;\\'><div style=\\'font-size:40px;\\'>${escapeHtml(p.emoji||'🖼️')}</div><div class=\\'pp-caption\\'>${escapeHtml(p.caption)}</div></div>'"
+             />
+           </div>`
+        : `<div class="pp-image"><div>
+             <div class="pp-emoji-scene">${escapeHtml(p.emoji)}</div>
+             <div class="pp-caption">${escapeHtml(p.caption)}</div>
+           </div></div>`;
+      content = `${sceneHtml}${wTagsHtml}
         <div class="pp-caption" style="margin-top:12px;">${escapeHtml(p.hint)}</div>`;
       break;
+    }
 
     case 'correction':
       content = `
@@ -3545,6 +3554,11 @@ function renderProblemPreview() {
     </div>
     ${content}
   `;
+
+  // 받아쓰기: 문제가 표시되면 TTS 자동 재생 (짧은 딜레이 후)
+  if (p.type === 'dictation') {
+    setTimeout(() => speakSentence(), 800);
+  }
 }
 
 
