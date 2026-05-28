@@ -2561,7 +2561,7 @@ function getTodayTask(level) {
 // ===========================================
 // Problem Bank (레벨 × 과제유형)
 // ===========================================
-const PROBLEM_BANK = {
+let PROBLEM_BANK = {
   1: {
     0: [ // 받아쓰기 (12개 — DB v1.0)
       { type:'dictation', text:'선생님이 교실에서 그림을 그려요.', qi:0, cat:'학교·교실' },
@@ -2779,6 +2779,376 @@ const PROBLEM_BANK = {
   }
 };
 
+
+// ===========================================
+// Google Sheets 연동
+// ===========================================
+const SHEET_URLS = [
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRYGIj5kLrrNCitYuXsRjf6a3rt0H9ZwLJHJBmQzpX-kausjkqAmJfi5l7YzvDvuA/pub?output=csv',
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRYGIj5kLrrNCitYuXsRjf6a3rt0H9ZwLJHJBmQzpX-kausjkqAmJfi5l7YzvDvuA/pub?gid=230854666&single=true&output=csv'
+];
+
+// 유형 이름 → type 코드 매핑
+const TYPE_CODE_MAP = {
+  '받아쓰기': 'dictation',
+  '낱말 확장 글쓰기': 'word_expand',
+  '꾸며주는 말 쓰기': 'descriptive',
+  '감정 표현하기': 'emotion',
+  '그림 보고 쓰기': 'picture',
+  '문장 고쳐 쓰기': 'correction',
+  '그림보고 쓰기': 'picture3',
+  '상상해서 쓰기': 'imagine',
+  '소개하기': 'intro',
+  '연결어 넣기': 'connector',
+  '관찰 글쓰기': 'observe',
+  '이야기 이어쓰기': 'story_continue',
+  '의견 쓰기': 'opinion',
+  '순서 글쓰기': 'sequence',
+  '일기 쓰기': 'diary',
+  '편지 쓰기': 'letter',
+  '주장하는 글쓰기': 'argument',
+  'AI글 고쳐 쓰기': 'ai_fix',
+  '장르 변환 글쓰기': 'genre_change',
+  '안내·소개 글쓰기': 'guide',
+  '관찰 기록 글쓰기': 'obs_record',
+  '보고하는 글쓰기': 'report',
+  'AI글 비평·고쳐쓰기': 'ai_critique',
+  '독자 맞춤 글쓰기': 'audience',
+  '매체 변환 글쓰기': 'media_change'
+};
+
+// CSV 파서 (따옴표로 감싼 필드, 줄바꿈 포함 처리)
+function parseCSV(text) {
+  const rows = [];
+  let row = [], cell = '', inQuote = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const next = text[i + 1];
+    if (ch === '"') {
+      if (inQuote && next === '"') { cell += '"'; i++; }
+      else { inQuote = !inQuote; }
+    } else if (ch === ',' && !inQuote) {
+      row.push(cell); cell = '';
+    } else if ((ch === '\n' || (ch === '\r' && next === '\n')) && !inQuote) {
+      if (ch === '\r') i++;
+      row.push(cell); cell = '';
+      if (row.some(c => c.trim())) rows.push(row);
+      row = [];
+    } else {
+      cell += ch;
+    }
+  }
+  if (cell || row.length) { row.push(cell); if (row.some(c => c.trim())) rows.push(row); }
+  return rows;
+}
+
+// 헤더 인덱스를 유연하게 찾기 (부분 일치 허용)
+function findHeaderIdx(headers, name) {
+  let idx = headers.findIndex(h => h === name);
+  if (idx === -1) idx = headers.findIndex(h => h.includes(name) || name.includes(h));
+  return idx;
+}
+
+// 시트 한 행 → 문제 객체 변환
+function sheetRowToProblem(headers, row) {
+  const get = (name) => {
+    const idx = findHeaderIdx(headers, name);
+    return idx >= 0 ? (row[idx] || '').trim() : '';
+  };
+
+  const levelStr = get('레벨');                   // L1, L2 …
+  const level = parseInt(levelStr.replace(/[Ll]/, '')) || 0;
+  if (!level || level > 6) return null;
+
+  const typeStr = get('유형');
+  const type = TYPE_CODE_MAP[typeStr];
+  if (!type) return null;
+
+  // taskTypeIdx: C[level].t에서 위치 찾기
+  const taskTypes = (C[level] && C[level].t) || [];
+  const taskTypeIdx = taskTypes.findIndex(t =>
+    t === typeStr || t.replace(/\s/g, '') === typeStr.replace(/\s/g, '')
+  );
+  if (taskTypeIdx === -1) return null;
+
+  const qiMap = { 'Q1': 0, 'Q2': 1, 'Q3': 2, 'Q4': 3 };
+  const qi = qiMap[get('분기')] ?? 0;
+  const cat = get('소재카테고리');
+  const core = get('핵심내용');
+  const sub  = get('보조정보');
+  const ex   = get('예시 또는 정답 개요') || get('예시·정답·구성') || get('예시') || get('정답');
+  const tts  = get('문항 또는 듣기 TTS') || get('문항') || get('듣기');
+
+  let p = { type, qi, cat };
+
+  switch (type) {
+    case 'dictation':
+      p.text = tts || core;
+      break;
+    case 'word_expand':
+      p.keyword = core;
+      p.hint = sub;
+      p.example = ex;
+      break;
+    case 'descriptive':
+      p.scene = core;
+      p.hint = sub;
+      p.example = ex;
+      break;
+    case 'emotion':
+      p.situation = core;
+      p.emotion = sub;
+      p.hint = '감정을 2문장으로 표현해 보세요.';
+      p.example = ex;
+      break;
+    case 'picture': {
+      // core: "emoji caption" 형식 또는 캡션만
+      const emojiMatch = core.match(/^([\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}👁️‍🗨️\S]*emoji\S*|[\u{1F300}-\u{1FAFF}\u{2702}-\u{27B0}]+)/u);
+      const spaceIdx = core.search(/\s/);
+      if (spaceIdx > 0 && spaceIdx < 6) {
+        p.emoji   = core.slice(0, spaceIdx);
+        p.caption = core.slice(spaceIdx + 1);
+      } else {
+        p.emoji   = '';
+        p.caption = core;
+      }
+      p.wordTags = sub ? sub.split(/[,·、]/).map(s => s.trim()).filter(Boolean) : [];
+      const tagStr = p.wordTags.join('·');
+      p.hint = tagStr ? `제공 낱말(${tagStr})을 사용하여 2문장을 써 보세요.` : '그림을 보고 2문장을 써 보세요.';
+      break;
+    }
+    case 'picture3': {
+      const spaceIdx3 = core.search(/\s/);
+      if (spaceIdx3 > 0 && spaceIdx3 < 6) {
+        p.emoji   = core.slice(0, spaceIdx3);
+        p.caption = core.slice(spaceIdx3 + 1);
+      } else {
+        p.emoji   = '';
+        p.caption = core;
+      }
+      p.wordTags = sub ? sub.split(/[,·、]/).map(s => s.trim()).filter(Boolean) : [];
+      p.hint = '제공 낱말을 활용하여 3문장을 써 보세요.';
+      break;
+    }
+    case 'correction':
+      p.wrong   = core;
+      p.issue   = sub;
+      p.hint    = '바르게 고쳐 쓰세요.';
+      p.example = ex;
+      break;
+    case 'imagine':
+      p.prompt  = core;
+      p.starter = sub;
+      p.hint    = '상상한 내용을 3문장으로 써 보세요.';
+      p.example = ex;
+      break;
+    case 'intro':
+      p.subject = core;
+      p.points  = sub;
+      p.hint    = '3문장으로 소개해 보세요.';
+      p.example = ex;
+      break;
+    case 'connector':
+      p.sentences  = core.split(/\n|。/).map(s => s.trim()).filter(Boolean);
+      p.connectors = sub.split(/[,·、]/).map(s => s.trim()).filter(Boolean);
+      p.hint       = '연결어를 넣어 문장을 이어 써 보세요.';
+      p.answer     = ex;
+      break;
+    case 'observe':
+      p.subject = core;
+      p.points  = sub;
+      p.hint    = ex || '관찰한 내용을 3~4문장으로 써 보세요.';
+      break;
+    case 'story_continue':
+      p.starter = core;
+      p.hint    = sub || '이야기를 이어서 3~4문장으로 써 보세요.';
+      break;
+    case 'opinion':
+      p.topic   = core;
+      p.hint    = sub || '자신의 의견과 이유를 3~4문장으로 써 보세요.';
+      p.example = ex;
+      break;
+    case 'sequence':
+      p.topic = core;
+      p.steps = sub ? sub.split(/\n|,/).map(s => s.trim()).filter(Boolean) : [];
+      p.hint  = ex || '순서를 나타내는 말을 넣어 써 보세요.';
+      break;
+    case 'diary':
+      p.date  = '오늘';
+      p.event = core;
+      p.hint  = sub || '있었던 일과 느낀 점을 3~4문장의 일기로 써 보세요.';
+      break;
+    case 'letter':
+      p.to       = core;
+      p.occasion = sub;
+      p.hint     = ex || '마음을 담은 편지를 써 보세요.';
+      p.parts    = '';
+      break;
+    case 'argument':
+      p.topic     = core;
+      p.stance    = sub;
+      p.hint      = '주장과 근거 2가지를 써 보세요.';
+      p.structure = ex;
+      break;
+    case 'ai_fix':
+      p.aiText = core;
+      p.issues = sub;
+      p.hint   = ex || '더 자연스럽고 풍부하게 고쳐 써 보세요.';
+      break;
+    case 'genre_change': {
+      p.original = core;
+      const gc = sub ? sub.split('→') : [];
+      p.from = (gc[0] || '').trim();
+      p.to   = (gc[1] || '').trim();
+      p.hint = ex || '다른 형식으로 바꿔 써 보세요.';
+      break;
+    }
+    case 'guide':
+      p.topic    = core;
+      p.audience = sub;
+      p.hint     = '안내 글을 써 보세요.';
+      p.structure = ex;
+      break;
+    case 'obs_record':
+      p.subject   = core;
+      p.hint      = sub || '변화를 기록해 보세요.';
+      p.structure = ex;
+      break;
+    case 'report':
+      p.topic     = core;
+      p.data      = sub;
+      p.hint      = '보고하는 글을 써 보세요.';
+      p.structure = ex;
+      break;
+    case 'ai_critique':
+      p.aiText         = core;
+      p.hint           = sub || '비판적으로 평가하고 고쳐 써 보세요.';
+      p.critique_points = ex;
+      break;
+    case 'audience':
+      p.topic    = core;
+      p.audience = sub;
+      p.hint     = ex || '독자에 맞는 글을 써 보세요.';
+      break;
+    case 'media_change': {
+      p.original = core;
+      const mc = sub ? sub.split('→') : [];
+      p.from = (mc[0] || '').trim();
+      p.to   = (mc[1] || '').trim();
+      p.hint = ex || '매체에 맞게 바꿔 써 보세요.';
+      break;
+    }
+    default:
+      p.hint = sub;
+  }
+
+  return { level, taskTypeIdx, problem: p };
+}
+
+// 시트 URL 하나 fetch → 문제 배열 반환
+async function fetchSheetProblems(url) {
+  const resp = await fetch(url, { cache: 'no-store' });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const text = await resp.text();
+  const rows = parseCSV(text);
+  if (rows.length < 2) return [];
+
+  const headers = rows[0].map(h => h.trim());
+  const problems = [];
+  const seenNums = new Set();
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row.some(c => c.trim())) continue;
+
+    // 번호(1열)로 중복 제거
+    const numIdx = findHeaderIdx(headers, '번호');
+    const rowNum = numIdx >= 0 ? (row[numIdx] || '').trim() : '';
+    const key = `${url}__${rowNum || i}`;
+    if (rowNum && seenNums.has(rowNum)) continue;
+    if (rowNum) seenNums.add(rowNum);
+
+    try {
+      const result = sheetRowToProblem(headers, row);
+      if (result) problems.push(result);
+    } catch (e) {
+      console.warn('[행 파싱 실패]', i, e);
+    }
+  }
+  return problems;
+}
+
+// 전체 시트 로딩 → PROBLEM_BANK 업데이트
+async function loadProblemsFromSheet() {
+  const allProblems = [];
+  for (const url of SHEET_URLS) {
+    try {
+      const probs = await fetchSheetProblems(url);
+      allProblems.push(...probs);
+      console.log(`[Sheet] ${url.slice(-20)} → ${probs.length}개`);
+    } catch (e) {
+      console.warn('[Sheet fetch 실패]', e.message);
+    }
+  }
+
+  if (allProblems.length === 0) return false;
+
+  // 전역 번호 중복 제거 (두 URL에서 같은 행이 올 경우)
+  const seen = new Set();
+  const deduped = allProblems.filter(({ level, taskTypeIdx, problem }) => {
+    const key = `${level}-${taskTypeIdx}-${problem.text || problem.keyword || problem.core || problem.situation || problem.topic || ''}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  // 레벨/유형별로 PROBLEM_BANK 업데이트 (데이터 있는 경우만 덮어씀)
+  const newBank = {};
+  for (const { level, taskTypeIdx, problem } of deduped) {
+    if (!newBank[level]) newBank[level] = {};
+    if (!newBank[level][taskTypeIdx]) newBank[level][taskTypeIdx] = [];
+    newBank[level][taskTypeIdx].push(problem);
+  }
+
+  for (const lv of Object.keys(newBank)) {
+    if (!PROBLEM_BANK[lv]) PROBLEM_BANK[lv] = {};
+    for (const ti of Object.keys(newBank[lv])) {
+      if (newBank[lv][ti].length > 0) {
+        PROBLEM_BANK[lv][ti] = newBank[lv][ti];
+      }
+    }
+  }
+
+  console.log(`[Sheet 로딩 완료] 총 ${deduped.length}개 문제 적용됨`);
+  return true;
+}
+
+// 로딩 배너 표시/숨기기
+function showSheetLoading(show) {
+  let el = document.getElementById('sheetLoadingBanner');
+  if (!el && !show) return;
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'sheetLoadingBanner';
+    el.style.cssText = [
+      'position:fixed','bottom:20px','left:50%','transform:translateX(-50%)',
+      'background:var(--text)','color:var(--white)',
+      'padding:10px 20px','border-radius:20px',
+      'font-size:13px','font-weight:600',
+      'display:flex','align-items:center','gap:8px',
+      'z-index:9999','box-shadow:0 4px 20px rgba(0,0,0,0.2)',
+      'opacity:1','transition:opacity 0.3s'
+    ].join(';');
+    el.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite;">⟳</span> 문제 데이터 불러오는 중…';
+    document.body.appendChild(el);
+  }
+  if (show) {
+    el.style.opacity = '1';
+  } else {
+    el.style.opacity = '0';
+    setTimeout(() => el && el.remove(), 350);
+  }
+}
 
 // ===========================================
 // 캔버스 설정 (레벨별)
@@ -4876,16 +5246,34 @@ function escapeHtml(s) {
 
 
 renderLevelTabs();
-// 오늘의 과제 자동 로드 (기본 레벨 1)
-(function() {
+
+// 오늘의 과제 초기화 (공통 함수)
+function initTodayTask() {
   const todayTask = getTodayTask(state.level);
   state.taskTypeIdx = todayTask.taskTypeIdx;
-  state.problemIdx = todayTask.problemIdx || 0;
+  state.problemIdx  = todayTask.problemIdx || 0;
   const panel = document.getElementById('todayTaskPanel');
-  document.getElementById('todayTaskName').textContent = todayTask.taskName;
+  document.getElementById('todayTaskName').textContent  = todayTask.taskName;
   document.getElementById('todayTaskTopic').textContent = todayTask.topic ? '주제: ' + todayTask.topic : '';
   panel.classList.remove('hidden');
   renderProblemPreview();
+}
+
+// Google Sheets 로딩 후 앱 시작
+(async function() {
+  showSheetLoading(true);
+  try {
+    const ok = await Promise.race([
+      loadProblemsFromSheet(),
+      new Promise(res => setTimeout(() => res(false), 6000)) // 6초 타임아웃
+    ]);
+    if (ok) console.log('[Google Sheets 데이터 적용됨]');
+    else     console.log('[타임아웃 또는 실패 → 기본 데이터 사용]');
+  } catch (e) {
+    console.warn('[Sheet 로딩 오류, 기본 데이터 사용]', e);
+  }
+  showSheetLoading(false);
+  initTodayTask();
 })();
 </script>
 
