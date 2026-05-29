@@ -5721,4 +5721,65 @@ function getProxyConfig() { return { url: '', password: '' }; }
 </script>
 
 </body>
+</html>w new Error('요청이 너무 많아요. 잠시 후 다시 시도해 주세요.');
+    if (response.status >= 500) throw new Error('서버 일시 오류예요. ' + errDetail);
+    throw new Error(`AI 분석 실패 (${response.status}). ${errDetail}`);
+  }
+
+  const data = await response.json();
+  const text = data.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
+  console.log('[API 응답]', text.substring(0, 300));
+  const cleaned = text.replace(/```json\s*|\s*```/g, '').trim();
+  let parsed;
+  try { parsed = JSON.parse(cleaned); }
+  catch (e) {
+    const m = cleaned.match(/\{[\s\S]*\}/);
+    if (m) { try { parsed = JSON.parse(m[0]); } catch (e2) { throw new Error('AI 응답을 해석할 수 없어요.'); } }
+    else { throw new Error('AI 응답이 예상한 형식이 아니에요.'); }
+  }
+  return parsed;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+renderLevelTabs();
+
+function initTodayTask() {
+  const todayTask = getTodayTask(state.level);
+  state.taskTypeIdx = todayTask.taskTypeIdx;
+  state.problemIdx  = todayTask.problemIdx || 0;
+  const panel = document.getElementById('todayTaskPanel');
+  document.getElementById('todayTaskName').textContent  = todayTask.taskName;
+  document.getElementById('todayTaskTopic').textContent = todayTask.topic ? '주제: ' + todayTask.topic : '';
+  panel.classList.remove('hidden');
+  renderProblemPreview();
+}
+
+(async function() {
+  showSheetLoading(true);
+  try {
+    const ok = await Promise.race([
+      loadProblemsFromSheet(),
+      new Promise(res => setTimeout(() => res(false), 6000))
+    ]);
+    if (ok) console.log('[Google Sheets 데이터 적용됨]');
+    else     console.log('[타임아웃 또는 실패]');
+  } catch (e) {
+    console.warn('[Sheet 로딩 오류]', e);
+  }
+  showSheetLoading(false);
+  initTodayTask();
+  renderTaskTypeTabs();
+})();
+</script>
+
+<script>
+const DEFAULT_PROXY_PATH = '/api/proxy';
+function resolveProxyUrl() { return DEFAULT_PROXY_PATH; }
+function getProxyConfig() { return { url: '', password: '' }; }
+</script>
+
+</body>
 </html>
