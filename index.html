@@ -3900,7 +3900,10 @@ spelling_errors 각 항목:
 - 수정 제안이 0개면 격려 대신 칭찬 강화 멘트로 마무리
 - 표현: 해요체, 부드럽고 친절한 톤, 구체적 예시 필수 ("틀린 표현 → 바른 표현" 형식)
 - 칭찬: 잘된 점 1가지를 구체적으로
-- 수정 제안: 실제 학생 글에서 발견된 문제만 지적 (없으면 생략)
+- 수정 제안: 실제 학생 글에서 발견된 오류만 지적 (없으면 반드시 생략)
+- ⚠️ 절대 금지: 없는 오류를 만들어 내지 마세요. 학생이 맞게 썼으면 지적하지 마세요.
+- example 필드의 "틀린 표현"과 "바른 표현"이 반드시 달라야 합니다. 같으면 오류가 아닙니다.
+- 맞춤법이 맞고 표현이 자연스러우면 correction 항목을 0개로 해도 됩니다.
 - 격려: 수정 제안이 있으면 "~한 점만 고친다면 훨씬 좋아질 거예요!" 형식
 
 feedback_items 각 항목:
@@ -4558,7 +4561,19 @@ function renderFeedbackItems(items) {
   const domainLabelMap = { '규범': '기초 규범', '어휘': '어휘·표현', '문장': '문장 구성' };
 
   list.innerHTML = '';
-  items.forEach(item => {
+  // correction 필터: example이 "A → A" (동일) 이거나 text가 비어있으면 제거
+  const validItems = items.filter(item => {
+    if (item.type === 'correction') {
+      if (!item.text || !item.text.trim()) return false;
+      if (item.example) {
+        const parts = item.example.split(/→|->/).map(s => s.trim());
+        if (parts.length === 2 && parts[0] === parts[1]) return false; // A→A 제거
+      }
+    }
+    return true;
+  });
+  if (!validItems.length) { card.style.display = 'none'; return; }
+  validItems.forEach(item => {
     const el = document.createElement('div');
     el.className = `fi-item ${item.type || 'praise'}`;
     const domain = item.domain
