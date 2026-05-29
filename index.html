@@ -3442,13 +3442,17 @@ function renderProblemPreview() {
     }
 
     case 'descriptive': {
-      // 장면명·선택지는 AI 채점용으로만 사용, 학생에게는 빈칸 문장만 노출
-      const dLines = (p.hint || '').split('\n');
-      const dSentence = dLines[1] || dLines[0] || '';
+      // [선택지] 패턴 완전 제거, 빈칸 포함 문장만 노출
+      const dClean = (p.hint || '')
+        .split('\n')
+        .map(l => l.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim())
+        .filter(l => l.length > 0 && !l.includes('골라') && !l.includes('완성'));
+      // ___ 포함 줄 우선, 없으면 첫 줄
+      const dSentence = dClean.find(l => l.includes('_')) || dClean[0] || '';
       content = `
         <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:8px 0;">
           <div style="font-size:40px;">✍️</div>
-          <div style="font-size:13px;color:var(--gray-2);">빈칸에 어울리는 말을 넣어 문장을 완성해 보세요.</div>
+          <div style="font-size:13px;color:var(--gray-2);">빈칸에 어울리는 말을 쓰세요.</div>
           ${dSentence ? `<div style="background:var(--bg-gray-soft);border-radius:var(--r-md);padding:16px 20px;font-size:16px;font-weight:700;color:var(--text);text-align:center;width:100%;">${escapeHtml(dSentence)}</div>` : ''}
         </div>`;
       break;
