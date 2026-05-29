@@ -1856,6 +1856,20 @@ html, body {
   margin-bottom: 4px;
 }
 
+/* ── 과제 유형 선택 탭 ── */
+.task-type-tab {
+  display: flex; flex-direction: column; align-items: flex-start;
+  padding: 8px 14px; gap: 2px;
+  border: 2px solid var(--gray-line); border-radius: var(--r-md);
+  background: var(--white); cursor: pointer;
+  font-family: inherit; transition: border-color 0.15s, background 0.15s;
+}
+.task-type-tab:hover { border-color: var(--primary); }
+.task-type-tab.selected { border-color: var(--primary); background: var(--bg-primary-soft); }
+.task-type-tab .ttt-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.task-type-tab .ttt-count { font-size: 11px; color: var(--gray-3); }
+.task-type-tab.selected .ttt-name { color: var(--primary); }
+
 /* ── 받아쓰기 diff 표시 ── */
 #ocrDisplay { font-size: 20px; font-weight: 700; letter-spacing: 0.05em; line-height: 1.8; word-break: break-all; }
 .diff-ok   { color: var(--text); }
@@ -1962,6 +1976,9 @@ html, body {
       <div class="grade-tabs" id="gradeTabs">
         <!-- 동적 생성: renderLevelTabs() -->
       </div>
+
+      <!-- 과제 유형 선택 탭 (테스트용) -->
+      <div id="taskTypeTabs" style="display:none;flex-wrap:wrap;gap:8px;margin:12px 0 4px;"></div>
 
       <!-- 오늘의 과제 패널 -->
       <div class="today-task-panel hidden" id="todayTaskPanel">
@@ -3282,6 +3299,28 @@ function renderLevelTabs() {
   }
 }
 
+// 과제 유형 탭 렌더 (레벨 선택 시 호출)
+function renderTaskTypeTabs() {
+  const box = document.getElementById('taskTypeTabs');
+  if (!box) return;
+  const lv = state.level;
+  const types = (C[lv] && C[lv].t) || [];
+  if (types.length === 0) { box.style.display = 'none'; return; }
+
+  box.style.display = 'flex';
+  box.innerHTML = '';
+  types.forEach((typeName, idx) => {
+    const pool = (PROBLEM_BANK[lv] || {})[idx] || [];
+    const btn = document.createElement('button');
+    btn.className = 'task-type-tab' + (idx === state.taskTypeIdx ? ' selected' : '');
+    btn.dataset.idx = idx;
+    btn.innerHTML = `
+      <span class="ttt-name">${escapeHtml(typeName)}</span>
+      <span class="ttt-count">${pool.length}문제</span>`;
+    box.appendChild(btn);
+  });
+}
+
 document.getElementById('gradeTabs').addEventListener('click', (e) => {
   const btn = e.target.closest('.grade-tab');
   if (!btn) return;
@@ -3291,18 +3330,35 @@ document.getElementById('gradeTabs').addEventListener('click', (e) => {
   state.level = parseInt(btn.dataset.level);
   state.problemIdx = 0;
 
-  // 오늘의 과제 자동 결정
+  // 오늘의 과제로 taskTypeIdx 초기화
   const todayTask = getTodayTask(state.level);
   state.taskTypeIdx = todayTask.taskTypeIdx;
-  state.problemIdx = todayTask.problemIdx || 0;
+  state.problemIdx  = todayTask.problemIdx || 0;
 
   // 오늘의 과제 패널 표시
   const panel = document.getElementById('todayTaskPanel');
-  const nameEl = document.getElementById('todayTaskName');
-  const topicEl = document.getElementById('todayTaskTopic');
   panel.classList.remove('hidden');
-  nameEl.textContent = todayTask.taskName;
-  topicEl.textContent = todayTask.topic ? `주제: ${todayTask.topic}` : '';
+  document.getElementById('todayTaskName').textContent  = todayTask.taskName;
+  document.getElementById('todayTaskTopic').textContent = todayTask.topic ? `주제: ${todayTask.topic}` : '';
+
+  renderTaskTypeTabs();
+  renderProblemPreview();
+});
+
+// 과제 유형 탭 클릭
+document.getElementById('taskTypeTabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('.task-type-tab');
+  if (!btn) return;
+  document.querySelectorAll('.task-type-tab').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+
+  state.taskTypeIdx = parseInt(btn.dataset.idx);
+  state.problemIdx  = 0;
+
+  // 오늘의 과제 패널 이름 업데이트
+  const typeName = (C[state.level] && C[state.level].t[state.taskTypeIdx]) || '';
+  document.getElementById('todayTaskName').textContent  = typeName;
+  document.getElementById('todayTaskTopic').textContent = '';
 
   renderProblemPreview();
 });
@@ -3587,11 +3643,8 @@ function renderProblemPreview() {
     ${content}
   `;
 
-  // 받아쓰기: 문제가 표시되면 TTS 자동 재생 (짧은 딜레이 후)
-  if (p.type === 'dictation') {
-    setTimeout(() => speakSentence(), 800);
-  }
 }
+// ↑ 받아쓰기 TTS는 플레이 버튼 클릭 시만 재생 (자동재생 제거됨)
 
 
 // ===========================================
@@ -5547,6 +5600,7 @@ function initTodayTask() {
   }
   showSheetLoading(false);
   initTodayTask();
+  renderTaskTypeTabs(); // 과제 유형 탭 초기 렌더
 })();
 </script>
 
