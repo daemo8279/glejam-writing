@@ -2928,20 +2928,24 @@ function parseCSV(text) {
 }
 
 // 헤더 인덱스를 유연하게 찾기 (부분 일치 허용)
+// 대소문자 무시 헤더 탐색
 function findHeaderIdx(headers, name) {
+  const lower = name.toLowerCase();
   let idx = headers.findIndex(h => h === name);
-  if (idx === -1) idx = headers.findIndex(h => h.includes(name) || name.includes(h));
+  if (idx === -1) idx = headers.findIndex(h => h.toLowerCase() === lower);
+  if (idx === -1) idx = headers.findIndex(h => h.toLowerCase().includes(lower) || lower.includes(h.toLowerCase()));
   return idx;
 }
 
-// 시트 한 행 → 문제 객체 변환
+// 시트 한 행 → 문제 객체 변환 (컬럼 구조 v2)
+// 헤더: 번호,레벨,학년,분량기준,유형,분기,기간,소재카테고리,핵심내용,보조정보,예시·정답·구성,문항(듣기 TTS),비고,이미지 url,평가 기준
 function sheetRowToProblem(headers, row) {
   const get = (name) => {
     const idx = findHeaderIdx(headers, name);
     return idx >= 0 ? (row[idx] || '').trim() : '';
   };
 
-  const levelStr = get('레벨');                   // L1, L2 …
+  const levelStr = get('레벨');
   const level = parseInt(levelStr.replace(/[Ll]/, '')) || 0;
   if (!level || level > 6) return null;
 
@@ -2949,7 +2953,6 @@ function sheetRowToProblem(headers, row) {
   const type = TYPE_CODE_MAP[typeStr];
   if (!type) return null;
 
-  // taskTypeIdx: C[level].t에서 위치 찾기
   const taskTypes = (C[level] && C[level].t) || [];
   const taskTypeIdx = taskTypes.findIndex(t =>
     t === typeStr || t.replace(/\s/g, '') === typeStr.replace(/\s/g, '')
@@ -2957,174 +2960,209 @@ function sheetRowToProblem(headers, row) {
   if (taskTypeIdx === -1) return null;
 
   const qiMap = { 'Q1': 0, 'Q2': 1, 'Q3': 2, 'Q4': 3 };
-  const qi = qiMap[get('분기')] ?? 0;
-  const cat = get('소재카테고리');
-  const core = get('핵심내용');
-  const sub  = get('보조정보');
-  const ex   = get('예시 또는 정답 개요') || get('예시·정답·구성') || get('예시') || get('정답');
-  const tts  = get('문항 또는 듣기 TTS') || get('문항') || get('듣기');
+  const qi    = qiMap[get('분기')] ?? 0;
+  const cat   = get('소재카테고리');
+  const core  = get('핵심내용');
+  const sub   = get('보조정보');
+  const ex    = get('예시·정답·구성') || get('예시') || get('정답');
+  const tts   = get('문항') || get('듣기');           // 문항(듣기 TTS) 컬럼
+  const imgRaw = get('이미지 url') || get('이미지 URL'); // 이미지 URL (소문자 대응)
+  const img   = (imgRaw && imgRaw !== '이미지') ? imgRaw : ''; // 플레이스홀더 제거
+
+  // 낱말 태그 분리 유틸 (· 또는 , 구분)
+  const splitTags = (str) => str ? str.split(/\s*[·,]\s*/).map(s => s.trim()).filter(Boolean) : [];
 
   let p = { type, qi, cat };
 
   switch (type) {
+    // ── L1 ──────────────────────────────────────────
     case 'dictation':
-      p.text = tts || core;
+      // 문항(듣기 TTS) 컬럼 = 실제 받아쓰기 문장
+      p.text = tts || ex || core;
       break;
+
     case 'word_expand':
+      // 핵심내용=키워드, 보조정보=빈칸 템플릿, 문항=안내문
       p.keyword = core;
-      p.hint = sub;
+      p.hint    = tts ? `${tts}\n${sub}` : sub;
       p.example = ex;
       break;
+
     case 'descriptive':
-      p.scene = core;
-      p.hint = sub;
+      // 핵심내용=장면/힌트, 보조정보=빈칸 문장, 예시=정답
+      p.scene   = core;
+      p.hint    = sub;   // 빈칸 문장 (표시용)
       p.example = ex;
       break;
+
+    // ── L2 ──────────────────────────────────────────
     case 'emotion':
-      p.situation = core;
-      p.emotion = sub;
-      p.hint = '감정을 2문장으로 표현해 보세요.';
-      p.example = ex;
+      // 핵심내용=감정, 보조정보=상황 (v2에서 순서 바뀜)
+      p.emotion   = core;
+      p.situation = sub;
+      p.hint      = tts || '감정을 2문장으로 표현해 보세요.';
+      p.example   = ex;
       break;
+
     case 'picture': {
-      const imgUrl = get('이미지 URL');
-      const spaceIdx = core.search(/\s/);
-      if (spaceIdx > 0 && spaceIdx < 6) {
-        p.emoji   = core.slice(0, spaceIdx);
-        p.caption = core.slice(spaceIdx + 1);
-      } else {
-        p.emoji   = '';
-        p.caption = core;
-      }
-      if (imgUrl) p.imageUrl = imgUrl;
-      p.wordTags = sub ? sub.split(/[,·、]/).map(s => s.trim()).filter(Boolean) : [];
+      // 핵심내용=캡션, 보조정보=낱말(· 구분), 이미지 url=이미지
+      p.emoji    = '';
+      p.caption  = core;
+      p.wordTags = splitTags(sub);
+      if (img) p.imageUrl = img;
       const tagStr = p.wordTags.join('·');
-      p.hint = tagStr ? `제공 낱말(${tagStr})을 사용하여 2문장을 써 보세요.` : '그림을 보고 2문장을 써 보세요.';
+      p.hint = tts || (tagStr ? `제공 낱말(${tagStr})을 사용하여 2문장을 써 보세요.` : '그림을 보고 2문장을 써 보세요.');
       break;
     }
-    case 'picture3': {
-      const imgUrl3 = get('이미지 URL');
-      const spaceIdx3 = core.search(/\s/);
-      if (spaceIdx3 > 0 && spaceIdx3 < 6) {
-        p.emoji   = core.slice(0, spaceIdx3);
-        p.caption = core.slice(spaceIdx3 + 1);
-      } else {
-        p.emoji   = '';
-        p.caption = core;
-      }
-      if (imgUrl3) p.imageUrl = imgUrl3;
-      p.wordTags = sub ? sub.split(/[,·、]/).map(s => s.trim()).filter(Boolean) : [];
-      p.hint = '제공 낱말을 활용하여 3문장을 써 보세요.';
-      break;
-    }
+
     case 'correction':
+      // 핵심내용=틀린 문장, 예시=정답
       p.wrong   = core;
-      p.issue   = sub;
-      p.hint    = '바르게 고쳐 쓰세요.';
+      p.issue   = '';
+      p.hint    = tts || '다음 문장을 바르게 고쳐 써 보세요.';
       p.example = ex;
       break;
+
+    // ── L3 ──────────────────────────────────────────
+    case 'picture3': {
+      p.emoji    = '';
+      p.caption  = core;
+      p.wordTags = splitTags(sub);
+      if (img) p.imageUrl = img;
+      p.hint = tts || '제공 낱말을 활용하여 3문장을 써 보세요.';
+      break;
+    }
+
     case 'imagine':
-      p.prompt  = core;
-      p.starter = sub;
-      p.hint    = '상상한 내용을 3문장으로 써 보세요.';
+      // 핵심내용=시작 문장("만약..."), 보조정보=프롬프트 질문
+      p.starter = core;
+      p.prompt  = sub;
+      p.hint    = tts || '상상한 내용을 3문장으로 써 보세요.';
       p.example = ex;
       break;
+
     case 'intro':
       p.subject = core;
       p.points  = sub;
-      p.hint    = '3문장으로 소개해 보세요.';
+      p.hint    = tts || '3문장으로 소개해 보세요.';
       p.example = ex;
       break;
+
     case 'connector':
-      p.sentences  = core.split(/\n|。/).map(s => s.trim()).filter(Boolean);
-      p.connectors = sub.split(/[,·、]/).map(s => s.trim()).filter(Boolean);
-      p.hint       = '연결어를 넣어 문장을 이어 써 보세요.';
+      // 핵심내용=문장들( / 구분), 보조정보=연결어(· 구분), 예시=정답
+      p.sentences  = core.split(/\s*\/\s*/).map(s => s.trim()).filter(Boolean);
+      p.connectors = splitTags(sub);
+      p.hint       = tts || '연결어를 넣어 문장을 이어 써 보세요.';
       p.answer     = ex;
       break;
+
+    // ── L4 ──────────────────────────────────────────
     case 'observe':
       p.subject = core;
       p.points  = sub;
-      p.hint    = ex || '관찰한 내용을 3~4문장으로 써 보세요.';
+      p.hint    = tts || '관찰한 내용을 3~4문장으로 써 보세요.';
       break;
+
     case 'story_continue':
       p.starter = core;
-      p.hint    = sub || '이야기를 이어서 3~4문장으로 써 보세요.';
+      p.hint    = tts || '이야기를 이어서 3~4문장으로 써 보세요.';
       break;
+
     case 'opinion':
       p.topic   = core;
-      p.hint    = sub || '자신의 의견과 이유를 3~4문장으로 써 보세요.';
+      p.hint    = tts || '자신의 의견과 이유를 3~4문장으로 써 보세요.';
       p.example = ex;
       break;
+
     case 'sequence':
       p.topic = core;
-      p.steps = sub ? sub.split(/\n|,/).map(s => s.trim()).filter(Boolean) : [];
-      p.hint  = ex || '순서를 나타내는 말을 넣어 써 보세요.';
+      p.steps = sub ? sub.split(/\s*→\s*|\n|,/).map(s => s.trim()).filter(Boolean) : [];
+      p.hint  = tts || '순서를 나타내는 말을 넣어 써 보세요.';
       break;
+
     case 'diary':
       p.date  = '오늘';
       p.event = core;
-      p.hint  = sub || '있었던 일과 느낀 점을 3~4문장의 일기로 써 보세요.';
+      p.hint  = tts || '있었던 일과 느낀 점을 일기로 써 보세요.';
       break;
-    case 'letter':
-      p.to       = core;
-      p.occasion = sub;
-      p.hint     = ex || '마음을 담은 편지를 써 보세요.';
-      p.parts    = '';
+
+    // ── L5 ──────────────────────────────────────────
+    case 'letter': {
+      // 핵심내용 = "받는 이 · 편지 제목" 형식
+      const lp = core.split(/\s*·\s*/);
+      p.to       = lp[0] || core;
+      p.occasion = lp[1] || '';
+      p.hint     = tts || '마음을 담은 편지를 써 보세요.';
+      p.parts    = sub || '';
       break;
+    }
+
     case 'argument':
       p.topic     = core;
       p.stance    = sub;
-      p.hint      = '주장과 근거 2가지를 써 보세요.';
+      p.hint      = tts || '주장과 근거 2가지를 써 보세요.';
       p.structure = ex;
       break;
+
     case 'ai_fix':
       p.aiText = core;
       p.issues = sub;
-      p.hint   = ex || '더 자연스럽고 풍부하게 고쳐 써 보세요.';
+      p.hint   = tts || '더 자연스럽고 풍부하게 고쳐 써 보세요.';
       break;
+
     case 'genre_change': {
-      p.original = core;
-      const gc = sub ? sub.split('→') : [];
-      p.from = (gc[0] || '').trim();
-      p.to   = (gc[1] || '').trim();
-      p.hint = ex || '다른 형식으로 바꿔 써 보세요.';
+      // 핵심내용 = "원형 → 변환형", 보조정보 = 원문
+      const gc = core ? core.split(/\s*→\s*/) : [];
+      p.from     = (gc[0] || '').trim();
+      p.to       = (gc[1] || '').trim();
+      p.original = sub;
+      p.hint     = tts || '다른 형식으로 바꿔 써 보세요.';
       break;
     }
+
     case 'guide':
-      p.topic    = core;
-      p.audience = sub;
-      p.hint     = '안내 글을 써 보세요.';
+      p.topic     = core;
+      p.audience  = sub;
+      p.hint      = tts || '안내 글을 써 보세요.';
       p.structure = ex;
       break;
+
+    // ── L6 ──────────────────────────────────────────
     case 'obs_record':
       p.subject   = core;
-      p.hint      = sub || '변화를 기록해 보세요.';
-      p.structure = ex;
+      p.hint      = tts || '변화를 기록해 보세요.';
+      p.structure = sub;
       break;
+
     case 'report':
       p.topic     = core;
       p.data      = sub;
-      p.hint      = '보고하는 글을 써 보세요.';
+      p.hint      = tts || '보고하는 글을 써 보세요.';
       p.structure = ex;
       break;
+
     case 'ai_critique':
       p.aiText         = core;
-      p.hint           = sub || '비판적으로 평가하고 고쳐 써 보세요.';
-      p.critique_points = ex;
+      p.hint           = tts || '비판적으로 평가하고 고쳐 써 보세요.';
+      p.critique_points = sub;
       break;
+
     case 'audience':
       p.topic    = core;
       p.audience = sub;
-      p.hint     = ex || '독자에 맞는 글을 써 보세요.';
+      p.hint     = tts || '독자에 맞는 글을 써 보세요.';
       break;
+
     case 'media_change': {
-      p.original = core;
-      const mc = sub ? sub.split('→') : [];
-      p.from = (mc[0] || '').trim();
-      p.to   = (mc[1] || '').trim();
-      p.hint = ex || '매체에 맞게 바꿔 써 보세요.';
+      // 핵심내용 = "원형 → 변환형", 보조정보 = 원문
+      const mc = core ? core.split(/\s*→\s*/) : [];
+      p.from     = (mc[0] || '').trim();
+      p.to       = (mc[1] || '').trim();
+      p.original = sub;
+      p.hint     = tts || '매체에 맞게 바꿔 써 보세요.';
       break;
     }
+
     default:
       p.hint = sub;
   }
