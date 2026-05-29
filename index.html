@@ -5522,9 +5522,10 @@ async function confirmAndProceed() {
       logic_score: updatedResult.logic_score ?? state.analysisResult.logic_score,
       spelling_score: updatedResult.spelling_score ?? state.analysisResult.spelling_score,
       spacing_score: updatedResult.spacing_score ?? state.analysisResult.spacing_score,
-      confidence: 100
+      feedback_items: updatedResult.feedback_items || state.analysisResult.feedback_items,
+      char_analysis: updatedResult.char_analysis || state.analysisResult.char_analysis,
+      legibility_tip: updatedResult.legibility_tip || state.analysisResult.legibility_tip,
     };
-    state.analysisResult = mergedResult;
     renderResult(mergedResult);
     goToStep(4);
   } catch (err) {
@@ -5551,8 +5552,131 @@ function setAnalyzeStep(key, status) {
   }
 }
 
+async function reevaluateWithCorrectedText(correctedText) {
+  const { system, user } = buildPrompt();
+  const textOnlyUser = `[학생이 직접 수정한 텍스트]\n"${correctedText}"\n\n위 텍스트를 기준으로 평가해 주세요. recognized_text에는 위 텍스트를 그대로 넣고, char_analysis는 각 글자를 good 상태로 구성하세요.`;
+  const proxyUrl = resolveProxyUrl();
+  const response = await fetch(proxyUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-access-password': '' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2500,
+      system: system,
+      messages: [{ role: 'user', content: [{ type: 'text', text: textOnlyUser }] }]
+    })
+  });
+  if (!response.ok) throw new Error(`재평가 실패 (${response.status})`);
+  const data = await response.json();
+  const text = data.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
+  const cleaned = text.replace(/```json\s*|\s*```/g, '').trim();
+  try { return JSON.parse(cleaned); }
+  catch(e) {
+    const m = cleaned.match(/\{[\s\S]*\}/);
+    if (m) return JSON.parse(m[0]);
+    throw new Error('재평가 응답 파싱 실패');
+  }
+}
 
 async function callClaudeVision() {
-  // 프로덕션 모드: 인증은 서버에서만 처리됨
   const base64Data = state.imageData.split(',')[1];
-  const cleanMediaType = (stat
+  const cleanMediaType = (state.imageMediaType || 'image/png').toLowerCase();
+  const { system, user } = buildPrompt();
+
+  const approxMB = (base64Data.length * 0.75) / (1024 * 1024);
+  console.log(`[API] 이미지 페이로드 크기: ~${approxMB.toFixed(2)}MB`);
+  if (approxMB > 5) throw new Error(`이미지가 너무 커요 (${approxMB.toFixed(1)}MB). 더 작은 해상도로 다시 시도해 주세요.`);
+
+  const proxyUrl = resolveProxyUrl();
+  let response;
+  try {
+    response = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-access-password': '' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2500,
+        system: system,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: cleanMediaType, data: base64Data } },
+            { type: 'text', text: user }
+          ]
+        }]
+      })
+    });
+  } catch (netErr) {
+    throw new Error('프록시 서버에 연결할 수 없어요. 주소를 확인해 주세요.');
+  }
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => '');
+    let errDetail = '';
+    try { const errObj = JSON.parse(errText); errDetail = (errObj.error && errObj.error.message) || ''; }
+    catch(e) { errDetail = errText.substring(0, 120); }
+    if (response.status === 401) throw new Error('서비스 접근이 거부됐어요.');
+    if (response.status === 403) throw new Error('허용되지 않은 출처에서의 요청이에요.');
+    if (response.status === 413 || /too large|size limit/i.test(errDetail)) throw new Error('이미지가 너무 커요.');
+    if (response.status === 429) throw new Error('요청이 너무 많아요. 잠시 후 다시 시도해 주세요.');
+    if (response.status >= 500) throw new Error('서버 일시 오류예요. ' + errDetail);
+    throw new Error(`AI 분석 실패 (${response.status}). ${errDetail}`);
+  }
+
+  const data = await response.json();
+  const text = data.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
+  console.log('[API 응답]', text.substring(0, 300));
+  const cleaned = text.replace(/```json\s*|\s*```/g, '').trim();
+  let parsed;
+  try { parsed = JSON.parse(cleaned); }
+  catch (e) {
+    const m = cleaned.match(/\{[\s\S]*\}/);
+    if (m) { try { parsed = JSON.parse(m[0]); } catch (e2) { throw new Error('AI 응답을 해석할 수 없어요.'); } }
+    else { throw new Error('AI 응답이 예상한 형식이 아니에요.'); }
+  }
+  return parsed;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+renderLevelTabs();
+
+function initTodayTask() {
+  const todayTask = getTodayTask(state.level);
+  state.taskTypeIdx = todayTask.taskTypeIdx;
+  state.problemIdx  = todayTask.problemIdx || 0;
+  const panel = document.getElementById('todayTaskPanel');
+  document.getElementById('todayTaskName').textContent  = todayTask.taskName;
+  document.getElementById('todayTaskTopic').textContent = todayTask.topic ? '주제: ' + todayTask.topic : '';
+  panel.classList.remove('hidden');
+  renderProblemPreview();
+}
+
+(async function() {
+  showSheetLoading(true);
+  try {
+    const ok = await Promise.race([
+      loadProblemsFromSheet(),
+      new Promise(res => setTimeout(() => res(false), 6000))
+    ]);
+    if (ok) console.log('[Google Sheets 데이터 적용됨]');
+    else     console.log('[타임아웃 또는 실패]');
+  } catch (e) {
+    console.warn('[Sheet 로딩 오류]', e);
+  }
+  showSheetLoading(false);
+  initTodayTask();
+  renderTaskTypeTabs();
+})();
+</script>
+
+<script>
+const DEFAULT_PROXY_PATH = '/api/proxy';
+function resolveProxyUrl() { return DEFAULT_PROXY_PATH; }
+function getProxyConfig() { return { url: '', password: '' }; }
+</script>
+
+</body>
+</html>
