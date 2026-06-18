@@ -541,37 +541,108 @@ html, body {
   padding: 0 4px;
 }
 
-/* ============ Retry Options ============ */
-.retry-section {
-  background: var(--white);
+/* ============ Finish (완료) 섹션 ============ */
+.finish-section {
+  position: relative;
+  background: #F0F7EE;
   border-radius: var(--r-lg);
-  padding: 24px 20px;
+  padding: 32px 24px 28px;
   margin-top: 18px;
-  border: 1px solid var(--gray-line);
+  overflow: hidden;
 }
 
-.retry-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 16px;
+/* 노트 스프링 바인딩 효과 */
+.finish-section::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 36px;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 18px,
+    #C8E6C9 18px,
+    #C8E6C9 22px,
+    transparent 22px,
+    transparent 40px
+  );
+  border-right: 1.5px solid #C8E6C9;
+}
+
+.finish-content {
+  padding-left: 24px;
+  text-align: center;
+}
+
+.finish-message {
+  font-size: 18px;
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 18px;
+  line-height: 1.65;
+  margin-bottom: 24px;
 }
 
-.retry-emoji { font-size: 22px; }
+.finish-score-card {
+  background: #4CAF50;
+  border-radius: 16px;
+  padding: 20px;
+  max-width: 260px;
+  margin: 0 auto 24px;
+}
 
-.retry-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.finish-score-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 12px;
+}
+
+.finish-score-bubble {
+  background: white;
+  border-radius: 100px;
+  padding: 8px 28px;
+  display: inline-block;
+}
+
+.finish-score-num {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.finish-score-denom {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-2);
+}
+
+.finish-btns {
+  display: flex;
   gap: 12px;
-  margin-bottom: 20px;
+  justify-content: center;
+}
+
+.finish-btns .btn {
+  flex: 1;
+  max-width: 200px;
+}
+
+.btn-pink {
+  background: #E91E8C;
+  color: white;
+  border: none;
+}
+.btn-pink:hover { background: #C2185B; }
+
+/* ============ Retry Options (레거시 — 숨김) ============ */
+.retry-section {
+  display: none; /* 새 finish-section으로 교체됨 */
 }
 
 @media (max-width: 640px) {
-  .retry-cards { grid-template-columns: 1fr; }
+  .finish-btns { flex-direction: column; align-items: center; }
+  .finish-btns .btn { max-width: 100%; }
 }
 
 .retry-card {
@@ -2089,17 +2160,24 @@ html, body {
     <div class="card">
       <div class="card-header">
         <div class="icon-box">
-          <span class="icon icon-20"><svg><use href="#i-pencil"/></svg></span>
+          <span class="icon icon-20"><svg><use href="#i-book"/></svg></span>
         </div>
         <div class="title-group">
-          <h2>답안을 입력하세요</h2>
-          <div class="desc">세 가지 방식 중 편한 것을 선택해 주세요</div>
+          <h2 id="step2Title">오늘의 과제</h2>
+          <div class="desc" id="step2Desc">문항을 확인하고 답안을 입력하세요</div>
         </div>
       </div>
 
-      <!-- 문제 요약 (학년별 다르게) -->
-      <div class="task-summary" id="taskSummary">
-        <!-- 동적 생성 -->
+      <!-- 문제 프리뷰 (Step 1과 동일한 내용) -->
+      <div class="problem-preview" id="problemPreviewStep2">
+        <!-- 동적 생성: renderProblemPreview('problemPreviewStep2') -->
+      </div>
+
+      <!-- 입력 방식 구분선 -->
+      <div style="display:flex;align-items:center;gap:10px;margin:16px 0 8px;">
+        <div style="flex:1;height:1px;background:var(--gray-line);"></div>
+        <span style="font-size:12px;font-weight:600;color:var(--gray-2);white-space:nowrap;">✏️ 답안 입력</span>
+        <div style="flex:1;height:1px;background:var(--gray-line);"></div>
       </div>
 
       <div class="input-tabs" id="inputTabs">
@@ -2489,39 +2567,23 @@ html, body {
       </div>
     </div>
 
-    <!-- 재시도 옵션 영역 -->
-    <div class="retry-section">
-      <div class="retry-header">
-        <span class="retry-emoji">🎯</span>
-        <span>다음에 어떻게 할까요?</span>
-      </div>
-
-      <!-- 70점 미만 시 경고 배너 (동적으로 표시) -->
-      <div class="retry-warn-banner hidden" id="retryWarnBanner">
-        <span class="warn-icon">⚠️</span>
-        <div class="warn-body">
-          <div class="warn-title">70점 이상이 되면 다음 과제로 넘어가요!</div>
-          <div class="warn-desc">조금만 더 연습하면 잘할 수 있어요. 이 과제를 한 번 더 해볼까요?</div>
+    <!-- 완료 섹션 (노트패드 스타일) -->
+    <div class="finish-section" id="finishSection">
+      <div class="finish-content">
+        <div class="finish-message" id="finishMessage">
+          내 글을 조금 더 보완할 수 있어요.<br>다시 글을 써 볼까요?
         </div>
-      </div>
-
-      <div class="retry-cards">
-        <button class="retry-card" onclick="retryWrongOnly()" id="retryWrongBtn">
-          <div class="retry-icon" style="background:#FEE2E2; color:#DC2626;">✏️</div>
-          <div class="retry-card-title">틀린 부분만<br>다시 써보기</div>
-          <div class="retry-card-desc" id="retryWrongDesc">맞춤법 글자를<br>연습해 보세요</div>
-        </button>
-        <button class="retry-card" id="retrySameBtn" onclick="retrySameProblem()">
-          <div class="retry-icon" style="background:#DBEAFE; color:#2563EB;">🔄</div>
-          <div class="retry-recommend-badge hidden" id="retryRecommendBadge">강력 추천!</div>
-          <div class="retry-card-title">이 과제<br>다시 도전</div>
-          <div class="retry-card-desc">점수를 더 올려<br>볼까요?</div>
-        </button>
-        <button class="retry-card" id="retryNewBtn" onclick="retryNewProblem()">
-          <div class="retry-icon" style="background:#D1FAE5; color:#059669;">🆕</div>
-          <div class="retry-card-title">다른 문제</div>
-          <div class="retry-card-desc">새 문제로<br>도전해 볼까요?</div>
-        </button>
+        <div class="finish-score-card">
+          <div class="finish-score-label">🐾 내 점수 🐾</div>
+          <div class="finish-score-bubble">
+            <span class="finish-score-num" id="finishScoreNum">—</span>
+            <span class="finish-score-denom">/100점</span>
+          </div>
+        </div>
+        <div class="finish-btns">
+          <button class="btn btn-ghost" onclick="goToReviewNote()">복습노트로 가기</button>
+          <button class="btn btn-pink" onclick="retryNewProblem()">다시 풀기 🐾</button>
+        </div>
       </div>
     </div>
   </div>
@@ -3445,14 +3507,43 @@ function goToStep(n) {
   if (n !== 2 && state.cameraStream) stopCamera();
 
   if (n === 2) {
-    renderTaskSummary();
+    // Step 2에 문제 프리뷰 렌더 (문항 보면서 입력 가능)
+    renderProblemPreview('problemPreviewStep2');
+
+    // Step 2 헤더 텍스트 업데이트
+    const p2 = currentProblem();
+    const lvLabel = state.level ? `레벨 ${state.level}` : '';
+    const taskLabel = currentTaskName ? currentTaskName() : '';
+    const titleEl = document.getElementById('step2Title');
+    const descEl  = document.getElementById('step2Desc');
+    if (titleEl) titleEl.textContent = taskLabel || '오늘의 과제';
+    if (descEl)  descEl.textContent  = lvLabel ? `${lvLabel} · 문항을 확인하고 답안을 입력하세요` : '문항을 확인하고 답안을 입력하세요';
+
     document.getElementById('submitBtn').disabled = true;
     state.imageData = null;
-    // 레벨이 바뀌었을 수 있으므로 현재 활성 탭에 맞게 재초기화
-    requestAnimationFrame(() => {
-      const activeTabMode = (document.querySelector('#inputTabs button.active') || {}).dataset?.mode;
-      if (activeTabMode === 'canvas') initCanvas();
-    });
+
+    // ── 이전 답안 완전 초기화 ──
+    // 키보드 텍스트영역 클리어
+    const kta = document.getElementById('keyboardTextarea');
+    if (kta) kta.value = '';
+    const kcc = document.getElementById('keyboardCharCount');
+    if (kcc) kcc.textContent = '0';
+    // 파일 업로드 프리뷰 초기화
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) fileInput.value = '';
+    const dropZone = document.getElementById('dropZone');
+    if (dropZone) {
+      const zoneTitle = dropZone.querySelector('.zone-title');
+      const zoneSub   = dropZone.querySelector('.zone-sub');
+      if (zoneTitle) zoneTitle.textContent = '종이에 쓴 사진을 올려 주세요';
+      if (zoneSub)   zoneSub.textContent   = '클릭하거나 드래그해서 이미지를 업로드하세요 (JPG, PNG)';
+      // 미리보기 이미지 제거
+      const prevImg = dropZone.querySelector('img.preview-img');
+      if (prevImg) prevImg.remove();
+    }
+
+    // canvas는 항상 초기화
+    requestAnimationFrame(() => initCanvas());
   }
   window.scrollTo({top: 0, behavior: 'smooth'});
 }
@@ -3555,8 +3646,10 @@ document.getElementById('taskTypeTabs').addEventListener('click', (e) => {
 // ===========================================
 // 문제 프리뷰 렌더 (레벨×과제유형)
 // ===========================================
-function renderProblemPreview() {
-  const box = document.getElementById('problemPreview');
+function renderProblemPreview(targetId) {
+  const id = targetId || 'problemPreview';
+  const box = document.getElementById(id);
+  if (!box) return;
   const p = currentProblem();
   if (!p) { box.innerHTML = ''; return; }
 
@@ -4932,41 +5025,39 @@ function renderResult(r) {
 }
 
 // ===========================================
-// 재시도 카드 (점수 70 미만 강조)
+// ===========================================
+// 완료 섹션 업데이트 (노트패드 카드)
 // ===========================================
 function updateRetryCards(result) {
-  const wrongBtn = document.getElementById('retryWrongBtn');
-  const sameBtn = document.getElementById('retrySameBtn');
-  const newBtn = document.getElementById('retryNewBtn');
-  const warnBanner = document.getElementById('retryWarnBanner');
-  const recommendBadge = document.getElementById('retryRecommendBadge');
-  if (!wrongBtn) return;
+  // 점수 표시
+  const score = result?.total_score ?? 0;
+  const scoreEl = document.getElementById('finishScoreNum');
+  if (scoreEl) scoreEl.textContent = score;
 
-  const score = result?.total_score ?? 100;
-  const errs = result?.spelling_errors || [];
-  const lowScore = score < 70;
-
-  // 맞춤법 틀린 글자
-  if (errs.length > 0) {
-    wrongBtn.disabled = false;
-    document.getElementById('retryWrongDesc').innerHTML = `맞춤법 ${errs.length}개를<br>연습해 보세요`;
-  } else {
-    wrongBtn.disabled = true;
-    document.getElementById('retryWrongDesc').innerHTML = `맞춤법 오류가<br>없어요!`;
+  // 점수별 메시지
+  const msgEl = document.getElementById('finishMessage');
+  if (msgEl) {
+    if (score >= 90) {
+      msgEl.innerHTML = '정말 잘 썼어요! 🎉<br>다음 문제도 도전해 볼까요?';
+    } else if (score >= 70) {
+      msgEl.innerHTML = '내 글을 조금 더 보완할 수 있어요.<br>다시 글을 써 볼까요?';
+    } else {
+      msgEl.innerHTML = '조금만 더 연습하면 훨씬 잘 쓸 수 있어요!<br>다시 써 볼까요?';
+    }
   }
 
-  // 70점 미만: 재도전 강조
-  if (lowScore) {
-    warnBanner && warnBanner.classList.remove('hidden');
-    sameBtn && sameBtn.classList.add('recommended');
-    recommendBadge && recommendBadge.classList.remove('hidden');
-    newBtn && (newBtn.style.opacity = '0.5');
-  } else {
-    warnBanner && warnBanner.classList.add('hidden');
-    sameBtn && sameBtn.classList.remove('recommended');
-    recommendBadge && recommendBadge.classList.add('hidden');
-    newBtn && (newBtn.style.opacity = '');
+  // 점수에 따라 카드 색상 변경
+  const card = document.querySelector('.finish-score-card');
+  if (card) {
+    if (score >= 90) card.style.background = '#2E7D32';
+    else if (score >= 70) card.style.background = '#4CAF50';
+    else card.style.background = '#F57C00';
   }
+}
+
+// 복습노트로 가기 (현재는 Step 1으로 이동)
+function goToReviewNote() {
+  goToStep(1);
 }
 
 // ===========================================
