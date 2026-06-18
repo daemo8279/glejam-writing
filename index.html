@@ -4439,6 +4439,44 @@ function getTierClass(tier) {
   return {excellent:'tier-excellent',great:'tier-great',good:'tier-good',keepGoing:'tier-keep-going'}[tier]||'tier-great';
 }
 
+// ===========================================
+// 격려 메시지 (레벨 × 점수 구간)
+// ===========================================
+const ENCOURAGEMENT_MESSAGES = {
+  excellent: {
+    1: { title:'완벽해요! 🌟', sub:'글씨도 내용도 훌륭해요!', emoji:'🎉', chip:'100점 도전!' },
+    2: { title:'정말 잘 썼어요! ✨', sub:'표현력이 멋져요!', emoji:'🌟', chip:'최고예요!' },
+    3: { title:'훌륭해요! 🎊', sub:'문장 구성이 아주 좋아요!', emoji:'🎉', chip:'대단해요!' },
+    4: { title:'멋진 글이에요! ✨', sub:'논리적으로 잘 썼어요!', emoji:'🌟', chip:'최고예요!' },
+    5: { title:'정말 잘 썼어요! 🎊', sub:'문단 구성이 훌륭해요!', emoji:'🎉', chip:'완벽해요!' },
+    6: { title:'훌륭한 글이에요! ✨', sub:'깊이 있는 글쓰기예요!', emoji:'🌟', chip:'최고예요!' }
+  },
+  great: {
+    1: { title:'잘 했어요! 👍', sub:'조금만 더 연습해봐요!', emoji:'😊', chip:'잘했어요!' },
+    2: { title:'잘 썼어요! 😊', sub:'표현을 더 다양하게 써봐요!', emoji:'👍', chip:'훌륭해요!' },
+    3: { title:'좋아요! 👏', sub:'문장을 더 늘려봐요!', emoji:'😊', chip:'잘했어요!' },
+    4: { title:'잘 썼어요! 👍', sub:'내용을 더 풍부하게 써봐요!', emoji:'😊', chip:'훌륭해요!' },
+    5: { title:'좋은 글이에요! 👏', sub:'표현을 더 다듬어봐요!', emoji:'👍', chip:'잘했어요!' },
+    6: { title:'잘 썼어요! 😊', sub:'논리를 더 정교하게 다듬어봐요!', emoji:'👏', chip:'훌륭해요!' }
+  },
+  good: {
+    1: { title:'잘 하고 있어요! 🙂', sub:'글씨를 더 또렷하게 써봐요!', emoji:'💪', chip:'도전중!' },
+    2: { title:'좋아요! 🙂', sub:'문장을 완성해봐요!', emoji:'💪', chip:'도전중!' },
+    3: { title:'노력하고 있어요! 😊', sub:'더 길게 써봐요!', emoji:'💪', chip:'파이팅!' },
+    4: { title:'잘 하고 있어요! 🙂', sub:'내용을 더 추가해봐요!', emoji:'💪', chip:'도전중!' },
+    5: { title:'좋아요! 😊', sub:'문단을 더 발전시켜봐요!', emoji:'💪', chip:'파이팅!' },
+    6: { title:'노력하고 있어요! 🙂', sub:'논리적 흐름을 생각해봐요!', emoji:'💪', chip:'도전중!' }
+  },
+  keepGoing: {
+    1: { title:'괜찮아요! 다시 해봐요 💪', sub:'조금만 더 연습하면 잘 할 수 있어요!', emoji:'🌱', chip:'다시 도전!' },
+    2: { title:'다시 한 번 해봐요! 🌱', sub:'천천히 생각하며 써봐요!', emoji:'💪', chip:'파이팅!' },
+    3: { title:'포기하지 마요! 💪', sub:'한 문장씩 써봐요!', emoji:'🌱', chip:'다시 도전!' },
+    4: { title:'괜찮아요! 💪', sub:'핵심 내용부터 써봐요!', emoji:'🌱', chip:'다시 도전!' },
+    5: { title:'다시 해봐요! 🌱', sub:'주제를 먼저 정하고 써봐요!', emoji:'💪', chip:'파이팅!' },
+    6: { title:'포기하지 마요! 💪', sub:'단계별로 생각을 정리해봐요!', emoji:'🌱', chip:'다시 도전!' }
+  }
+};
+
 function applyEncouragement(score, level) {
   const tier = getScoreTier(score);
   const key = Math.min(Math.max(parseInt(level)||1, 1), 6);
