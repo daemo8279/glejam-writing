@@ -925,6 +925,49 @@ html, body {
   border-radius: var(--r-sm);
 }
 
+.keyboard-input-wrap {
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.keyboard-prompt-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  padding: 0 2px;
+}
+.keyboard-textarea {
+  width: 100%;
+  min-height: 160px;
+  padding: 14px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  font-size: 16px;
+  font-family: inherit;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--surface);
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.keyboard-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+.keyboard-textarea::placeholder { color: var(--text-dim); }
+.keyboard-counter {
+  text-align: right;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.keyboard-counter.over { color: var(--err); font-weight: 700; }
+.keyboard-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: center;
+}
 .canvas-hint {
   font-size: 12px;
   color: var(--gray-2);
@@ -2072,6 +2115,10 @@ html, body {
           <span class="icon icon-16"><svg><use href="#i-pencil"/></svg></span>
           직접 쓰기
         </button>
+        <button data-mode="keyboard" id="keyboardTabBtn" style="display:none;">
+          <span class="icon icon-16"><svg><use href="#i-type"/></svg></span>
+          키보드 입력
+        </button>
       </div>
 
       <div class="input-panel active" data-mode="upload">
@@ -2130,6 +2177,22 @@ html, body {
             <span class="icon icon-16"><svg><use href="#i-trash"/></svg></span>
             전체 지우기
           </button>
+        </div>
+      </div>
+
+      <!-- 키보드 입력 패널 (L4~L6) -->
+      <div class="input-panel" data-mode="keyboard">
+        <div class="keyboard-input-wrap">
+          <div class="keyboard-prompt-label" id="keyboardPromptLabel">여기에 글을 써 보세요</div>
+          <textarea
+            id="keyboardTextarea"
+            class="keyboard-textarea"
+            placeholder="이곳에 글을 입력하세요..."
+            maxlength="600"
+            rows="6"
+          ></textarea>
+          <div class="keyboard-counter"><span id="keyboardCharCount">0</span> / <span id="keyboardCharLimit">400</span>자</div>
+          <div class="keyboard-hint">레벨 4: 3~4문장 · 레벨 5~6: 1~2문단 (200~250자)</div>
         </div>
       </div>
 
@@ -2819,15 +2882,47 @@ let PROBLEM_BANK = {
 // ===========================================
 // Google Sheets 연동
 // ===========================================
-const SHEET_URLS = [
-  'https://docs.google.com/spreadsheets/d/1PrFclF7vPCLB5AIFFepMl5wfjxgb7e92gNbKV_LGwWQ/gviz/tq?tqx=out:csv'
-];
+const SHEET_BASE = 'https://docs.google.com/spreadsheets/d/1PrFclF7vPCLB5AIFFepMl5wfjxgb7e92gNbKV_LGwWQ/gviz/tq?tqx=out:csv';
+const SHEET_URLS = ['L1','L2','L3','L4','L5','L6'].map(s => SHEET_BASE + '&sheet=' + s);
+const RUBRIC_SHEET_URL = SHEET_BASE + '&sheet=' + encodeURIComponent('상세 평가 기준');
+
+// 평가 기준 코드 → {name, detail} 매핑 (상세 평가 기준 시트에서 로드)
+let RUBRIC_MAP = {};
 
 // 유형 이름 → type 코드 매핑
 const TYPE_CODE_MAP = {
   '받아쓰기': 'dictation',
   '낱말 확장 글쓰기': 'word_expand',
   '꾸며주는 말 쓰기': 'descriptive',
+  // L2
+  '감정 표현하기': 'emotion',
+  '그림 보고 글 쓰기': 'picture',
+  '문장 고쳐쓰기': 'correction',
+  '낱말 확장 글쓰기(2)': 'word_expand2',
+  // L3
+  '그림 보고 글쓰기(2)': 'picture3',
+  '상상해서 글쓰기': 'imagine',
+  '소개하기': 'intro',
+  '연결어 넣기': 'connector',
+  '고쳐 쓰기(2)': 'correction2',
+  // L4
+  '관찰 글쓰기': 'observe',
+  '순서에 맞는 글쓰기': 'sequence',
+  '이야기 이어쓰기': 'story_continue',
+  '주장하는 글쓰기': 'opinion',
+  '일기 쓰기': 'diary',
+  // L5
+  '편지 쓰기': 'letter',
+  '주장·근거 글쓰기': 'argument',
+  'AI 글 고쳐쓰기': 'ai_fix',
+  'AI 비평 글쓰기': 'ai_critique',
+  '장르 바꿔쓰기': 'genre_change',
+  '안내문 쓰기': 'guide',
+  // L6
+  '관찰 기록': 'obs_record',
+  '보고서 쓰기': 'report',
+  '독자 맞춤 글쓰기': 'audience',
+  '매체 바꿔쓰기': 'media_change',
   '감정 표현하기': 'emotion',
   '그림 보고 쓰기': 'picture',
   '그림 보고 글 쓰기': 'picture',
@@ -2934,6 +3029,12 @@ function sheetRowToProblem(headers, row) {
   const tts   = get('문항') || get('듣기');           // 문항(듣기 TTS) 컬럼
   const imgRaw = get('이미지 url') || get('이미지 URL'); // 이미지 URL (소문자 대응)
   const img   = (imgRaw && imgRaw !== '이미지') ? imgRaw : ''; // 플레이스홀더 제거
+  // 평가 기준: "1B. 맞춤법\n1C. 띄어쓰기" 형태 → 코드 배열 ["1B","1C"]
+  const rubricRaw = get('평가 기준') || get('평가기준') || '';
+  const rubric = rubricRaw.split('\n').map(s => {
+    const m = s.trim().match(/^([0-9][A-Z])/);
+    return m ? m[1] : null;
+  }).filter(Boolean);
 
   // 낱말 태그 분리 유틸 (· 또는 , 구분)
   const splitTags = (str) => str ? str.split(/\s*[·,]\s*/).map(s => s.trim()).filter(Boolean) : [];
@@ -2955,9 +3056,9 @@ function sheetRowToProblem(headers, row) {
       break;
 
     case 'descriptive':
-      // 핵심내용=장면/힌트, 보조정보=빈칸 문장, 예시=정답
-      p.scene   = core;
-      p.hint    = sub;   // 빈칸 문장 (표시용)
+      // 핵심내용=빈칸 문장(표시용), 보조정보=부가설명, 예시=정답
+      p.hint    = core;  // 빈칸 문장 → renderProblemPreview에서 밑줄로 표시
+      p.scene   = sub || core;
       p.example = ex;
       break;
 
@@ -3153,7 +3254,30 @@ function sheetRowToProblem(headers, row) {
       p.hint = sub;
   }
 
+  // 평가 기준 코드 배열을 문제 객체에 저장
+  if (rubric.length > 0) p.rubric = rubric;
+
   return { level, taskTypeIdx, problem: p };
+}
+
+// 상세 평가 기준 시트 로드 → RUBRIC_MAP 채우기
+async function loadRubricMap() {
+  try {
+    const resp = await fetch(RUBRIC_SHEET_URL, { cache: 'no-store' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const text = await resp.text();
+    const rows = parseCSV(text);
+    for (const row of rows) {
+      if (!row[0] || !row[0].trim()) continue;
+      const code   = row[0].trim();   // "1A"
+      const name   = (row[1] || '').trim();  // "글씨 가독성"
+      const detail = (row[2] || '').trim();  // 세부 체크리스트
+      if (/^[0-9][A-Z]$/.test(code)) RUBRIC_MAP[code] = { name, detail };
+    }
+    console.log('[Rubric] ' + Object.keys(RUBRIC_MAP).length + '개 기준 로드 완료');
+  } catch (e) {
+    console.warn('[Rubric 로드 실패]', e.message);
+  }
 }
 
 // 시트 URL 하나 fetch → 문제 배열 반환
@@ -3191,6 +3315,9 @@ async function fetchSheetProblems(url) {
 
 // 전체 시트 로딩 → PROBLEM_BANK 업데이트
 async function loadProblemsFromSheet() {
+  // 평가 기준 먼저 로드 (buildPrompt에서 사용)
+  await loadRubricMap();
+
   const allProblems = [];
   for (const url of SHEET_URLS) {
     try {
@@ -3403,6 +3530,8 @@ document.getElementById('gradeTabs').addEventListener('click', (e) => {
 
   renderTaskTypeTabs();
   renderProblemPreview();
+  updateKeyboardTabUI();
+  if (state.level < 4) setInputTab('upload');
 });
 
 // 과제 유형 탭 클릭
@@ -3750,6 +3879,31 @@ function setInputTab(mode) {
   state.inputMode = mode;
   if (mode === 'canvas') requestAnimationFrame(() => initCanvas());
   if (mode !== 'camera' && state.cameraStream) stopCamera();
+  if (mode === 'keyboard') {
+    updateKeyboardTabUI();
+  }
+}
+
+function updateKeyboardTabUI() {
+  const lv = state.level;
+  const isHigh = lv >= 4;
+  const btn = document.getElementById('keyboardTabBtn');
+  if (btn) btn.style.display = isHigh ? '' : 'none';
+  // 레이블 & 글자 수 한도
+  const limits = { 4: 200, 5: 300, 6: 350 };
+  const limitEl = document.getElementById('keyboardCharLimit');
+  if (limitEl) limitEl.textContent = limits[lv] || 400;
+  // 프롬프트 라벨
+  const p = currentProblem();
+  const lbl = document.getElementById('keyboardPromptLabel');
+  if (lbl && p) {
+    const prompts = {
+      4: '3~4문장으로 자유롭게 써 보세요',
+      5: '1~2문단으로 내 생각을 써 보세요',
+      6: '논리적으로 1~2문단을 써 보세요'
+    };
+    lbl.textContent = prompts[lv] || '여기에 글을 써 보세요';
+  }
 }
 
 function initCanvas() {
@@ -3811,12 +3965,37 @@ function drawGrid() {
 // ===========================================
 // buildPrompt (레벨 × 과제유형)
 // ===========================================
+// ─ Dynamic Rubric Helpers ──────────────────────────────────────────
+function buildDynamicRubricSection(rubricCodes) {
+  if (!rubricCodes || !rubricCodes.length) return '';
+  const lines = rubricCodes.map(code => {
+    const info = RUBRIC_MAP[code];
+    if (!info) return `  - [${code}] (기준 정보 없음)`;
+    return `  - [${code}] ${info.name}: ${info.detail}`;
+  });
+  return `\n★ 이 문항의 평가 기준 ★\n${lines.join('\n')}`;
+}
+
+function buildDynamicOutputSchema(rubricCodes) {
+  const scores = {};
+  (rubricCodes || []).forEach(code => {
+    scores[code] = { score: 0, comment: '' };
+  });
+  return scores;
+}
+
 function buildPrompt() {
   const p = currentProblem();
   const lv = state.level;
   const levelData = C[lv] || {};
   const taskName = currentTaskName();
   const scaleDesc = levelData.s || '1문장';
+
+  // ── 동적 평가 기준 (구글 시트 '평가 기준' 열에서 로드) ──────
+  const dynRubricCodes = (p && p.rubric && p.rubric.length && Object.keys(RUBRIC_MAP).length > 0)
+    ? p.rubric : null;
+  const dynRubricSection = dynRubricCodes ? buildDynamicRubricSection(dynRubricCodes) : '';
+  const dynScores       = dynRubricCodes ? buildDynamicOutputSchema(dynRubricCodes) : null;
 
   // ── 공통 OCR + 피드백 베이스 ──────────────────────────────
   const baseSystem = `당신은 대한민국 초등학교 글쓰기 지도 전문 국어 교사입니다.
@@ -3869,6 +4048,28 @@ feedback_items 각 항목:
   example: (correction일 때 권장) 예) "틀린 표현 → 바른 표현"
 
 teacher_comment: 20자 이내 격려 존댓말`;
+
+  // ─ 동적 평가 기준 경로 ──────────────────────────────────────────
+  if (dynRubricCodes) {
+    const scaleSuffix = lv <= 1 ? '1문장' : lv === 2 ? '1~2문장' : lv === 3 ? '2~3문장'
+                      : lv === 4 ? '3~4문장' : '1~2문단';
+    const taskContext = [p.topic, p.subject, p.hint, p.starter, p.text, p.event]
+      .filter(Boolean).join(' / ');
+    const criteriaScoresSchema = JSON.stringify(dynScores);
+    const dynSys = `${baseSystem}${dynRubricSection}
+
+[${taskName} — 레벨${lv}] ${taskContext}
+분량 기준: ${scaleSuffix}.
+
+각 평가 기준(criteria_scores)에 대해:
+  - score: 0~100점 (해당 기준 달성도)
+  - comment: 20자 이내 친절한 피드백 (해요체, 구체적, 긍정적)
+criteria_scores의 모든 코드는 반드시 채워 주세요.
+
+출력:{"task_type":"${p.type||'open'}","recognized_text":"","confidence":0,"total_score":0,"legibility_score":0,"task_score":0,"teacher_comment":"","char_analysis":[],"legibility_tip":"","criteria_scores":${criteriaScoresSchema},"spelling_errors":[],"language_tip":"","feedback_items":[{"type":"praise","text":""},{"type":"encourage","text":""}]}`;
+    const dynUsr = `과제 유형: ${taskName}\n내용: ${taskContext}\n힌트: ${p.hint||''}\n\n손글씨를 읽고 위의 평가 기준에 따라 분석해 주세요.`;
+    return { system: dynSys, user: dynUsr };
+  }
 
   // ─ Level 1 ─────────────────────────────────────────────────
   if (lv === 1 && p.type === 'dictation') {
@@ -4454,7 +4655,14 @@ function reconcileCharAnalysis(r) {
 // ===========================================
 function renderResult(r) {
   r = reconcileCharAnalysis(r);
-  document.getElementById('submittedImg').src = state.imageData;
+  const submittedImgEl = document.getElementById('submittedImg');
+  if (state.imageData) {
+    submittedImgEl.src = state.imageData;
+    submittedImgEl.style.display = '';
+  } else {
+    submittedImgEl.src = '';
+    submittedImgEl.style.display = 'none';
+  }
   const lv = state.level;
   const p = currentProblem();
 
@@ -4477,7 +4685,13 @@ function renderResult(r) {
   document.getElementById('confBar').style.width = conf + '%';
   document.getElementById('confText').textContent = conf + '%';
 
-  // 총점
+  // 총점: criteria_scores가 있으면 task_score/total_score 자동 계산
+  if (r.criteria_scores && Object.keys(r.criteria_scores).length > 0) {
+    const cVals = Object.values(r.criteria_scores).map(v => v.score ?? 0);
+    const cAvg = Math.round(cVals.reduce((a,b) => a+b, 0) / cVals.length);
+    if (!r.task_score) r.task_score = cAvg;
+    if (!r.total_score) r.total_score = Math.round((r.legibility_score ?? 0) * 0.3 + cAvg * 0.7);
+  }
   document.getElementById('totalScore').innerHTML = (r.total_score ?? 0) + '<small>/100</small>';
   document.getElementById('teacherComment').textContent = r.teacher_comment || '';
 
@@ -4599,18 +4813,39 @@ function renderResult(r) {
     document.getElementById('rubricScoreMini').innerHTML = (r.task_score??0)+'<small>점</small>';
     const rubricList = document.getElementById('rubricList');
     rubricList.innerHTML = '';
-    (r.rubric||[]).forEach(item => {
-      const statusIcon = {pass:'#i-check',warn:'#i-alert',fail:'#i-alert'}[item.status]||'#i-check';
-      const el = document.createElement('div');
-      el.className = `rubric-item ${item.status||'pass'}`;
-      el.innerHTML = `
-        <div class="rubric-check"><span class="icon icon-16"><svg><use href="${statusIcon}"/></svg></span></div>
-        <div class="rubric-body">
-          <div class="rubric-title">${escapeHtml(item.title||'')}</div>
-          <div class="rubric-desc">${escapeHtml(item.desc||'')}</div>
-        </div>`;
-      rubricList.appendChild(el);
-    });
+
+    // criteria_scores 우선 (동적 평가 기준), 없으면 기존 rubric[] 폴백
+    if (r.criteria_scores && Object.keys(r.criteria_scores).length > 0) {
+      Object.entries(r.criteria_scores).forEach(([code, item]) => {
+        const info = RUBRIC_MAP[code] || { name: code, detail: '' };
+        const score = item.score ?? 0;
+        const status = score >= 70 ? 'pass' : score >= 50 ? 'warn' : 'fail';
+        const statusIcon = {pass:'#i-check', warn:'#i-alert', fail:'#i-alert'}[status] || '#i-check';
+        const el = document.createElement('div');
+        el.className = `rubric-item ${status}`;
+        el.innerHTML = `
+          <div class="rubric-check"><span class="icon icon-16"><svg><use href="${statusIcon}"/></svg></span></div>
+          <div class="rubric-body">
+            <div class="rubric-title">${escapeHtml(info.name)}<span class="rubric-code"> [${escapeHtml(code)}]</span></div>
+            <div class="rubric-desc">${escapeHtml(item.comment||'')}</div>
+          </div>
+          <div class="rubric-score-badge score-${status}">${score}<small>점</small></div>`;
+        rubricList.appendChild(el);
+      });
+    } else {
+      (r.rubric||[]).forEach(item => {
+        const statusIcon = {pass:'#i-check',warn:'#i-alert',fail:'#i-alert'}[item.status]||'#i-check';
+        const el = document.createElement('div');
+        el.className = `rubric-item ${item.status||'pass'}`;
+        el.innerHTML = `
+          <div class="rubric-check"><span class="icon icon-16"><svg><use href="${statusIcon}"/></svg></span></div>
+          <div class="rubric-body">
+            <div class="rubric-title">${escapeHtml(item.title||'')}</div>
+            <div class="rubric-desc">${escapeHtml(item.desc||'')}</div>
+          </div>`;
+        rubricList.appendChild(el);
+      });
+    }
     document.getElementById('rubricTipText').innerHTML =
       '<b>선생님 한마디:</b> ' + escapeHtml(r.language_tip||r.spelling_tip||'잘 했어요!');
 
@@ -4860,6 +5095,24 @@ document.getElementById('inputTabs').addEventListener('click', (e) => {
 
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
+
+// 키보드 입력 이벤트
+const keyboardTextarea = document.getElementById('keyboardTextarea');
+if (keyboardTextarea) {
+  keyboardTextarea.addEventListener('input', () => {
+    const val = keyboardTextarea.value;
+    state.keyboardText = val;
+    const count = val.length;
+    const limitEl = document.getElementById('keyboardCharLimit');
+    const limit = parseInt(limitEl?.textContent || '400');
+    const countEl = document.getElementById('keyboardCharCount');
+    if (countEl) countEl.textContent = count;
+    const counterEl = countEl?.closest('.keyboard-counter');
+    if (counterEl) counterEl.classList.toggle('over', count > limit);
+    // 한 글자 이상이면 제출 버튼 활성화
+    document.getElementById('submitBtn').disabled = count < 10;
+  });
+}
 
 fileInput.addEventListener('change', (e) => {
   if (e.target.files[0]) handleFile(e.target.files[0]);
@@ -5181,6 +5434,41 @@ function showError(msg) {
 // STEP 3 & 4: Claude Vision API
 // ===========================================
 async function runAnalysis() {
+  const activeMode = (document.querySelector('#inputTabs button.active') || {}).dataset?.mode || 'upload';
+
+  if (activeMode === 'keyboard') {
+    // ── 키보드 입력 모드 ──────────────────────────────────────
+    const text = (state.keyboardText || '').trim();
+    if (text.length < 10) {
+      showError('글을 10자 이상 입력해 주세요.');
+      return;
+    }
+    updateAnalyzeStep2Label();
+    goToStep(3);
+    resetAnalyzeSteps();
+    try {
+      setAnalyzeStep('ocr', 'now');
+      await new Promise(r => setTimeout(r, 300));
+      const result = await callClaudeText(text);
+      setAnalyzeStep('ocr', 'done');
+      setAnalyzeStep('compare', 'now');
+      await new Promise(r => setTimeout(r, 400));
+      setAnalyzeStep('compare', 'done');
+      setAnalyzeStep('feedback', 'now');
+      await new Promise(r => setTimeout(r, 400));
+      setAnalyzeStep('feedback', 'done');
+      state.analysisResult = result;
+      state.originalOcrText = result.recognized_text || text;
+      await new Promise(r => setTimeout(r, 300));
+      openConfirmModal(result);
+    } catch (err) {
+      console.error(err);
+      showError('분석 중 오류가 발생했어요: ' + err.message);
+      goToStep(2);
+    }
+    return;
+  }
+
   if (!state.imageData) {
     showError('답안 이미지가 없습니다.');
     return;
@@ -5464,6 +5752,64 @@ async function reevaluateWithCorrectedText(correctedText) {
   }
 }
 
+// ─────────────────────────────────────────────────────
+// callClaudeText — 키보드 입력 텍스트 직접 평가 (이미지 없음)
+// ─────────────────────────────────────────────────────
+async function callClaudeText(inputText) {
+  const { system, user } = buildPrompt();
+
+  // 텍스트 모드용 system 보강: OCR 불필요, 글씨 채점 없음
+  const textSystem = system
+    .replace('학생이 종이(원고지/캔버스)에 손으로 쓴 글씨 이미지를 분석해 평가하고', '학생이 키보드로 입력한 글을 평가하고')
+    .replace('★ OCR 핵심 원칙 ★', '★ 텍스트 평가 원칙 ★')
+    .replace('recognized_text: 학생이 실제로 쓴 글자 그대로 (자동 교정 금지)', 'recognized_text: 학생이 입력한 텍스트를 그대로 복사 (수정 금지)')
+    .replace('불분명한 글자 → 시각적으로 가장 비슷한 글자로', '텍스트 입력이므로 OCR 불필요')
+    .replace('char status: good(또렷) / warn(삐뚤·받침 불완전) / bad(알아보기 힘듦) / space(띄어쓰기)', 'char_analysis: 빈 배열 []로 반환')
+    .replace('손글씨가 전혀 없으면 confidence 10 이하', 'confidence: 항상 100');
+
+  const textUser = `학생이 키보드로 입력한 글:\n\n${inputText}\n\nOCR 없이 이 텍스트를 직접 평가해 주세요. recognized_text에는 위 텍스트를 그대로 넣으세요. confidence는 100, legibility_score는 100으로 고정하고, char_analysis는 []로 반환하세요.`;
+
+  const proxyUrl = resolveProxyUrl();
+  let response;
+  try {
+    response = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-access-password': '' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        system: textSystem,
+        messages: [{ role: 'user', content: [
+          { type: 'text', text: textUser }
+        ]}]
+      })
+    });
+  } catch(fetchErr) {
+    throw new Error(`네트워크 오류: ${fetchErr.message}`);
+  }
+  if (!response.ok) {
+    const errText = await response.text().catch(()=>'');
+    throw new Error(`API 오류 (${response.status}): ${errText.substring(0,200)}`);
+  }
+  const data = await response.json();
+  const rawText = data.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
+  const cleaned = rawText.replace(/\`\`\`json\s*|\s*\`\`\`/g, '').trim();
+  let result;
+  try {
+    result = JSON.parse(cleaned);
+  } catch(e) {
+    const m = cleaned.match(/\{[\s\S]*\}/);
+    if (m) result = JSON.parse(m[0]);
+    else throw new Error('JSON 파싱 실패: ' + cleaned.substring(0,200));
+  }
+  // 키보드 입력은 OCR 관련 필드 고정
+  result.recognized_text = result.recognized_text || inputText;
+  result.confidence = 100;
+  result.legibility_score = result.legibility_score || 100;
+  result.char_analysis = [];
+  return result;
+}
+
 async function callClaudeVision() {
   const base64Data = state.imageData.split(',')[1];
   const cleanMediaType = (state.imageMediaType || 'image/png').toLowerCase();
@@ -5522,6 +5868,7 @@ renderLevelTabs();
   document.getElementById('todayTaskTopic').textContent = todayTask.topic ? '주제: ' + todayTask.topic : '';
   renderTaskTypeTabs();
   renderProblemPreview();
+  updateKeyboardTabUI();
 })();
 </script>
 </body>
