@@ -524,6 +524,23 @@ html, body {
   letter-spacing: 0.02em;
 }
 
+/* 문제 카드 — 핵심·보조 2존 레이아웃 */
+.pp-core {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.65;
+  text-align: center;
+  padding: 6px 0;
+}
+.pp-sub {
+  font-size: 12px;
+  color: var(--gray-2);
+  text-align: center;
+  line-height: 1.55;
+  padding: 0 4px;
+}
+
 /* ============ Retry Options ============ */
 .retry-section {
   background: var(--white);
@@ -3408,12 +3425,21 @@ function renderProblemPreview() {
   const p = currentProblem();
   if (!p) { box.innerHTML = ''; return; }
 
-  const taskName = currentTaskName();
-  let content = '';
+  const pool = (PROBLEM_BANK[state.level] || {})[state.taskTypeIdx] || [];
+  const totalProblems = pool.length;
+  const problemNumLabel = totalProblems > 1
+    ? `<div class="problem-num-badge">${state.problemIdx + 1} / ${totalProblems}</div>`
+    : '';
+
+  let coreHtml = '';
+  let subHtml  = '';
+  let imgHtml  = '';
 
   switch (p.type) {
+
+    // ── L1 ───────────────────────────────────────────────────
     case 'dictation':
-      content = `
+      coreHtml = `
         <div class="pp-audio">
           <button class="audio-play-btn" onclick="speakSentence()" id="audioBtn">
             <span class="icon icon-24" style="color:white;"><svg><use href="#i-play"/></svg></span>
@@ -3421,290 +3447,222 @@ function renderProblemPreview() {
           <div class="audio-info">
             <div class="label">버튼을 눌러 문장을 들어 보세요</div>
             <div class="title hidden-sentence">🔒 문장은 숨겨져 있어요 · 듣고 받아쓰세요</div>
-            <div class="hint">선생님 목소리를 잘 듣고 써 보세요</div>
           </div>
         </div>`;
+      subHtml = '선생님 목소리를 잘 듣고 써 보세요';
       break;
 
     case 'word_expand': {
-      // hint: "[낱말]을 넣어 문장을 완성해 보세요.\n낱말로 _______."
       const hLines = (p.hint || '').split('\n');
       const instruction = hLines[0] || '';
-      const template = hLines[1] || '';
-      content = `
-        <div style="display:flex;flex-direction:column;gap:14px;padding:4px 0;">
-          <div style="display:flex;justify-content:center;">
-            <span class="word-chip" style="font-size:22px;font-weight:800;padding:10px 24px;letter-spacing:-0.02em;">${escapeHtml(p.keyword)}</span>
-          </div>
-          <div style="font-size:13px;color:var(--gray-2);text-align:center;">${escapeHtml(instruction)}</div>
-          ${template ? `<div style="background:var(--bg-gray-soft);border-radius:var(--r-md);padding:14px 16px;font-size:15px;font-weight:600;color:var(--text);text-align:center;letter-spacing:-0.01em;">${escapeHtml(template)}</div>` : ''}
-        </div>`;
+      const template    = hLines[1] || '';
+      coreHtml = `<div style="display:flex;justify-content:center;">
+        <span class="word-chip" style="font-size:26px;font-weight:800;padding:12px 30px;letter-spacing:-0.02em;">${escapeHtml(p.keyword)}</span>
+      </div>`;
+      subHtml = escapeHtml(instruction)
+        + (template ? `<br><span style="font-size:14px;font-weight:600;color:var(--text);">${escapeHtml(template)}</span>` : '');
       break;
     }
 
     case 'descriptive': {
-      // [선택지] 패턴 완전 제거, 빈칸 포함 문장만 노출
       const dClean = (p.hint || '')
         .split('\n')
-        .map(l => l.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim())
+        .map(l => l.replace(/\[.*?\]/g,'').replace(/\(.*?\)/g,'').trim())
         .filter(l => l.length > 0 && !l.includes('골라') && !l.includes('완성'));
-      // ___ 포함 줄 우선, 없으면 첫 줄
       const dSentence = dClean.find(l => l.includes('_')) || dClean[0] || '';
-      content = `
-        <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:8px 0;">
-          <div style="font-size:40px;">✍️</div>
-          <div style="font-size:13px;color:var(--gray-2);">빈칸에 어울리는 말을 쓰세요.</div>
-          ${dSentence ? `<div style="background:var(--bg-gray-soft);border-radius:var(--r-md);padding:16px 20px;font-size:16px;font-weight:700;color:var(--text);text-align:center;width:100%;">${escapeHtml(dSentence)}</div>` : ''}
-        </div>`;
+      coreHtml = dSentence
+        ? `<div style="background:var(--bg-gray-soft);border-radius:var(--r-md);padding:16px 20px;font-size:17px;font-weight:700;color:var(--text);text-align:center;letter-spacing:-0.01em;line-height:1.7;">${escapeHtml(dSentence)}</div>`
+        : '';
+      subHtml = '빈칸에 어울리는 말을 쓰세요.';
       break;
     }
 
+    // ── L2 ───────────────────────────────────────────────────
     case 'emotion':
-      content = `
-        <div class="pp-image"><div>
-          <div class="pp-emoji-scene" style="font-size:48px;">💬</div>
-          <div class="pp-caption" style="font-size:14px; font-weight:700; margin-top:8px;">${escapeHtml(p.situation)}</div>
-          <div class="pp-caption" style="margin-top:4px; color:var(--primary);">감정 키워드: <b>${escapeHtml(p.emotion)}</b></div>
-        </div></div>
-        <div class="pp-caption" style="margin-top:12px;">${escapeHtml(p.hint)}</div>
-`;
+      coreHtml = `<div style="background:var(--bg-gray-soft);border-radius:var(--r-md);padding:16px 18px;font-size:16px;font-weight:700;color:var(--text);line-height:1.7;">${escapeHtml(p.situation)}</div>`;
+      subHtml  = `감정 키워드: <b style="color:var(--primary);">${escapeHtml(p.emotion)}</b>`;
       break;
 
     case 'picture':
     case 'picture3': {
       const wTagsHtml = p.wordTags && p.wordTags.length
-        ? `<div style="margin-top:10px;"><div style="font-size:11px;font-weight:600;color:var(--gray-2);margin-bottom:6px;">사용할 낱말</div><div class="pp-words">${p.wordTags.map(t=>`<span class="word-chip" style="font-size:14px;padding:8px 16px;">${escapeHtml(t)}</span>`).join('')}</div></div>`
+        ? `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px;">${p.wordTags.map(t=>`<span class="word-chip" style="font-size:13px;padding:6px 14px;">${escapeHtml(t)}</span>`).join('')}</div>`
         : '';
-      const sceneHtml = p.imageUrl
-        ? `<div class="pp-image" style="padding:0;overflow:hidden;border-radius:var(--r-md);">
-             <img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.caption)}"
-               style="width:100%;max-height:220px;object-fit:cover;display:block;"
-               onerror="this.parentElement.innerHTML='<div style=\\'padding:24px;text-align:center;\\'><div style=\\'font-size:40px;\\'>${escapeHtml(p.emoji||'🖼️')}</div><div class=\\'pp-caption\\'>${escapeHtml(p.caption)}</div></div>'"
-             />
-           </div>`
-        : `<div class="pp-image"><div>
-             <div class="pp-emoji-scene">${escapeHtml(p.emoji)}</div>
-             <div class="pp-caption">${escapeHtml(p.caption)}</div>
-           </div></div>`;
-      content = `${sceneHtml}${wTagsHtml}
-        <div class="pp-caption" style="margin-top:12px;">${escapeHtml(p.hint)}</div>`;
+      coreHtml = `<div style="font-size:16px;font-weight:700;">${escapeHtml(p.caption)}</div>`;
+      subHtml  = escapeHtml(p.hint || '') + (wTagsHtml ? `<br>${wTagsHtml}` : '');
+      imgHtml  = p.imageUrl
+        ? `<img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.caption)}"
+             style="width:100%;max-height:160px;object-fit:cover;border-radius:var(--r-md);display:block;margin-top:12px;"
+             onerror="this.style.display='none'">`
+        : `<div style="font-size:64px;line-height:1;text-align:center;margin-top:12px;">${escapeHtml(p.emoji||'🖼️')}</div>`;
       break;
     }
 
     case 'correction':
-      content = `
-        <div class="pp-image" style="flex-direction:column; gap:10px; text-align:left; padding:18px;">
-          <div style="font-size:11px; font-weight:600; color:var(--point);">고쳐야 할 문장</div>
-          <div style="font-size:16px; font-weight:700; color:var(--text); padding:12px; background:var(--point-soft); border-radius:var(--r-sm);">${escapeHtml(p.wrong)}</div>
-          <div style="font-size:12px; color:var(--gray-2);">${escapeHtml(p.issue || '')}</div>
-        </div>
-        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+      coreHtml = `
+        <div style="padding:14px 16px;background:var(--point-soft);border-radius:var(--r-sm);border-left:3px solid var(--point);font-size:16px;font-weight:700;color:var(--text);line-height:1.65;text-align:left;">
+          ${escapeHtml(p.wrong)}
+        </div>`;
+      subHtml = `<span style="color:var(--point);font-weight:600;">고쳐야 할 문장</span>${p.issue ? ' · ' + escapeHtml(p.issue) : ''}`;
       break;
 
     case 'word_expand2': {
       const kw2 = p.keywords || [];
-      content = `
-        <div style="display:flex;flex-direction:column;gap:14px;padding:4px 0;">
-          <div style="display:flex;justify-content:center;gap:10px;">
-            ${kw2.map(k=>`<span class="word-chip" style="font-size:20px;font-weight:800;padding:10px 20px;">${escapeHtml(k)}</span>`).join('')}
-          </div>
-          <div style="font-size:13px;color:var(--gray-2);text-align:center;">두 낱말을 모두 넣어 한 문장을 완성해 보세요.</div>
-        </div>`;
+      coreHtml = `<div style="display:flex;justify-content:center;gap:12px;">
+        ${kw2.map(k=>`<span class="word-chip" style="font-size:22px;font-weight:800;padding:10px 22px;">${escapeHtml(k)}</span>`).join('')}
+      </div>`;
+      subHtml = '두 낱말을 모두 넣어 한 문장을 완성해 보세요.';
       break;
     }
 
+    // ── L3 ───────────────────────────────────────────────────
     case 'correction2':
-      content = `
-        <div class="pp-image" style="flex-direction:column; gap:10px; text-align:left; padding:18px;">
-          <div style="font-size:11px; font-weight:600; color:var(--point);">고쳐야 할 글</div>
-          <div style="font-size:14px; font-weight:600; color:var(--text); padding:12px; background:var(--point-soft); border-radius:var(--r-sm); line-height:1.7;">${escapeHtml(p.wrong)}</div>
-        </div>
-        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+      coreHtml = `
+        <div style="padding:14px 16px;background:var(--point-soft);border-radius:var(--r-sm);border-left:3px solid var(--point);font-size:14px;font-weight:600;color:var(--text);line-height:1.75;text-align:left;">
+          ${escapeHtml(p.wrong)}
+        </div>`;
+      subHtml = `<span style="color:var(--point);font-weight:600;">고쳐야 할 글</span> · ${escapeHtml(p.hint||'')}`;
       break;
 
     case 'imagine':
-      content = `
-        <div class="pp-image"><div>
-          <div class="pp-emoji-scene" style="font-size:48px;">💭</div>
-          <div class="pp-caption" style="font-size:14px; font-weight:700; margin-top:8px;">${escapeHtml(p.prompt)}</div>
-          <div class="pp-caption" style="margin-top:4px; color:var(--primary);">시작 문장: <b>"${escapeHtml(p.starter)}"</b></div>
-        </div></div>
-        <div class="pp-caption" style="margin-top:12px;">${escapeHtml(p.hint)}</div>`;
+      coreHtml = `
+        <div style="background:var(--bg-gray-soft);border-radius:var(--r-md);padding:16px 18px;font-size:15px;font-weight:700;color:var(--text);line-height:1.7;text-align:left;">
+          "${escapeHtml(p.starter)}"
+        </div>`;
+      subHtml = escapeHtml(p.prompt || p.hint || '');
       break;
 
     case 'intro':
-      content = `
-        <div class="pp-image" style="flex-direction:column; gap:8px;">
-          <div style="font-size:20px; font-weight:700; color:var(--primary);">${escapeHtml(p.subject)}</div>
-          <div style="font-size:12px; color:var(--gray-2);">포함할 내용: ${escapeHtml(p.points)}</div>
-        </div>
-        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+      coreHtml = `<div style="font-size:20px;font-weight:800;color:var(--primary);letter-spacing:-0.02em;">${escapeHtml(p.subject)}</div>`;
+      subHtml  = `포함할 내용: ${escapeHtml(p.points || p.hint || '')}`;
       break;
 
-    case 'connector':
+    case 'connector': {
       const chips = (p.connectors || []).map(c =>
-        `<span class="word-chip" style="font-size:14px; padding:8px 14px;">${escapeHtml(c)}</span>`).join('');
+        `<span class="word-chip" style="font-size:13px;padding:6px 14px;">${escapeHtml(c)}</span>`).join('');
       const sents = (p.sentences || []).map((s,i) =>
-        `<div style="padding:6px 10px; background:var(--white); border-radius:6px; font-size:13px; font-weight:500;">${i+1}. ${escapeHtml(s)}</div>`).join('');
-      content = `
-        <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:12px;">${sents}</div>
-        <div style="margin-bottom:8px; font-size:11px; color:var(--gray-2); font-weight:600;">사용할 연결어:</div>
-        <div class="pp-words" style="margin-bottom:8px;">${chips}</div>
-        <div class="pp-caption">${escapeHtml(p.hint)}</div>`;
+        `<div style="padding:7px 11px;background:var(--white);border-radius:6px;font-size:14px;font-weight:500;text-align:left;line-height:1.5;">${i+1}. ${escapeHtml(s)}</div>`).join('');
+      coreHtml = `<div style="display:flex;flex-direction:column;gap:6px;width:100%;">${sents}</div>`;
+      subHtml  = `연결어: <span style="display:inline-flex;gap:6px;flex-wrap:wrap;margin-left:4px;">${chips}</span>`;
+      break;
+    }
+
+    // ── L4 ───────────────────────────────────────────────────
+    case 'observe':
+      coreHtml = `<div style="font-size:17px;font-weight:800;color:var(--primary);letter-spacing:-0.02em;">관찰 대상: ${escapeHtml(p.subject)}</div>`;
+      subHtml  = `관찰 포인트: ${escapeHtml(p.points || p.hint || '')}`;
       break;
 
-    case 'observe':
-      content = `
-        <div class="pp-image" style="flex-direction:column; gap:8px;">
-          <div style="font-size:18px; font-weight:700; color:var(--primary);">관찰 대상: ${escapeHtml(p.subject)}</div>
-          <div style="font-size:12px; color:var(--gray-2);">관찰 포인트: ${escapeHtml(p.points)}</div>
-        </div>
-        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+    case 'sequence': {
+      const stepBadges = (p.steps || []).map((s,i) =>
+        `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;">${i+1}. ${escapeHtml(s)}</span>`).join(
+        `<span style="color:var(--gray-3);font-size:14px;font-weight:700;">→</span>`);
+      coreHtml = `
+        <div style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:10px;">${escapeHtml(p.topic)}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;">${stepBadges}</div>`;
+      subHtml = escapeHtml(p.hint || '');
       break;
+    }
 
     case 'story_continue':
-      content = `
-        <div class="pp-image" style="padding:18px; flex-direction:column; text-align:left; gap:8px;">
-          <div style="font-size:11px; color:var(--gray-2); font-weight:600;">이야기의 시작</div>
-          <div style="font-size:15px; font-weight:600; color:var(--text); line-height:1.6;">"${escapeHtml(p.starter)}"</div>
-        </div>
-        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+      coreHtml = `
+        <div style="background:var(--bg-gray-soft);border-radius:var(--r-md);padding:16px 18px;font-size:14px;font-weight:600;color:var(--text);line-height:1.75;text-align:left;">
+          "${escapeHtml(p.starter)}"
+        </div>`;
+      subHtml = escapeHtml(p.hint || '이야기를 이어 써 보세요.');
       break;
 
     case 'opinion':
-      content = `
-        <div class="pp-image" style="flex-direction:column; gap:8px;">
-          <div style="font-size:16px; font-weight:700; color:var(--primary);">${escapeHtml(p.topic)}</div>
-          <div style="font-size:12px; color:var(--gray-2);">${escapeHtml(p.example || '')}</div>
-        </div>
-        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
-      break;
-
-    case 'sequence':
-      const stepsList = (p.steps || []).map((s,i) =>
-        `<span style="padding:4px 10px; background:var(--primary); color:white; border-radius:999px; font-size:12px; font-weight:600;">${i+1}. ${escapeHtml(s)}</span>`).join(' → ');
-      content = `
-        <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:12px;">${stepsList}</div>
-        <div class="pp-caption">${escapeHtml(p.hint)}</div>`;
-      break;
-
-    case 'diary':
-      content = `
-        <div class="pp-image" style="flex-direction:column; gap:8px;">
-          <div style="font-size:18px; font-weight:700; color:var(--primary);">${escapeHtml(p.event)}</div>
-          <div style="font-size:12px; color:var(--gray-2);">일기 형식 / ${escapeHtml(p.hint)}</div>
+      coreHtml = `
+        <div style="background:var(--bg-gray-soft);border-radius:var(--r-md);padding:16px 18px;font-size:16px;font-weight:700;color:var(--text);line-height:1.65;text-align:left;">
+          ${escapeHtml(p.topic)}
         </div>`;
+      subHtml = escapeHtml(p.hint || '주장과 근거를 써 보세요.');
       break;
+
+    // ── L5 ───────────────────────────────────────────────────
+    case 'ai_fix':
+    case 'ai_critique':
+      coreHtml = `
+        <div style="padding:14px 16px;background:var(--bg-gray-soft);border-radius:var(--r-sm);font-size:14px;font-weight:500;line-height:1.75;text-align:left;color:var(--text);">
+          ${escapeHtml(p.aiText || p.topic || '')}
+        </div>`;
+      subHtml = `<span style="color:var(--gray-2);">AI가 쓴 글</span> · ${escapeHtml(p.hint || 'AI 글을 고쳐 보세요.')}`;
+      break;
+
+    case 'genre_change': {
+      const orig = p.original || '';
+      const preview = orig.length > 100 ? orig.substring(0,100) + '…' : orig;
+      coreHtml = `
+        <div style="padding:14px 16px;background:var(--bg-gray-soft);border-radius:var(--r-sm);font-size:13px;font-weight:500;line-height:1.75;text-align:left;color:var(--text);max-height:120px;overflow-y:auto;">
+          ${escapeHtml(preview)}
+        </div>`;
+      subHtml  = `${escapeHtml(p.from||'')} → <b style="color:var(--primary);">${escapeHtml(p.to||'')}</b> · ${escapeHtml(p.hint||'')}`;
+      break;
+    }
 
     case 'letter':
-      content = `
-        <div class="pp-image" style="flex-direction:column; gap:8px;">
-          <div style="font-size:16px; font-weight:700; color:var(--primary);">받는 이: ${escapeHtml(p.to)}</div>
-          <div style="font-size:13px; color:var(--text);">주제: ${escapeHtml(p.occasion)}</div>
-          <div style="font-size:12px; color:var(--gray-2);">구성: ${escapeHtml(p.parts || '')}</div>
-        </div>
-        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+      coreHtml = `<div style="font-size:18px;font-weight:800;color:var(--primary);">받는 이: ${escapeHtml(p.to)}</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-top:6px;">${escapeHtml(p.occasion||'')}</div>`;
+      subHtml = `구성: ${escapeHtml(p.parts||'')} · ${escapeHtml(p.hint||'')}`;
+      break;
+
+    // ── L6 ───────────────────────────────────────────────────
+    case 'audience':
+      coreHtml = `
+        <div style="background:var(--bg-gray-soft);border-radius:var(--r-md);padding:16px 18px;font-size:16px;font-weight:700;color:var(--text);line-height:1.65;text-align:left;">
+          ${escapeHtml(p.topic)}
+        </div>`;
+      subHtml = `독자: <b style="color:var(--primary);">${escapeHtml(p.audience||'')}</b> · ${escapeHtml(p.hint||'')}`;
+      break;
+
+    case 'media_change': {
+      const morig = p.original || p.topic || '';
+      const mpreview = morig.length > 80 ? morig.substring(0,80) + '…' : morig;
+      coreHtml = `
+        <div style="padding:14px 16px;background:var(--bg-gray-soft);border-radius:var(--r-sm);font-size:13px;font-weight:500;line-height:1.75;text-align:left;color:var(--text);">
+          ${escapeHtml(mpreview)}
+        </div>`;
+      subHtml = `${escapeHtml(p.from||'')} → <b style="color:var(--primary);">${escapeHtml(p.to||'')}</b> · ${escapeHtml(p.hint||'')}`;
+      break;
+    }
+
+    case 'guide':
+      coreHtml = `<div style="font-size:18px;font-weight:800;color:var(--primary);">${escapeHtml(p.topic||p.subject||'')}</div>`;
+      subHtml  = (p.audience ? `독자: ${escapeHtml(p.audience)} · ` : '') + escapeHtml(p.hint||'');
+      break;
+
+    // ── 구형 타입 폴백 ────────────────────────────────────────
+    case 'diary':
+      coreHtml = `<div style="font-size:18px;font-weight:800;color:var(--primary);">${escapeHtml(p.event||'')}</div>`;
+      subHtml  = escapeHtml(p.hint||'');
       break;
 
     case 'argument':
-      content = `
-        <div class="pp-image" style="flex-direction:column; gap:8px;">
-          <div style="font-size:15px; font-weight:700; color:var(--primary);">${escapeHtml(p.topic)}</div>
-          <div style="font-size:12px; color:var(--gray-2);">입장: ${escapeHtml(p.stance || '')} | 구성: ${escapeHtml(p.structure || '')}</div>
-        </div>
-        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
-      break;
-
-    case 'ai_fix':
-    case 'ai_critique':
-      content = `
-        <div class="pp-image" style="flex-direction:column; gap:8px; text-align:left; padding:16px;">
-          <div style="font-size:11px; font-weight:600; color:var(--gray-2);">AI가 쓴 글 (고쳐보세요)</div>
-          <div style="font-size:13px; font-weight:500; color:var(--text); background:var(--bg-gray-soft); padding:10px; border-radius:var(--r-sm); line-height:1.65;">${escapeHtml(p.aiText)}</div>
-          <div style="font-size:12px; color:var(--point);">문제점: ${escapeHtml(p.issues || p.critique_points || '')}</div>
-        </div>
-        <div class="pp-caption" style="margin-top:8px;">${escapeHtml(p.hint)}</div>`;
-      break;
-
-    case 'genre_change':
-      content = `
-        <div class="pp-image" style="flex-direction:column; gap:8px; text-align:left; padding:16px;">
-          <div style="font-size:11px; font-weight:600; color:var(--gray-2);">원문 (${escapeHtml(p.from)})</div>
-          <div style="font-size:13px; font-weight:500; color:var(--text); background:var(--bg-gray-soft); padding:10px; border-radius:var(--r-sm); line-height:1.65;">${escapeHtml(p.original)}</div>
-          <div style="font-size:12px; color:var(--primary);">→ ${escapeHtml(p.to)}으로 바꿔 보세요</div>
-        </div>
-        <div class="pp-caption" style="margin-top:8px;">${escapeHtml(p.hint)}</div>`;
-      break;
-
-    case 'guide':
-      content = `
-        <div class="pp-image" style="flex-direction:column; gap:8px;">
-          <div style="font-size:15px; font-weight:700; color:var(--primary);">${escapeHtml(p.topic)}</div>
-          <div style="font-size:12px; color:var(--gray-2);">독자: ${escapeHtml(p.audience)} | 구성: ${escapeHtml(p.structure || '')}</div>
-        </div>
-        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
+      coreHtml = `
+        <div style="background:var(--bg-gray-soft);border-radius:var(--r-md);padding:16px 18px;font-size:16px;font-weight:700;color:var(--text);line-height:1.65;text-align:left;">
+          ${escapeHtml(p.topic||'')}
+        </div>`;
+      subHtml = `입장: ${escapeHtml(p.stance||'')} · 구성: ${escapeHtml(p.structure||'')}`;
       break;
 
     case 'obs_record':
-      content = `
-        <div class="pp-image" style="flex-direction:column; gap:8px;">
-          <div style="font-size:15px; font-weight:700; color:var(--primary);">${escapeHtml(p.subject)}</div>
-          <div style="font-size:12px; color:var(--gray-2);">구성: ${escapeHtml(p.structure || '')}</div>
-        </div>
-        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
-      break;
-
     case 'report':
-      content = `
-        <div class="pp-image" style="flex-direction:column; gap:8px; text-align:left; padding:16px;">
-          <div style="font-size:15px; font-weight:700; color:var(--primary);">${escapeHtml(p.topic)}</div>
-          <div style="font-size:12px; color:var(--gray-2); background:var(--bg-gray-soft); padding:8px; border-radius:6px;">${escapeHtml(p.data || '')}</div>
-          <div style="font-size:12px; color:var(--gray-2);">구성: ${escapeHtml(p.structure || '')}</div>
-        </div>
-        <div class="pp-caption" style="margin-top:8px;">${escapeHtml(p.hint)}</div>`;
-      break;
-
-    case 'audience':
-      content = `
-        <div class="pp-image" style="flex-direction:column; gap:8px;">
-          <div style="font-size:15px; font-weight:700; color:var(--primary);">${escapeHtml(p.topic)}</div>
-          <div style="font-size:13px; color:var(--text);">독자: <b>${escapeHtml(p.audience)}</b></div>
-        </div>
-        <div class="pp-caption" style="margin-top:10px;">${escapeHtml(p.hint)}</div>`;
-      break;
-
-    case 'media_change':
-      content = `
-        <div class="pp-image" style="flex-direction:column; gap:8px; text-align:left; padding:16px;">
-          <div style="font-size:11px; font-weight:600; color:var(--gray-2);">원문 (${escapeHtml(p.from)})</div>
-          <div style="font-size:13px; font-weight:500; color:var(--text); background:var(--bg-gray-soft); padding:10px; border-radius:var(--r-sm); line-height:1.65;">${escapeHtml(p.original)}</div>
-          <div style="font-size:12px; color:var(--primary);">→ ${escapeHtml(p.to)}으로 바꿔 보세요</div>
-        </div>
-        <div class="pp-caption" style="margin-top:8px;">${escapeHtml(p.hint)}</div>`;
+      coreHtml = `<div style="font-size:18px;font-weight:800;color:var(--primary);">${escapeHtml(p.topic||p.subject||'')}</div>`;
+      subHtml  = escapeHtml(p.data || p.hint || '');
       break;
 
     default:
-      content = `<div class="pp-caption">${escapeHtml(p.hint || '')}</div>`;
+      coreHtml = `<div style="font-size:16px;font-weight:600;color:var(--text);">${escapeHtml(p.hint||p.topic||p.subject||'')}</div>`;
+      subHtml  = '';
   }
 
-  // 문제 번호 표시 (선택 불가 — 순차 진행)
-  const pool = (PROBLEM_BANK[state.level] || {})[state.taskTypeIdx] || [];
-  const totalProblems = pool.length;
-  const problemNumLabel = totalProblems > 1
-    ? `<div class="problem-num-badge">${state.problemIdx + 1} / ${totalProblems}</div>`
-    : '';
-
   box.innerHTML = `
-    <div class="pp-label" style="display:flex;align-items:center;justify-content:space-between;">
-      <span style="display:flex;align-items:center;gap:6px;">
-        <span class="icon icon-16"><svg><use href="#i-pencil"/></svg></span>
-        ${escapeHtml(currentTaskName())}
-      </span>
-      ${problemNumLabel}
-    </div>
-    ${content}
+    ${problemNumLabel ? `<div style="text-align:right;margin-bottom:10px;">${problemNumLabel}</div>` : ''}
+    <div class="pp-core">${coreHtml}</div>
+    ${subHtml ? `<div class="pp-sub" style="margin-top:8px;">${subHtml}</div>` : ''}
+    ${imgHtml}
   `;
-
 }
 // ↑ 받아쓰기 TTS는 플레이 버튼 클릭 시만 재생 (자동재생 제거됨)
 
@@ -5513,91 +5471,4 @@ async function callClaudeVision() {
   try {
     response = await fetch(proxyUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-access-password': '' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2500,
-        system: system,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: cleanMediaType, data: base64Data } },
-            { type: 'text', text: user }
-          ]
-        }]
-      })
-    });
-  } catch (netErr) {
-    throw new Error('프록시 서버에 연결할 수 없어요. 주소를 확인해 주세요.');
-  }
-
-  if (!response.ok) {
-    const errText = await response.text().catch(() => '');
-    let errDetail = '';
-    try { const errObj = JSON.parse(errText); errDetail = (errObj.error && errObj.error.message) || ''; }
-    catch(e) { errDetail = errText.substring(0, 120); }
-    if (response.status === 401) throw new Error('서비스 접근이 거부됐어요.');
-    if (response.status === 403) throw new Error('허용되지 않은 출처에서의 요청이에요.');
-    if (response.status === 413 || /too large|size limit/i.test(errDetail)) throw new Error('이미지가 너무 커요.');
-    if (response.status === 429) throw new Error('요청이 너무 많아요. 잠시 후 다시 시도해 주세요.');
-    if (response.status >= 500) throw new Error('서버 일시 오류예요. ' + errDetail);
-    throw new Error(`AI 분석 실패 (${response.status}). ${errDetail}`);
-  }
-
-  const data = await response.json();
-  const text = data.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
-  console.log('[API 응답]', text.substring(0, 300));
-  const cleaned = text.replace(/```json\s*|\s*```/g, '').trim();
-  let parsed;
-  try { parsed = JSON.parse(cleaned); }
-  catch (e) {
-    const m = cleaned.match(/\{[\s\S]*\}/);
-    if (m) { try { parsed = JSON.parse(m[0]); } catch (e2) { throw new Error('AI 응답을 해석할 수 없어요.'); } }
-    else { throw new Error('AI 응답이 예상한 형식이 아니에요.'); }
-  }
-  return parsed;
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-renderLevelTabs();
-
-function initTodayTask() {
-  const todayTask = getTodayTask(state.level);
-  state.taskTypeIdx = todayTask.taskTypeIdx;
-  state.problemIdx  = todayTask.problemIdx || 0;
-  const panel = document.getElementById('todayTaskPanel');
-  document.getElementById('todayTaskName').textContent  = todayTask.taskName;
-  document.getElementById('todayTaskTopic').textContent = todayTask.topic ? '주제: ' + todayTask.topic : '';
-  panel.classList.remove('hidden');
-  renderProblemPreview();
-}
-
-(async function() {
-  showSheetLoading(true);
-  try {
-    const ok = await Promise.race([
-      loadProblemsFromSheet(),
-      new Promise(res => setTimeout(() => res(false), 6000))
-    ]);
-    if (ok) console.log('[Google Sheets 데이터 적용됨]');
-    else     console.log('[타임아웃 또는 실패]');
-  } catch (e) {
-    console.warn('[Sheet 로딩 오류]', e);
-  }
-  showSheetLoading(false);
-  initTodayTask();
-  renderTaskTypeTabs();
-})();
-</script>
-
-<script>
-const DEFAULT_PROXY_PATH = '/api/proxy';
-function resolveProxyUrl() { return DEFAULT_PROXY_PATH; }
-function getProxyConfig() { return { url: '', password: '' }; }
-</script>
-
-</body>
-</html>
+      headers: { 'Content-Type': 'application/json'
