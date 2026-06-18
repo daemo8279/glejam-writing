@@ -4056,9 +4056,30 @@ teacher_comment: 20자 이내 격려 존댓말`;
     const taskContext = [p.topic, p.subject, p.hint, p.starter, p.text, p.event]
       .filter(Boolean).join(' / ');
     const criteriaScoresSchema = JSON.stringify(dynScores);
-    const dynSys = `${baseSystem}${dynRubricSection}
 
-[${taskName} — 레벨${lv}] ${taskContext}
+    // feedback_items domain 안내 (코드 → 이름)
+    const domainDesc = dynRubricCodes.map(code => {
+      const info = RUBRIC_MAP[code];
+      return info ? `"${code}"(${info.name})` : `"${code}"`;
+    }).join(' | ');
+
+    // 받아쓰기는 정답 문장을 명시적으로 표시
+    const taskHeader = p.type === 'dictation'
+      ? `[받아쓰기 — 레벨${lv}] 정답 문장: "${p.text}"`
+      : `[${taskName} — 레벨${lv}] ${taskContext}`;
+
+    const dynSys = `${baseSystem}
+
+⚠️ 이 문항은 아래 ★ 이 문항의 평가 기준 ★으로만 평가합니다.
+위의 '3대 평가 영역'(기초 규범/어휘·표현/문장 구성)은 적용하지 마세요.
+feedback_items는 criteria_scores 결과를 바탕으로 생성하세요:
+- 점수 낮은(~69점) 기준 → correction (domain: 해당 기준 코드, example: "틀린 표현 → 바른 표현")
+- 점수 높은(70점+) 기준 중 가장 잘한 것 1개 → praise
+- 마지막 1개 → encourage ("~한 점만 고친다면 훨씬 좋아질 거예요!" 또는 칭찬 마무리)
+- domain 사용 가능 값: ${domainDesc}
+${dynRubricSection}
+
+${taskHeader}
 분량 기준: ${scaleSuffix}.
 
 각 평가 기준(criteria_scores)에 대해:
@@ -4067,7 +4088,13 @@ teacher_comment: 20자 이내 격려 존댓말`;
 criteria_scores의 모든 코드는 반드시 채워 주세요.
 
 출력:{"task_type":"${p.type||'open'}","recognized_text":"","confidence":0,"total_score":0,"legibility_score":0,"task_score":0,"teacher_comment":"","char_analysis":[],"legibility_tip":"","criteria_scores":${criteriaScoresSchema},"spelling_errors":[],"language_tip":"","feedback_items":[{"type":"praise","text":""},{"type":"encourage","text":""}]}`;
-    const dynUsr = `과제 유형: ${taskName}\n내용: ${taskContext}\n힌트: ${p.hint||''}\n\n손글씨를 읽고 위의 평가 기준에 따라 분석해 주세요.`;
+
+    let dynUsr;
+    if (p.type === 'dictation') {
+      dynUsr = `정답 문장: "${p.text}"\n\n학생이 받아쓰기한 손글씨를 읽고, 정답과 비교하여 위의 평가 기준에 따라 분석해 주세요. recognized_text에는 학생이 실제로 쓴 글자를 그대로 담으세요.`;
+    } else {
+      dynUsr = `과제 유형: ${taskName}\n내용: ${taskContext}\n힌트: ${p.hint||''}\n\n손글씨를 읽고 위의 평가 기준에 따라 분석해 주세요.`;
+    }
     return { system: dynSys, user: dynUsr };
   }
 
@@ -4626,7 +4653,9 @@ function renderFeedbackItems(items) {
   if (!items || !items.length) { card.style.display = 'none'; return; }
 
   const iconMap = { praise: '⭐', correction: '✏️', encourage: '💪' };
-  const domainLabelMap = { '규범': '기초 규범', '어휘': '어휘·표현', '문장': '문장 구성' };
+  // 기존 3대 영역 + rubric 코드 → 이름 (RUBRIC_MAP에서 동적 생성)
+  const domainLabelMap = { '규범': '기초 규범', '어휘': '어휘·표현', '문장': '문장 구성',
+    ...Object.fromEntries(Object.entries(RUBRIC_MAP).map(([k, v]) => [k, v.name])) };
 
   list.innerHTML = '';
   // correction 필터: example이 "A → A" (동일) 이거나 text가 비어있으면 제거
