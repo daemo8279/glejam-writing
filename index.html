@@ -5431,6 +5431,17 @@ function showError(msg) {
 }
 
 // ===========================================
+// Proxy URL resolver
+// ===========================================
+function resolveProxyUrl() {
+  // 로컬 개발 환경이면 localhost proxy, 그 외(Vercel 등)는 /api/proxy
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:3000/api/proxy';
+  }
+  return '/api/proxy';
+}
+
+// ===========================================
 // STEP 3 & 4: Claude Vision API
 // ===========================================
 async function runAnalysis() {
