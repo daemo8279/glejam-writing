@@ -2456,22 +2456,28 @@ html, body {
         </button>
         <button class="retry-card" id="retryNewBtn" onclick="retryNewProblem()">
           <div class="retry-icon" style="background:#D1FAE5; color:#059669;">🆕</div>
-          <div class="retry-card-title">다른 과제<br>풀어보기</div>
-          <div class="retry-card-desc">새 문제로<br>실력 키우기</div>
-        </button>
-      </div>
-      <div class="retry-footer">
-        <button class="btn btn-ghost" onclick="goToStep(1)" style="padding:10px 22px;">
-          <span class="icon icon-16"><svg><use href="#i-home"/></svg></span>
-          처음 화면으로
+          <div class="retry-card-title">다른 문제</div>
+          <div class="retry-card-desc">새 문제로<br>도전해 볼까요?</div>
         </button>
       </div>
     </div>
   </div>
 
-</div>
-
 <script>
+
+// ===========================================
+// 유틸리티 함수
+// ===========================================
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ===========================================
 // 커리큘럼 데이터 (글잼 오늘의쓰기)
 // ===========================================
@@ -3465,13 +3471,14 @@ function renderProblemPreview() {
     }
 
     case 'descriptive': {
-      const dClean = (p.hint || '')
-        .split('\n')
-        .map(l => l.replace(/\[.*?\]/g,'').replace(/\(.*?\)/g,'').trim())
-        .filter(l => l.length > 0 && !l.includes('골라') && !l.includes('완성'));
-      const dSentence = dClean.find(l => l.includes('_')) || dClean[0] || '';
+      // [      ] → 밑줄 빈칸으로 시각화
+      const raw = p.hint || '';
+      const withPlaceholder = raw.replace(/\[[\s_]*\]/g, '\x00BLANK\x00');
+      const escaped = escapeHtml(withPlaceholder);
+      const blankSpan = '<span style="display:inline-block;min-width:72px;border-bottom:2.5px solid var(--text);margin:0 4px;vertical-align:bottom;"></span>';
+      const dSentence = escaped.replace(/\x00BLANK\x00/g, blankSpan);
       coreHtml = dSentence
-        ? `<div style="background:var(--bg-gray-soft);border-radius:var(--r-md);padding:16px 20px;font-size:17px;font-weight:700;color:var(--text);text-align:center;letter-spacing:-0.01em;line-height:1.7;">${escapeHtml(dSentence)}</div>`
+        ? `<div style="background:var(--bg-gray-soft);border-radius:var(--r-md);padding:16px 20px;font-size:17px;font-weight:700;color:var(--text);text-align:center;letter-spacing:-0.01em;line-height:1.9;">${dSentence}</div>`
         : '';
       subHtml = '빈칸에 어울리는 말을 쓰세요.';
       break;
@@ -5471,4 +5478,51 @@ async function callClaudeVision() {
   try {
     response = await fetch(proxyUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json'
+      headers: { 'Content-Type': 'application/json', 'x-access-password': '' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        system: system,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: cleanMediaType, data: base64Data } },
+          { type: 'text', text: user }
+        ]}]
+      })
+    });
+  } catch(fetchErr) {
+    throw new Error(`네트워크 오류: ${fetchErr.message}`);
+  }
+  if (!response.ok) {
+    const errText = await response.text().catch(()=>'');
+    throw new Error(`API 오류 (${response.status}): ${errText.substring(0,200)}`);
+  }
+  const data = await response.json();
+  const rawText = data.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
+  const cleaned = rawText.replace(/```json\s*|\s*```/g, '').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch(e) {
+    const m = cleaned.match(/\{[\s\S]*\}/);
+    if (m) return JSON.parse(m[0]);
+    throw new Error('JSON 파싱 실패: ' + cleaned.substring(0,200));
+  }
+}
+
+// ─── Initialization ──────────────────────────────────
+renderLevelTabs();
+
+// 초기 레벨(1) 자동 로드
+(function initLevel() {
+  const todayTask = getTodayTask(state.level);
+  state.taskTypeIdx = todayTask.taskTypeIdx;
+  state.problemIdx  = todayTask.problemIdx || 0;
+  const panel = document.getElementById('todayTaskPanel');
+  panel.classList.remove('hidden');
+  document.getElementById('todayTaskName').textContent  = todayTask.taskName;
+  document.getElementById('todayTaskTopic').textContent = todayTask.topic ? '주제: ' + todayTask.topic : '';
+  renderTaskTypeTabs();
+  renderProblemPreview();
+})();
+</script>
+</body>
+</html>
