@@ -4084,9 +4084,25 @@ function buildPrompt() {
   const taskName = currentTaskName();
   const scaleDesc = levelData.s || '1문장';
 
-  // ── 동적 평가 기준 (구글 시트 '평가 기준' 열에서 로드) ──────
-  const dynRubricCodes = (p && p.rubric && p.rubric.length && Object.keys(RUBRIC_MAP).length > 0)
-    ? p.rubric : null;
+  // ── 유형별 기본 평가 기준 (시트 데이터 없을 때 폴백) ──────────
+  const TYPE_DEFAULT_RUBRIC = {
+    'observe':        ['4A', '5C', '4C', '3C', '1B'],   // 관찰 글쓰기: 중심생각+구체묘사+통일성+논리순서+맞춤법
+    'sequence':       ['3C', '4A', '4C', '3B', '1B'],   // 순서에 맞는 글쓰기: 시간순서+중심생각+통일성+연결어+맞춤법
+    'story_continue': ['4A', '5B', '4C', '5A', '1B'],   // 이야기 이어쓰기: 중심생각+상상력+통일성+감정표현+맞춤법
+    'opinion':        ['4A', '4C', '3C', '2A', '1B'],   // 주장하는 글쓰기: 중심생각+통일성+논리순서+정확어휘+맞춤법
+    'ai_fix':         ['4B', '5C', '4C', '2B', '1B'],   // 글 수정하기: 불필요표현+구체묘사+통일성+다양어휘+맞춤법
+    'genre_change':   ['4A', '4C', '5B', '2B', '1D'],   // 장르 바꿔 쓰기: 중심생각+통일성+상상력+다양어휘+시제
+    'letter':         ['4A', '5A', '4C', '2C', '1D'],   // 편지 쓰기: 중심생각+감정표현+통일성+감정꾸밈말+높임법
+    'audience':       ['4A', '4C', '2A', '2B', '1D'],   // 독자 맞춤 글쓰기: 중심생각+통일성+정확어휘+다양어휘+높임법
+    'media_change':   ['4A', '4C', '5B', '2B', '1B'],   // 매체 변환 글쓰기: 중심생각+통일성+상상력+다양어휘+맞춤법
+    'guide':          ['4A', '4C', '3C', '2A', '1D'],   // 안내·소개 글쓰기: 중심생각+통일성+논리순서+정확어휘+높임법
+  };
+
+  // ── 동적 평가 기준 (시트 코드 우선, 없으면 유형별 폴백) ──────
+  const _sheetCodes    = (p && p.rubric && p.rubric.length) ? p.rubric : null;
+  const _fallbackCodes = (!_sheetCodes && p && p.type && Object.keys(RUBRIC_MAP).length > 0)
+    ? (TYPE_DEFAULT_RUBRIC[p.type] || null) : null;
+  const dynRubricCodes  = _sheetCodes || _fallbackCodes;
   const dynRubricSection = dynRubricCodes ? buildDynamicRubricSection(dynRubricCodes) : '';
   const dynScores       = dynRubricCodes ? buildDynamicOutputSchema(dynRubricCodes) : null;
 
