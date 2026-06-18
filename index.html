@@ -5745,7 +5745,7 @@ async function reevaluateWithCorrectedText(correctedText) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-access-password': '' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2500,
       system: system,
       messages: [{ role: 'user', content: [{ type: 'text', text: textOnlyUser }] }]
@@ -5787,7 +5787,7 @@ async function callClaudeText(inputText) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-access-password': '' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 4000,
         system: textSystem,
         messages: [{ role: 'user', content: [
@@ -5837,7 +5837,7 @@ async function callClaudeVision() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-access-password': '' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 4000,
         system: system,
         messages: [{ role: 'user', content: [
