@@ -3483,14 +3483,35 @@ function showSheetLoading(show) {
 // ===========================================
 // 캔버스 설정 (레벨별)
 // ===========================================
+// 예시 답안 없는 유형의 레벨별 폴백 칸 수
 const CANVAS_CONFIG = {
-  1: { rows: 30, cols: 10, height: 2700 },  // 300字 원고지 (칸 90px 유지)
-  2: { rows: 30, cols: 10, height: 2700 },  // 300字 원고지
-  3: { rows: 30, cols: 10, height: 2700 },  // 300字 원고지
-  4: { rows: 60, cols: 10, height: 5400 },  // 600字 원고지 (칸 90px 유지)
-  5: { rows: 60, cols: 10, height: 5400 },  // 600字 원고지
-  6: { rows: 60, cols: 10, height: 5400 },  // 600字 원고지
+  1: { rows:  5, cols: 10, height:  450 },
+  2: { rows:  8, cols: 10, height:  720 },
+  3: { rows: 12, cols: 10, height: 1080 },
+  4: { rows: 18, cols: 10, height: 1620 },
+  5: { rows: 24, cols: 10, height: 2160 },
+  6: { rows: 30, cols: 10, height: 2700 },
 };
+
+// 문제별 동적 캔버스 설정: 예시 답안 글자 수 + 10칸
+function getCanvasConfig() {
+  const COLS = 10;
+  const CELL_H = 90; // 칸 높이(px) — 원래 크기 유지
+  const p = currentProblem();
+
+  if (p) {
+    const exText = p.example || p.answer || (p.type === 'dictation' ? p.text : '') || '';
+    if (exText) {
+      const charCount = exText.length; // 공백 포함 전체 글자 수
+      const totalCells = charCount + 10; // +10칸 여유
+      const rows = Math.max(3, Math.ceil(totalCells / COLS));
+      return { rows, cols: COLS, height: rows * CELL_H };
+    }
+  }
+
+  // 예시 없는 유형 → 레벨 기본값
+  return CANVAS_CONFIG[state.level] || CANVAS_CONFIG[1];
+}
 
 // ===========================================
 // State
@@ -4037,7 +4058,7 @@ function initCanvas() {
   // 캔버스가 숨겨져 있으면 부모 컨테이너 너비로 fallback
   const logicalWidth = rect.width || canvas.parentElement?.getBoundingClientRect().width || 340;
 
-  const cfg = CANVAS_CONFIG[state.level] || CANVAS_CONFIG[1];
+  const cfg = getCanvasConfig();
   const canvasHeight = cfg.height;
 
   canvas.width = logicalWidth * dpr;
@@ -4060,7 +4081,7 @@ function drawGrid() {
   ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, w, h);
 
-  const cfg = CANVAS_CONFIG[state.level] || CANVAS_CONFIG[1];
+  const cfg = getCanvasConfig();
   const cols = cfg.cols;
   const rows = cfg.rows;
   const cellW = w / cols;
