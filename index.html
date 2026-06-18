@@ -617,6 +617,31 @@ html, body {
   color: var(--gray-2);
 }
 
+.finish-example {
+  background: #fff;
+  border: 1.5px solid #C8E6C9;
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  margin: 14px 0 4px;
+  text-align: left;
+}
+
+.finish-example-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #388E3C;
+  letter-spacing: 0.4px;
+  margin-bottom: 8px;
+}
+
+.finish-example-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--gray-1);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .finish-btns {
   display: flex;
   gap: 12px;
@@ -2580,6 +2605,11 @@ html, body {
             <span class="finish-score-denom">/100점</span>
           </div>
         </div>
+        <!-- 예시 답안 -->
+        <div class="finish-example" id="finishExample" style="display:none;">
+          <div class="finish-example-label">📝 예시 답안</div>
+          <div class="finish-example-text" id="finishExampleText"></div>
+        </div>
         <div class="finish-btns">
           <button class="btn btn-ghost" onclick="goToReviewNote()">복습노트로 가기</button>
           <button class="btn btn-pink" onclick="retryNewProblem()">다시 풀기 🐾</button>
@@ -3454,12 +3484,12 @@ function showSheetLoading(show) {
 // 캔버스 설정 (레벨별)
 // ===========================================
 const CANVAS_CONFIG = {
-  1: { rows: 2, cols: 12, height: 200 },
-  2: { rows: 3, cols: 12, height: 280 },
-  3: { rows: 4, cols: 10, height: 360 },
-  4: { rows: 5, cols: 10, height: 420 },
-  5: { rows: 6, cols: 10, height: 500 },
-  6: { rows: 7, cols: 10, height: 580 }
+  1: { rows: 30, cols: 10, height: 1080 },  // 300字 원고지
+  2: { rows: 30, cols: 10, height: 1080 },  // 300字 원고지
+  3: { rows: 30, cols: 10, height: 1080 },  // 300字 원고지
+  4: { rows: 30, cols: 20, height: 1080 },  // 600字 원고지
+  5: { rows: 30, cols: 20, height: 1080 },  // 600字 원고지
+  6: { rows: 30, cols: 20, height: 1080 },  // 600字 원고지
 };
 
 // ===========================================
@@ -5068,6 +5098,22 @@ function updateRetryCards(result) {
     if (score >= 90) card.style.background = '#2E7D32';
     else if (score >= 70) card.style.background = '#4CAF50';
     else card.style.background = '#F57C00';
+  }
+
+  // 예시답안 표시
+  const exampleBox = document.getElementById('finishExample');
+  const exampleText = document.getElementById('finishExampleText');
+  if (exampleBox && exampleText) {
+    const p = currentProblem();
+    const ex = p
+      ? (p.example || p.answer || (p.type === 'dictation' ? p.text : '') || '')
+      : '';
+    if (ex) {
+      exampleText.textContent = ex;
+      exampleBox.style.display = '';
+    } else {
+      exampleBox.style.display = 'none';
+    }
   }
 }
 
